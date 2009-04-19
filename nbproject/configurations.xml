@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="51">
+  <logicalFolder name="root" displayName="root" projectFiles="true">
+    <logicalFolder name="HeaderFiles"
+                   displayName="Header Files"
+                   projectFiles="true">
+      <itemPath>Container.h</itemPath>
+      <itemPath>Element.h</itemPath>
+      <itemPath>Expression.h</itemPath>
+      <itemPath>Interpreter.h</itemPath>
+      <itemPath>lexer.h</itemPath>
+      <itemPath>Operator.h</itemPath>
+      <itemPath>parser.h</itemPath>
+      <itemPath>Type.h</itemPath>
+      <itemPath>Value.h</itemPath>
+      <itemPath>Variable.h</itemPath>
+    </logicalFolder>
+    <logicalFolder name="ResourceFiles"
+                   displayName="Resource Files"
+                   projectFiles="true">
+    </logicalFolder>
+    <logicalFolder name="SourceFiles"
+                   displayName="Source Files"
+                   projectFiles="true">
+      <itemPath>Container.cpp</itemPath>
+      <itemPath>Element.cpp</itemPath>
+      <itemPath>Expression.cpp</itemPath>
+      <itemPath>Interpreter.cpp</itemPath>
+      <itemPath>lexer.cpp</itemPath>
+      <itemPath>main.cpp</itemPath>
+      <itemPath>Operator.cpp</itemPath>
+      <itemPath>parser.cpp</itemPath>
+      <itemPath>Type.cpp</itemPath>
+      <itemPath>Value.cpp</itemPath>
+      <itemPath>Variable.cpp</itemPath>
+    </logicalFolder>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false">
+      <itemPath>Makefile</itemPath>
+    </logicalFolder>
+  </logicalFolder>
+  <projectmakefile>Makefile</projectmakefile>
+  <confs>
+    <conf name="Debug" type="1">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <compilerSet>GNU|GNU</compilerSet>
+        <platform>2</platform>
+      </toolsSet>
+      <compileType>
+        <linkerTool>
+          <linkerLibItems>
+          </linkerLibItems>
+        </linkerTool>
+      </compileType>
+      <item path="Container.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Container.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="Element.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Element.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="Expression.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Expression.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="Interpreter.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Interpreter.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="Operator.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Operator.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="Type.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Type.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="Value.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Value.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="Variable.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Variable.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="lexer.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="lexer.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="main.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="parser.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="parser.h">
+        <itemTool>3</itemTool>
+      </item>
+    </conf>
+    <conf name="Release" type="1">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <compilerSet>GNU|GNU</compilerSet>
+        <platform>2</platform>
+      </toolsSet>
+      <compileType>
+        <cCompilerTool>
+          <developmentMode>5</developmentMode>
+        </cCompilerTool>
+        <ccCompilerTool>
+          <developmentMode>5</developmentMode>
+        </ccCompilerTool>
+        <fortranCompilerTool>
+          <developmentMode>5</developmentMode>
+        </fortranCompilerTool>
+        <linkerTool>
+          <linkerLibItems>
+          </linkerLibItems>
+        </linkerTool>
+      </compileType>
+      <item path="Container.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Container.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="Element.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Element.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="Expression.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Expression.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="Interpreter.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Interpreter.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="Operator.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Operator.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="Type.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Type.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="Value.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Value.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="Variable.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Variable.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="lexer.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="lexer.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="main.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="parser.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="parser.h">
+        <itemTool>3</itemTool>
+      </item>
+    </conf>
+  </confs>
+</configurationDescriptor>
