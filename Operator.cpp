@@ -1,7 +1,6 @@
 
+#include <iostream>
 #include "Value.h"
-
-
 #include "Type.h"
 #include "Expression.h"
 #include "Operator.h"
@@ -21,6 +20,7 @@ public:
 };
 
 Operator* Operator::get(int type) {
+    std::cout << "Operator::get(" << type << ")\n";
     switch (type) {
         case OP_NEG:
             return new Neg();
@@ -37,7 +37,7 @@ Symbol::Symbol(int name_impl, std::list<Expression*> args_impl) : Operator(OP_SY
         iter++;
     }
 }
-Symbol::Symbol(int name_impl) : Operator(OP_SYMBOL), name(name_impl), numArgs(-1), args(0) { }
+Symbol::Symbol(int name_impl) : Operator(OP_SYMBOL), name(name_impl), numArgs(0), args(0) { }
 Symbol::~Symbol() {
     for (int i = 0; i < numArgs; i++) {
         delete args[i];
@@ -81,7 +81,7 @@ void ArrayDef::preform(std::stack<Value*>& stack, Frame* frame) {
     for (int i = 0; i < numElems; i++)
         vals[i] = elems[i]->eval(frame);
     Type* arrType = Type::getDynamicArrayType((Type*)vals[0]->typeObj);
-    std::map<std::string,Type*> typemap;
+    std::map<int,Type*> typemap;
     ArrayValue* val = new ArrayValue((Array*)arrType,typemap);
     val->resize(numElems);
     for (int i = 0; i < numElems; i++) {

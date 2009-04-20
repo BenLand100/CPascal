@@ -1,10 +1,15 @@
 #include "Value.h"
 
-Value* Value::fromType(Type* type, std::map<std::string,Type*> typemap) {
-    std::map<std::string,Type*>::iterator end = typemap.end();
-    while (type->type == TYPE_REF && typemap.find(type->descr) != end)
-        type = typemap[type->descr];
+#include <iostream>
+#define debug(x) std::cout << x << '\n'
+
+Value* Value::fromType(Type* type, std::map<int,Type*> &typemap) {
+    std::map<int,Type*>::iterator end = typemap.end();
+    debug("fromType " << type->type);
+    while (type->type == TYPE_REF && typemap.find(((RefType*)type)->name) != end)
+        type = typemap[((RefType*)type)->name];
     if (type->type == TYPE_REF) return 0;
+    debug("fromType " << type->type);
     switch (type->type) {
         case TYPE_STRING:
             return new StringValue((char*)"");
@@ -300,7 +305,7 @@ int BooleanValue::asInteger() {
 
 //**** BEGIN ARRAYVALUE DEFINITION ***
 
-ArrayValue::ArrayValue(Array* arr, std::map<std::string,Type*> typemap) : Value(TYPE_ARRAY,arr) {
+ArrayValue::ArrayValue(Array* arr, std::map<int,Type*> &typemap) : Value(TYPE_ARRAY,arr) {
     elemType = new Type*;
     *elemType = (Type*)arr->element;
     dynamic = new bool;
@@ -414,7 +419,7 @@ void ArrayValue::resize(int size) {
         for (int i = 0; i < cutoff; i++) {
             newarr[i] = oldarr[cutoff];
         }
-        std::map<std::string,Type*> typemap;
+        std::map<int,Type*> typemap;
         for (int i = cutoff; i < size; i++) {
             newarr[i] = Value::fromType(*elemType,typemap);
         }
@@ -434,7 +439,7 @@ Value* ArrayValue::getIndex(int index) {
 
 //**** BEGIN POINTERVALUE DEFINITION ***
 
-PointerValue::PointerValue(Pointer* pt, std::map<std::string,Type*> typemap) : Value(TYPE_POINTER,pt) {
+PointerValue::PointerValue(Pointer* pt, std::map<int,Type*> &typemap) : Value(TYPE_POINTER,pt) {
     refType = new Type*;
     *refType = (Type*)pt->pointsTo;
     ref = new Value*;
@@ -487,7 +492,7 @@ Value* PointerValue::getRef() {
 
 //**** BEGIN RECORDVALUE DEFINITION ***
 
-RecordValue::RecordValue(Record* rec, std::map<std::string,Type*> typemap) : Value(TYPE_RECORD,rec) {
+RecordValue::RecordValue(Record* rec, std::map<int,Type*> &typemap) : Value(TYPE_RECORD,rec) {
     fields = new std::map<int,Value*>*;
     *fields = new std::map<int,Value*>;
     types = new std::map<int,Type*>*;

@@ -1,13 +1,12 @@
-
 #include "Value.h"
-
 #include <stack>
-
 #include "Expression.h"
 #include "Operator.h"
 
+
 Expression::Expression() : length(0), elems(0) { }
 Expression::Expression(std::list<Element*> postfix) : length(postfix.size()), elems(new Element*[postfix.size()]) {
+    debug("Expression()");
     std::list<Element*>::iterator iter = postfix.begin();
     for (int i = 0; i < length; i++)
         elems[i] = *(iter++);
@@ -25,9 +24,11 @@ Value* Expression::eval(Frame* frame) {
         Element* elem = elems[i];
         switch(elem->eltype) {
             case ELEM_VALUE:
+                debug("\t-Value{" << ((Value*)elem)->type << "}");
                 stack.push(((Value*)elem)->duplicate());
                 break;
             case ELEM_OPERATOR:
+                debug("\t-Operator{" << ((Operator*)elem)->type << "}");
                 ((Operator*)elem)->preform(stack,frame);
                 break;
         }

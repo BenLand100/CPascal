@@ -10,6 +10,9 @@
 #include <list>
 #include <stack>
 
+#include <iostream>
+#define debug(x) std::cout << x << '\n'
+
 Expression* parseExpr(char* &cur);
 std::list<Expression*> parseBlock(char* &cur);
 void parseContainer(char* &cur, Container* container);
@@ -20,13 +23,17 @@ inline char* next(char* cur) {
         case POPERATOR:
         case PSPECIAL:
         case PCHAR:
+            debug("next(" << (int)*cur << "," << (int)*(cur+1) << ")");
             return cur + 2;
         case PNAME:
         case PINTEGER:
+            debug("next(" << (int)*cur << "," << *(int*)(cur+1) << ")");
             return cur + sizeof(long) + 1;
         case PREAL:
+            debug("next(" << (int)*cur << "," << *(float*)(cur+1) << ")");
             return cur + sizeof(float) + 1;
         case PSTRING:
+            debug("next(" << (int)*cur << "," << (cur+1) << ")");
             char* res = cur + 1;
             while (*(res++)); //keeps going until next is one past null
             return res;
@@ -39,10 +46,11 @@ inline bool reserved(int name) {
 }
 
 Type* parseType(char* &cur) {
+    debug("parseType");
     cur = next(cur);
     if (cur[0] == POPERATOR && cur[1] == OP_DEREFGET)
         return Type::getPointerType(parseType(cur));
-    int name = *(int*)&cur[1];
+    int name = *(int*)(cur+1);
     switch (name) {
         case RES_ARRAY:
             cur = next(cur);
@@ -90,6 +98,7 @@ Type* parseType(char* &cur) {
 }
 
 std::map<int,Type*> parseTypes(char* &cur) {
+    debug("parseTypes");
     std::map<int,Type*> types;
     do {
         char* tok = next(cur);
@@ -107,6 +116,7 @@ std::map<int,Type*> parseTypes(char* &cur) {
 
 
 std::map<int,Expression*> parseConsts(char* &cur) {
+    debug("parseConsts");
     std::map<int,Expression*> consts;
     while (*cur) {
         char* tok = next(cur);
@@ -121,27 +131,28 @@ std::map<int,Expression*> parseConsts(char* &cur) {
 }
 
 std::list<Variable*> parseVars(char* &cur) {
+    debug("parseVars");
     std::list<Variable*> vars;
     std::stack<int> untyped;
     while (*cur) {
         char* tok = next(cur);
-        if (tok[0] == POPERATOR) {
+        if (tok[0] == PSPECIAL) {
             switch (tok[1]) { //silent skip ,
                 case SPC_COLON: {
-                    cur = next(tok);
-                    Type* type = parseType(cur);
+                    Type* type = parseType(tok);
                     while (!untyped.empty()) {
                         vars.push_back(new Variable(untyped.top(), type));
                         untyped.pop();
                     }
-                    cur = next(cur);
+                    cur = next(tok);
                 }
                 default:
                     cur = tok;
             }
         } else {
-            int name = *(int*)&tok[1];
+            int name = *(int*)(tok+1);
             if (reserved(name)) {
+                debug("numvars=" << vars.size());
                 return vars;
             }
             untyped.push(name);
@@ -152,6 +163,7 @@ std::list<Variable*> parseVars(char* &cur) {
 }
 
 Method* parseMethod(char* &cur) {
+    debug("parseMethod");
     cur = next(cur);
     Method* meth = new Method(*(int*)(cur+1));
     std::stack<int> untyped;
@@ -249,6 +261,7 @@ inline opprec mk_opprec(Operator* op, char prec) {
 }
 
 Expression* parseExpr(char* &cur) {
+    debug("parseExpr");
     static std::map<char,char> precedence = precedence_map();
     std::list<Element*> expr;
     std::stack<std::stack<opprec>*> parseStack;
@@ -256,6 +269,7 @@ Expression* parseExpr(char* &cur) {
     char lastType = -1, nextType = -1;
     while (*cur) {
         char* tok = next(cur);
+        debug((int)*tok);
         lastType = nextType;
         nextType = tok[0];
         //System.out.println("Expr: " + tok);
@@ -429,23 +443,28 @@ Expression* parseExpr(char* &cur) {
                 expr.push_back(new CharValue(tok[1]));
         }
         next_exprparse:
+        debug("next_exprparse");
         cur = tok;
     }
     end_exprparse:
+    debug("end_exprparse");
     while (!oper->empty()) {
         expr.push_back(oper->top().op);
         oper->pop();
     }
+    debug("expr_created");
     return new Expression(expr);
 }
 
 Until* parseUntil(char* &cur)  {
+   debug("parseUntil");
    std::list<Expression*> block = parseBlock(cur); //eats the until
    Expression* cond = parseExpr(cur);
    return new Until(block,cond);
 }
 
 Case* parseCase(char* &cur) {
+    debug("parseCase");
     cur = next(cur); //skip case
     Expression* cond = parseExpr(cur);
     cur = next(cur); //skip of
@@ -484,6 +503,7 @@ Case* parseCase(char* &cur) {
 }
 
 For* parseFor(char* &cur) {
+    debug("parseFor");
     cur = next(cur); //skip for
     int var = *(int*)(cur+1);
     cur = next(cur); //skip :=
@@ -499,6 +519,7 @@ For* parseFor(char* &cur) {
 }
 
 While* parseWhile(char* &cur) {
+    debug("parseWhile");
     cur = next(cur); //skip while
     Expression* cond = parseExpr(cur);
     cur = next(cur); //skip do
@@ -507,6 +528,7 @@ While* parseWhile(char* &cur) {
 }
 
 If* parseIf(char* &cur) {
+    debug("parseIf");
     cur = next(cur); //skip if
     Expression* cond = parseExpr(cur);
     cur = next(cur); //skip then
@@ -535,6 +557,7 @@ If* parseIf(char* &cur) {
 }
 
 Try* parseTry(char* &cur) {
+    debug("parseTry");
     std::list<Expression*> danger = parseBlock(cur);
     std::list<Expression*> saftey;
     std::list<Expression*> always;
@@ -551,11 +574,12 @@ Try* parseTry(char* &cur) {
 }
 
 std::list<Expression*> parseBlock(char* &cur) {
+    debug("parseBlock");
     std::list<Expression*> block;
     bool fullblock;
     char* tok = next(cur);
     if (tok[0] == PNAME) {
-        switch (*(int*)(cur+1)) {
+        switch (*(int*)(tok+1)) {
             case RES_BEGIN:
             case RES_REPEAT:
             case RES_TRY:
@@ -567,8 +591,10 @@ std::list<Expression*> parseBlock(char* &cur) {
             default:
                 fullblock = false;
         }
+        debug("fullblock=" << fullblock);
         do {
             tok = next(cur);
+            debug("block_switch=" << *(int*)(tok+1));
             switch (*(int*)(tok+1)) { //Expressions alway begin with a PName?
                 case RES_END:
                     cur = next(tok);
@@ -611,6 +637,7 @@ std::list<Expression*> parseBlock(char* &cur) {
 }
 
 void parseContainer(char* &cur, Container* container) {
+    debug("parseContainer");
     char* tok;
     do {
         tok = next(cur);
@@ -644,6 +671,11 @@ void parseContainer(char* &cur, Container* container) {
 }
 
 Program* parse(char* tokens) {
+    char* iter = tokens;
+    while (*iter) {
+        iter = next(iter);
+    }
+    debug("parse");
     char* cur = tokens;
     if (cur[0] != PNAME || *(int*)(cur+1) != RES_PROGRAM)
         return 0;

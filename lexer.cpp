@@ -40,6 +40,7 @@ int reserved(std::map<std::string,int> &names) {
     names["size"] = RES_SIZE;
     names["resize"] = RES_RESIZE;
     names["nil"] = RES_NIL;
+    names["result"] = RES_RESULT;
     return MAX_RES; //return next
 }
 
@@ -211,12 +212,8 @@ char* lex(char* ppg) {
                 char* type = toks;
                 *(toks++) = PINTEGER;
                 *(toks++) = c;
-                for (c = *(++ppg); !numchar(c); c = *(++ppg)) {
+                for (c = *(++ppg); c == '.' || numchar(c); c = *(++ppg)) {
                     if (c == '.') *type = PREAL;
-                    if (c == '\\') {
-                        *(toks++) = c;
-                        c = *(++ppg);
-                    }
                     *(toks++) = c;
                 }
                 ppg--;

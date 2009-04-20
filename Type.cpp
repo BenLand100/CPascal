@@ -2,6 +2,9 @@
 #include "lexer.h"
 #include <sstream>
 
+#include <iostream>
+#define debug(x) std::cout << x << '\n'
+
 Type* Type::nil = getType(RES_NIL);
 Type* Type::string = getType(RES_STRING);
 Type* Type::integer = getType(RES_INTEGER);
@@ -62,6 +65,7 @@ Type* Type::getType(int name) {
     std::string descr(str.str());
     if (types.find(descr) != types.end())
         return types[descr];
+    debug("getType=" << name);
     switch (name) {
         case RES_NIL:
             return new Type(descr, TYPE_NIL);
@@ -76,7 +80,7 @@ Type* Type::getType(int name) {
         case RES_CHAR:
             return new Type(descr, TYPE_CHAR);
         default:
-            return new Type(descr, TYPE_REF);
+            return new RefType(descr, name);
     }
 }
 
@@ -129,4 +133,10 @@ Record::Record(std::string descr_impl, std::list<Variable*> fields_impl) : Type(
 
 bool Record::instanceOf(Type* type) {
     return this->type == type->type && this->fields == ((Record*)type)->fields;
+}
+
+RefType::RefType(std::string descr, int name_impl) : Type(descr,TYPE_REF), name(name_impl) { }
+
+bool RefType::instanceOf(Type* type) {
+    return this->type == type->type && this->name == ((RefType*)type)->name;
 }

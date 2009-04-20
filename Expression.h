@@ -22,6 +22,9 @@ typedef struct _Block {
 #include <map>
 #include <vector>
 
+#include <iostream>
+#define debug(x) std::cout << x << '\n'
+
 class Expression {
 public:
     Expression(std::list<Element*> postfix);
@@ -38,8 +41,11 @@ private:
 inline void evalBlock(Block* block, Frame* frame) {
     int numElems = block->length;
     Expression** elems = block->elems;
-    for (int i = 0; i < numElems; i++, elems++)
-        delete (*elems)->eval(frame);
+    debug("evalBlock{" << elems << "," << numElems << "}");
+    for (int i = 0; i < numElems; i++) {
+        debug("eval " << elems[i]);
+        delete elems[i]->eval(frame);
+    }
 }
 
 inline void cleanBlock(Block* block) {

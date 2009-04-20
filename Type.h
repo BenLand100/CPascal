@@ -55,6 +55,16 @@ private:
     Type(int name); //only for reserved types
 };
 
+class RefType : public Type {
+    friend class Type;
+public:
+    const int name;
+
+    bool instanceOf(Type* type);
+protected:
+    RefType(std::string descr, int name);
+};
+
 class Array : public Type {
     friend class Type;
 public:

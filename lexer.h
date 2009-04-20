@@ -43,6 +43,7 @@
 #define RES_SIZE        30
 #define RES_RESIZE      31
 #define RES_NIL         32
+#define RES_RESULT      33
 
 #define MAX_RES         50
 

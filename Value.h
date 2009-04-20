@@ -17,7 +17,7 @@ class PointerValue;
 
 class Value : public Element {
 public:
-    static Value* fromType(Type* type, std::map<std::string,Type*> typemap);
+    static Value* fromType(Type* type, std::map<int,Type*> &typemap);
 
     const Type* typeObj;
     const int   type;
@@ -135,7 +135,7 @@ private:
 
 class ArrayValue : public Value {
 public:
-    ArrayValue(Array* arr, std::map<std::string,Type*> typemap);
+    ArrayValue(Array* arr, std::map<int,Type*> &typemap);
     ~ArrayValue();
 
     Value* duplicate();
@@ -158,7 +158,7 @@ private:
 
 class PointerValue : public Value {
 public:
-    PointerValue(Pointer* pt, std::map<std::string,Type*> typemap);
+    PointerValue(Pointer* pt, std::map<int,Type*> &typemap);
     PointerValue(Value* ref);
     ~PointerValue();
 
@@ -175,7 +175,7 @@ private:
 
 class RecordValue : public Value {
 public:
-    RecordValue(Record* rec, std::map<std::string,Type*> typemap);
+    RecordValue(Record* rec, std::map<int,Type*> &typemap);
     ~RecordValue();
 
     Value* duplicate();
