@@ -1,10 +1,347 @@
 
+#include <stack>
+
+
 #include <iostream>
 #include "Value.h"
 #include "Type.h"
 #include "Expression.h"
 #include "Operator.h"
 #include "lexer.h"
+
+class IDiv : public Operator {
+public:
+    IDiv() : Operator(OP_IDIV) { };
+    ~IDiv() { };
+    void preform(std::stack<Value*> &stack, Frame* frame) {
+        Value* b = stack.top();
+        stack.pop();
+        Value* a = stack.top();
+        stack.pop();
+        int res = (a->type == TYPE_REAL ? ((int)a->asReal()) : a->asInteger()) / (b->type == TYPE_REAL ? ((int)b->asReal()) : b->asInteger());
+        stack.push(new IntegerValue(res));
+        delete a;
+        delete b;
+    }
+};
+
+class FDiv : public Operator {
+public:
+    FDiv() : Operator(OP_FDIV) { };
+    ~FDiv() { };
+    void preform(std::stack<Value*> &stack, Frame* frame) {
+        Value* b = stack.top();
+        stack.pop();
+        Value* a = stack.top();
+        stack.pop();
+        double res = a->asReal() - b->asReal();
+        stack.push(new RealValue(res));
+        delete a;
+        delete b;
+    }
+};
+
+class Mod : public Operator {
+public:
+    Mod() : Operator(OP_MOD) { };
+    ~Mod() { };
+    void preform(std::stack<Value*> &stack, Frame* frame) {
+        Value* b = stack.top();
+        stack.pop();
+        Value* a = stack.top();
+        stack.pop();
+        if (a->type == TYPE_REAL || b->type == TYPE_REAL) {
+            double res = a->asReal() - b->asReal();
+            stack.push(new RealValue(res));
+        } else {
+            int res = a->asInteger() - b->asInteger();
+            stack.push(new IntegerValue(res));
+        }
+        delete a;
+        delete b;
+    }
+};
+
+class Mul : public Operator {
+public:
+    Mul() : Operator(OP_MUL) { };
+    ~Mul() { };
+    void preform(std::stack<Value*> &stack, Frame* frame) {
+        Value* b = stack.top();
+        stack.pop();
+        Value* a = stack.top();
+        stack.pop();
+        if (a->type == TYPE_REAL || b->type == TYPE_REAL) {
+            double res = a->asReal() - b->asReal();
+            stack.push(new RealValue(res));
+        } else {
+            int res = a->asInteger() - b->asInteger();
+            stack.push(new IntegerValue(res));
+        }
+        delete a;
+        delete b;
+    }
+};
+
+class Add : public Operator {
+public:
+    Add() : Operator(OP_ADD) { };
+    ~Add() { };
+    void preform(std::stack<Value*> &stack, Frame* frame) {
+        Value* b = stack.top();
+        stack.pop();
+        Value* a = stack.top();
+        stack.pop();
+        if (a->type == TYPE_STRING || b->type == TYPE_STRING) {
+            std::string str(a->asString());
+            str.append(b->asString());
+            stack.push(new StringValue(str));
+        } else if (a->type == TYPE_REAL || b->type == TYPE_REAL) {
+            double res = a->asReal() - b->asReal();
+            stack.push(new RealValue(res));
+        } else {
+            int res = a->asInteger() - b->asInteger();
+            stack.push(new IntegerValue(res));
+        }
+        delete a;
+        delete b;
+    }
+};
+
+class Sub : public Operator {
+public:
+    Sub() : Operator(OP_SUB) { };
+    ~Sub() { };
+    void preform(std::stack<Value*> &stack, Frame* frame) {
+        Value* b = stack.top();
+        stack.pop();
+        Value* a = stack.top();
+        stack.pop();
+        if (a->type == TYPE_REAL || b->type == TYPE_REAL) {
+            double res = a->asReal() - b->asReal();
+            stack.push(new RealValue(res));
+        } else {
+            int res = a->asInteger() - b->asInteger();
+            stack.push(new IntegerValue(res));
+        }
+        delete a;
+        delete b;
+    }
+};
+
+class Not : public Operator {
+public:
+    Not() : Operator(OP_NOT) { };
+    ~Not() { };
+    void preform(std::stack<Value*> &stack, Frame* frame) {
+        Value* a = stack.top();
+        stack.pop();
+        stack.push(new BooleanValue(!a->asBoolean()));
+        delete a;
+    }
+};
+
+class Or : public Operator {
+public:
+    Or() : Operator(OP_OR) { };
+    ~Or() { };
+    void preform(std::stack<Value*> &stack, Frame* frame) {
+        Value* b = stack.top();
+        stack.pop();
+        Value* a = stack.top();
+        stack.pop();
+        stack.push(new BooleanValue(a->asBoolean() || b->asBoolean()));
+        delete a;
+        delete b;
+    }
+};
+
+class And : public Operator {
+public:
+    And() : Operator(OP_AND) { };
+    ~And() { };
+    void preform(std::stack<Value*> &stack, Frame* frame) {
+        Value* b = stack.top();
+        stack.pop();
+        Value* a = stack.top();
+        stack.pop();
+        stack.push(new BooleanValue(a->asBoolean() && b->asBoolean()));
+        delete a;
+        delete b;
+    }
+};
+
+class Equ : public Operator {
+public:
+    Equ() : Operator(OP_EQU) { };
+    ~Equ() { };
+    void preform(std::stack<Value*> &stack, Frame* frame) {
+        Value* b = stack.top();
+        stack.pop();
+        Value* a = stack.top();
+        stack.pop();
+        if (a->type == TYPE_REAL || b->type == TYPE_REAL) {
+            stack.push(new BooleanValue(a->asReal() == b->asReal()));
+        } else {
+            stack.push(new BooleanValue(a->asInteger() == b->asInteger()));
+        }
+        delete a;
+        delete b;
+    }
+};
+
+class Neq : public Operator {
+public:
+    Neq() : Operator(OP_NEQ) { };
+    ~Neq() { };
+    void preform(std::stack<Value*> &stack, Frame* frame) {
+        Value* b = stack.top();
+        stack.pop();
+        Value* a = stack.top();
+        stack.pop();
+        if (a->type == TYPE_REAL || b->type == TYPE_REAL) {
+            stack.push(new BooleanValue(a->asReal() != b->asReal()));
+        } else {
+            stack.push(new BooleanValue(a->asInteger() != b->asInteger()));
+        }
+        delete a;
+        delete b;
+    }
+};
+
+class Less : public Operator {
+public:
+    Less() : Operator(OP_LESS) { };
+    ~Less() { };
+    void preform(std::stack<Value*> &stack, Frame* frame) {
+        Value* b = stack.top();
+        stack.pop();
+        Value* a = stack.top();
+        stack.pop();
+        if (a->type == TYPE_REAL || b->type == TYPE_REAL) {
+            stack.push(new BooleanValue(a->asReal() < b->asReal()));
+        } else {
+            stack.push(new BooleanValue(a->asInteger() < b->asInteger()));
+        }
+        delete a;
+        delete b;
+    }
+};
+
+class LessEq : public Operator {
+public:
+    LessEq() : Operator(OP_LESSEQ) { };
+    ~LessEq() { };
+    void preform(std::stack<Value*> &stack, Frame* frame) {
+        Value* b = stack.top();
+        stack.pop();
+        Value* a = stack.top();
+        stack.pop();
+        if (a->type == TYPE_REAL || b->type == TYPE_REAL) {
+            stack.push(new BooleanValue(a->asReal() <= b->asReal()));
+        } else {
+            stack.push(new BooleanValue(a->asInteger() <= b->asInteger()));
+        }
+        delete a;
+        delete b;
+    }
+};
+
+class Great : public Operator {
+public:
+    Great() : Operator(OP_GREAT) { };
+    ~Great() { };
+    void preform(std::stack<Value*> &stack, Frame* frame) {
+        Value* b = stack.top();
+        stack.pop();
+        Value* a = stack.top();
+        stack.pop();
+        if (a->type == TYPE_REAL || b->type == TYPE_REAL) {
+            stack.push(new BooleanValue(a->asReal() > b->asReal()));
+        } else {
+            stack.push(new BooleanValue(a->asInteger() > b->asInteger()));
+        }
+        delete a;
+        delete b;
+    }
+};
+
+class GreatEq : public Operator {
+public:
+    GreatEq() : Operator(OP_GREATEQ) { };
+    ~GreatEq() { };
+    void preform(std::stack<Value*> &stack, Frame* frame) {
+        Value* b = stack.top();
+        stack.pop();
+        Value* a = stack.top();
+        stack.pop();
+        if (a->type == TYPE_REAL || b->type == TYPE_REAL) {
+            stack.push(new BooleanValue(a->asReal() >= b->asReal()));
+        } else {
+            stack.push(new BooleanValue(a->asInteger() >= b->asInteger()));
+        }
+        delete a;
+        delete b;
+    }
+};
+
+class Asgn : public Operator {
+public:
+    Asgn() : Operator(OP_ASGN) { };
+    ~Asgn() { };
+    void preform(std::stack<Value*> &stack, Frame* frame) {
+        Value* val = stack.top();
+        stack.pop();
+        Value* var = stack.top();
+        stack.pop();
+        var->set(val);
+        stack.push(val);
+        delete var;
+    }
+};
+
+class Addr : public Operator {
+public:
+    Addr() : Operator(OP_ADDR) { };
+    ~Addr() { };
+    void preform(std::stack<Value*> &stack, Frame* frame) {
+        Value* val = stack.top();
+        stack.pop();
+        Pointer* pt = Type::getPointerType((Type*)val->typeObj);
+        std::map<int,Type*> typemap;
+        PointerValue* ref = new PointerValue(pt,typemap);
+        ref->set(val);
+        stack.push(ref);
+        delete val;
+    }
+};
+
+class DerefGet : public Operator {
+public:
+    DerefGet() : Operator(OP_DEREFGET) { };
+    ~DerefGet() { };
+    void preform(std::stack<Value*> &stack, Frame* frame) {
+        Value* ref = stack.top();
+        stack.pop();
+        stack.push(ref->getRef()->duplicate());
+        delete ref;
+    }
+};
+
+class DerefSet : public Operator {
+public:
+    DerefSet() : Operator(OP_DEREFSET) { };
+    ~DerefSet() { };
+    void preform(std::stack<Value*> &stack, Frame* frame) {
+        Value* val = stack.top();
+        stack.pop();
+        Value* pval = stack.top();
+        stack.pop();
+        pval->getRef()->set(val);
+        stack.push(val);
+        delete pval;
+    }
+};
 
 class Neg : public Operator {
 public:

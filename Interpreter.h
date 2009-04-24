@@ -14,6 +14,7 @@ public:
     ~Interpreter();
 
     void run();
+    bool addMethod(void* addr, char* def); //stdcall only
 private:
     Program* prog;
 };
