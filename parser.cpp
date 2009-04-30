@@ -42,7 +42,7 @@ inline char* next(char* cur) {
 }
 
 inline bool reserved(int name) {
-    return MAX_RES > name;
+    return MAX_PROTECTED > name;
 }
 
 Type* parseType(char* &cur) {
@@ -57,8 +57,12 @@ Type* parseType(char* &cur) {
             if (cur[0] == PSPECIAL && cur[1] == SPC_LBRACE)  {
                 char* tkfrom = next(cur);
                 char* tkto = next(next(tkfrom));
-                if (tkfrom[0] != tkto[0])
+                if (tkfrom[0] != tkto[0]) {
+                    debug((int)tkfrom[0]);
+                    debug((int)tkto[0]);
+                    debug("we're fucked");
                     throw -1;
+                }
                 int from, to;
                 switch (tkfrom[0]) {
                     case PCHAR:
@@ -66,10 +70,11 @@ Type* parseType(char* &cur) {
                         to = tkto[1];
                         break;
                     case PINTEGER:
-                        from = *(int*)tkfrom[1];
-                        to = *(int*)tkto[1];
+                        from = *(int*)(tkfrom+1);
+                        to = *(int*)(tkto+1);
                         break;
                     default:
+                        debug("its not that bad");
                         throw -1;
                 }
                 cur = next(next(tkto)); //skip the ] of
@@ -118,14 +123,17 @@ std::map<int,Type*> parseTypes(char* &cur) {
 std::map<int,Expression*> parseConsts(char* &cur) {
     debug("parseConsts");
     std::map<int,Expression*> consts;
-    while (*cur) {
-        char* tok = next(cur);
-        int name = *(int*)&tok[1];
-        if (reserved(name)) 
+    char* tok = next(cur);
+    while (*tok) {
+        int name = *(int*)(tok+1);
+        if (reserved(name)) {
             return consts;
+            debug("consts_return =" << name);
+        }
         cur = next(tok); //skip = 
         Expression* expr = parseExpr(cur); //eats the ;
         consts[name] = expr;
+        tok = next(cur);
     }
     return consts;
 }
@@ -269,10 +277,8 @@ Expression* parseExpr(char* &cur) {
     char lastType = -1, nextType = -1;
     while (*cur) {
         char* tok = next(cur);
-        debug((int)*tok);
         lastType = nextType;
         nextType = tok[0];
-        //System.out.println("Expr: " + tok);
         switch (nextType) {
             case PSPECIAL:
                 switch (tok[1]) {
@@ -300,13 +306,10 @@ Expression* parseExpr(char* &cur) {
                         goto next_exprparse;
                     case SPC_LBRACE: {
                         std::list<Expression*> indexes;
-                        char* temp = tok;
                         do {
-                            tok = temp;
                             indexes.push_back(parseExpr(tok));
-                            temp = next(tok);
-                        } while (temp[0] != PSPECIAL || temp[1] != SPC_RBRACE);
-                        temp = next(temp);
+                        } while (tok[0] != PSPECIAL && tok[1] != SPC_RBRACE);
+                        char* temp = next(tok);
                         if (temp[0] == POPERATOR && temp[1] == OP_ASGN) {
                             tok = temp;
                             char prec = precedence[OP_ARRAYSET];
@@ -565,7 +568,8 @@ Try* parseTry(char* &cur) {
     switch (*(int*)(tok+1)) {
         case RES_EXCEPT:
             saftey = parseBlock(cur);
-            if (cur[0] != PNAME || *(int*)(cur+1) != RES_FINALLY)
+            tok = next(cur);
+            if (tok[0] != PNAME || *(int*)(tok+1) != RES_FINALLY)
                 break;
         case RES_FINALLY:
             always = parseBlock(cur);
@@ -671,10 +675,6 @@ void parseContainer(char* &cur, Container* container) {
 }
 
 Program* parse(char* tokens) {
-    char* iter = tokens;
-    while (*iter) {
-        iter = next(iter);
-    }
     debug("parse");
     char* cur = tokens;
     if (cur[0] != PNAME || *(int*)(cur+1) != RES_PROGRAM)

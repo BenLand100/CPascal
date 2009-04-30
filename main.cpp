@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include "parser.h"
 #include "lexer.h"
@@ -52,12 +53,17 @@ ostream& operator<< (ostream& out, Container* c) {
 }
 
 int main(int argc, char** argv) {
-    char* ppg = (char*)"program test; procedure testing(var i: integer); var z: integer; begin z; end; begin testing(5); end.\n";
-    char* tokens = lex(ppg);
-    Program* prog = parse(tokens);
-    freetoks(tokens);
-    cout << prog;
-    Interpreter* interp = new Interpreter(prog);
+    ifstream in;
+    in.open("./test.pas", ifstream::ate | ifstream::binary);
+    if (!in) return EXIT_FAILURE;
+    int size = in.tellg();
+    char* ppg = new char[size+1];
+    in.seekg(0,ios::beg);
+    in.read(ppg,size);
+    in.close();
+    ppg[size] = '\0';
+    Interpreter* interp = new Interpreter(ppg);
+    delete ppg;
     interp->run();
     delete interp;
     return (EXIT_SUCCESS);

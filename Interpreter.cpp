@@ -1,11 +1,14 @@
 #include "Interpreter.h"
 #include "lexer.h"
+#include "parser.h"
 
 #include <iostream>
 #define debug(x) std::cout << x << '\n'
 
-Interpreter::Interpreter(Program* prog_impl) : prog(prog_impl) {
-
+Interpreter::Interpreter(char* ppg) {
+    char* tokens = lex(ppg,names);
+    prog = parse(tokens);
+    freetoks(tokens);
 }
 
 Interpreter::~Interpreter() {
@@ -44,7 +47,8 @@ void Frame::init(Container* container) {
     std::map<int,Expression*>::iterator iter = container->constants.begin();
     std::map<int,Expression*>::iterator end = container->constants.end();
     while (iter != end) {
-        slots[iter->first] = new Slot(iter->second->eval(this));
+        Value* val = iter->second->eval(this);
+        slots[iter->first] = new Slot(val);
         debug("init_const=" << iter->first);
         iter++;
     }

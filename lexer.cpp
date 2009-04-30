@@ -5,6 +5,8 @@
 #include <string>
 #include <iostream>
 
+#include <iostream>
+#define debug(x) 
 
 int reserved(std::map<std::string,int> &names) {
     names["program"] = RES_PROGRAM;
@@ -12,7 +14,7 @@ int reserved(std::map<std::string,int> &names) {
     names["end"] = RES_END;
     names["var"] = RES_VAR;
     names["procedure"] = RES_PROCEDURE;
-    names["funtcion"] = RES_FUNCTION;
+    names["function"] = RES_FUNCTION;
     names["if"] = RES_IF;
     names["then"] = RES_THEN;
     names["else"] = RES_ELSE;
@@ -51,8 +53,8 @@ inline void whitespace(char* &ppg) {
             case '\t':
             case '\n':
             case '\r':
-                ppg++;
-                return;
+                ++ppg;
+                break;
             default:
                 return;
         }
@@ -60,11 +62,11 @@ inline void whitespace(char* &ppg) {
 }
 
 inline int namechar(char c) {
-    return (c >= 'a' && c <= 'z') || (c <= '0' && c >= '9');
+    return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_';
 }
 
 inline int numchar(char c) {
-    return ((c >= '0' && c <= '9') || c == '.');
+    return (c >= '0' && c <= '9');
 }
 
 inline void tolower(char* ppg) {
@@ -76,16 +78,18 @@ inline void tolower(char* ppg) {
     }
 }
 
-char* lex(char* ppg) {
-    std::map<std::string,int> names;
+char* lex(char* ppg, std::map<std::string,int> &names) {
     int nextord = reserved(names);
     std::cout << ppg << '\n';
     char* res = new char[strlen(ppg)*2]; //this should suffice, haha.
     char* toks = res;
     whitespace(ppg);
     tolower(ppg);
+    debug(std::cout << "lexing...\n";)
     char c;
     while (c = *ppg) {
+        debug(char* last = toks;)
+        debug(std::cout << c << ' ';)
         switch (c) {
             //***BEGIN NAME/FAUX_OPERATOR***
             case 'a':
@@ -109,8 +113,8 @@ char* lex(char* ppg) {
                 goto name;
             case 'f':
                 if (ppg[1] == 'a' && ppg[2] == 'l' && ppg[3] == 's' && ppg[4] == 'e' && !namechar(ppg[4])) {
-                    *(toks++) = PBOOLEAN;
-                    *(toks++) = BOOL_FALSE;
+                    *(toks++) = (char)PBOOLEAN;
+                    *(toks++) = (char)BOOL_FALSE;
                     ppg += 4;
                     break;
                 }
@@ -152,9 +156,8 @@ char* lex(char* ppg) {
                 goto name;
             case 't':
                 if (ppg[1] == 'r' && ppg[2] == 'u' && ppg[3] == 'e' && !namechar(ppg[4])) {
-                    *(toks++) = PBOOLEAN;
-                    *(toks++) = BOOL_TRUE;
-                    toks += 5;
+                    *(toks++) = (char)PBOOLEAN;
+                    *(toks++) = (char)BOOL_TRUE;
                     ppg += 3;
                     break;
                 }
@@ -191,7 +194,6 @@ char* lex(char* ppg) {
                     }
                     *(toks++) = c;
                 }
-                ppg--;
                 if (toks - type == 2) {
                     *type = PCHAR;
                 } else {
@@ -212,9 +214,15 @@ char* lex(char* ppg) {
                 char* type = toks;
                 *(toks++) = PINTEGER;
                 *(toks++) = c;
-                for (c = *(++ppg); c == '.' || numchar(c); c = *(++ppg)) {
-                    if (c == '.') *type = PREAL;
+                for (c = *(++ppg); numchar(c); c = *(++ppg)) {
                     *(toks++) = c;
+                }
+                if (c == '.' && *(ppg+1) != '.') {
+                    *type = PREAL;
+                    *(toks++) = '.';
+                    for (c = *(++ppg); numchar(c); c = *(++ppg)) {
+                        *(toks++) = c;
+                    }
                 }
                 ppg--;
                 *(toks++) = 0;
@@ -230,10 +238,6 @@ char* lex(char* ppg) {
                 }
             } break;
             //***BEGIN COMMENT***
-            case '\\':
-                if (ppg[1] == '\\')
-                    while (*(++ppg) != '\n'); //; is important
-                break;
             case '{':
                 while (*(++ppg) != '}'); //; is important
                 break;
@@ -300,6 +304,9 @@ char* lex(char* ppg) {
                 *(toks++) = OP_SUB;
                 break;
             case '/':
+                if (ppg[1] == '/')
+                    while (*(++ppg) != '\n'); //; is important
+                break;
                 *(toks++) = POPERATOR;
                 *(toks++) = OP_FDIV;
                 break;
@@ -336,7 +343,17 @@ char* lex(char* ppg) {
                 }
                 break;
         }
-        whitespace(++ppg);
+        ++ppg;
+        whitespace(ppg);
+        debug(
+            std::cout << (int)*last << '\n';
+            if (*last == PSTRING) {
+                std::cout << "s=" << (last+1) << '\n';
+            }
+            if (*last == PCHAR) {
+                std::cout << "c=" << *(last+1) << '\n';
+            }
+        )
     }
     *(toks++) = 0;
     return res;

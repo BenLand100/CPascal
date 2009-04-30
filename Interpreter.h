@@ -10,13 +10,14 @@ class Frame;
 
 class Interpreter {
 public:
-    Interpreter(Program* prog);
+    Interpreter(char* ppg);
     ~Interpreter();
 
     void run();
     bool addMethod(void* addr, char* def); //stdcall only
 private:
     Program* prog;
+    std::map<std::string,int> names;
 };
 
 #define SLOT_METHOD 0

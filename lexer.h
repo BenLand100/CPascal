@@ -29,12 +29,12 @@
 #define RES_CASE        16
 #define RES_OF          17
 #define RES_CONST       18
-#define RES_TYPE        19
-#define RES_ARRAY       20
-#define RES_RECORD      21
-#define RES_TRY         22
-#define RES_EXCEPT      23
-#define RES_FINALLY     24
+#define RES_TRY         19
+#define RES_EXCEPT      20
+#define RES_FINALLY     21
+#define RES_TYPE        22
+#define RES_ARRAY       23
+#define RES_RECORD      24
 #define RES_CHAR        25
 #define RES_STRING      26
 #define RES_INTEGER     27
@@ -45,6 +45,7 @@
 #define RES_NIL         32
 #define RES_RESULT      33
 
+#define MAX_PROTECTED   24
 #define MAX_RES         50
 
 #define OP_IDIV         0
@@ -88,6 +89,8 @@
 #define BOOL_FALSE      0
 #define BOOL_TRUE       1
 
+#include <map>
+
 /**
  * PBOOLEAN is followed by its BOOL_ definition
  * POPERATOR is followed by its OP_ definition
@@ -98,7 +101,7 @@
  * PINTEGER is followed by a long value
  * PNAME is followed by a unique integer (first few are reserved)
  */
-char* lex(char* ppg);
+char* lex(char* ppg, std::map<std::string,int> &names);
 
 void freetoks(char* tokens);
 

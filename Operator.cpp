@@ -359,6 +359,44 @@ public:
 Operator* Operator::get(int type) {
     std::cout << "Operator::get(" << type << ")\n";
     switch (type) {
+        case OP_IDIV:
+            return new IDiv();
+        case OP_FDIV:
+            return new FDiv();
+        case OP_MOD:
+            return new Mod();
+        case OP_MUL:
+            return new Mul();
+        case OP_ADD:
+            return new Add();
+        case OP_SUB:
+            return new Sub();
+        case OP_NOT:
+            return new Not();
+        case OP_OR:
+            return new Or();
+        case OP_AND:
+            return new And();
+        case OP_EQU:
+            return new Equ();
+        case OP_NEQ:
+            return new Neq();
+        case OP_LESS:
+            return new Less();
+        case OP_LESSEQ:
+            return new LessEq();
+        case OP_GREAT:
+            return new Great();
+        case OP_GREATEQ:
+            return new GreatEq();
+        case OP_ASGN:
+            return new Asgn();
+        case OP_DEREFGET:
+            return new DerefGet();
+        case OP_DEREFSET:
+            return new DerefSet();
+        case OP_ADDR:
+            return new Addr();
         case OP_NEG:
             return new Neg();
     }
