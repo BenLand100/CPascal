@@ -34,12 +34,14 @@ public:
         stack.pop();
         Value* a = stack.top();
         stack.pop();
-        double res = a->asReal() - b->asReal();
+        double res = a->asReal() / b->asReal();
         stack.push(new RealValue(res));
         delete a;
         delete b;
     }
 };
+
+#include <math.h>
 
 class Mod : public Operator {
 public:
@@ -51,10 +53,10 @@ public:
         Value* a = stack.top();
         stack.pop();
         if (a->type == TYPE_REAL || b->type == TYPE_REAL) {
-            double res = a->asReal() - b->asReal();
+            double res = fmod(a->asReal(),b->asReal());
             stack.push(new RealValue(res));
         } else {
-            int res = a->asInteger() - b->asInteger();
+            int res = a->asInteger() % b->asInteger();
             stack.push(new IntegerValue(res));
         }
         delete a;
@@ -72,10 +74,10 @@ public:
         Value* a = stack.top();
         stack.pop();
         if (a->type == TYPE_REAL || b->type == TYPE_REAL) {
-            double res = a->asReal() - b->asReal();
+            double res = a->asReal() * b->asReal();
             stack.push(new RealValue(res));
         } else {
-            int res = a->asInteger() - b->asInteger();
+            int res = a->asInteger() * b->asInteger();
             stack.push(new IntegerValue(res));
         }
         delete a;
@@ -97,10 +99,10 @@ public:
             str.append(b->asString());
             stack.push(new StringValue(str));
         } else if (a->type == TYPE_REAL || b->type == TYPE_REAL) {
-            double res = a->asReal() - b->asReal();
+            double res = a->asReal() + b->asReal();
             stack.push(new RealValue(res));
         } else {
-            int res = a->asInteger() - b->asInteger();
+            int res = a->asInteger() + b->asInteger();
             stack.push(new IntegerValue(res));
         }
         delete a;

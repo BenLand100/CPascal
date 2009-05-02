@@ -373,7 +373,7 @@ Expression* parseExpr(char* &cur) {
                 }
                 if (lastType == POPERATOR && tok[0] == POPERATOR && tok[1] == OP_SUB) //special operator renaming
                     tok[1] = OP_NEG;
-                char prec = precedence[OP_ARRAYSET];
+                char prec = precedence[tok[1]];
                 while (!oper->empty() && prec <= oper->top().prec) {
                     expr.push_back(oper->top().op);
                     oper->pop();
@@ -508,12 +508,12 @@ Case* parseCase(char* &cur) {
 For* parseFor(char* &cur) {
     debug("parseFor");
     cur = next(cur); //skip for
+    cur = next(cur); //get var
     int var = *(int*)(cur+1);
     cur = next(cur); //skip :=
     Expression* begin = parseExpr(cur);
     cur = next(cur); //grap the to/downto
     bool inc = cur[1] == RES_TO;
-    cur = next(cur);
     Expression* end = parseExpr(cur);
     cur = next(cur); //skip do
     //System.out.println("End: " + end);

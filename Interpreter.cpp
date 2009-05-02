@@ -16,6 +16,11 @@ Interpreter::~Interpreter() {
 }
 
 void Interpreter::run() {
+    std::map<std::string,int>::iterator iter = names.begin();
+    while (iter != names.end()) {
+        debug(iter->first << ">>" << iter->second);
+        iter++;
+    }
     Frame* frame = new Frame(prog);
     evalBlock(&prog->block, frame);
     delete frame;

@@ -112,7 +112,7 @@ char* lex(char* ppg, std::map<std::string,int> &names) {
             case 'e':
                 goto name;
             case 'f':
-                if (ppg[1] == 'a' && ppg[2] == 'l' && ppg[3] == 's' && ppg[4] == 'e' && !namechar(ppg[4])) {
+                if (ppg[1] == 'a' && ppg[2] == 'l' && ppg[3] == 's' && ppg[4] == 'e' && !namechar(ppg[5])) {
                     *(toks++) = (char)PBOOLEAN;
                     *(toks++) = (char)BOOL_FALSE;
                     ppg += 4;

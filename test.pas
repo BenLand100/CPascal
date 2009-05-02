@@ -7,19 +7,19 @@ procedure writeln(str: string);
 begin
 end;
     
-procedure chartostr(str: string);
+function chartostr(str: string) : string;
 begin
 end;
 
-procedure booltostr(str: string);
+function booltostr(str: string) : string;
 begin
 end;
 
-procedure realtostr(str: string);
+function realtostr(str: string) : string;
 begin
 end;
 
-procedure inttostr(str: string);
+function inttostr(str: string) : string;
 begin
 end;
 
@@ -92,7 +92,7 @@ var
     i:integer;
 begin
     i:= 0;
-    while i<10 do
+    while i < 10 do
     begin
         writeln(inttostr(i));
         i:= i + 1;
@@ -366,19 +366,19 @@ begin
     writeln(RealToStr(newReal));
     writeln(IntToStr(newInteger));
     writeln(BoolToStr(newBoolean));
-    //testifelse;
+    testifelse;
     testorderoperations;
     testtruths;
-    //testwhile;
-    //testfor;
-    //testcase;
-    //testrepeatuntil;
-    //writeln('For exec: ' + RealToStr(forlooptime));
-    //doarraystuff;
+    testwhile;
+    testfor;
+    testcase;
+    testrepeatuntil;
+    writeln('For exec: ' + RealToStr(forlooptime));
+    //doarraystuff; //arrays messed up, takes out three
     //testtypes;
     //phonebook;
-    //testtry;
+    //testtry; //doesn't check for any exception yet, but *works* 
     testref;
-    //writeln(inttostr(3*-1));
-    //testpointer;
+    writeln(inttostr(3*-1));
+    //testpointer; //something is wrong with assigning values that contain references (objects)
 end;        

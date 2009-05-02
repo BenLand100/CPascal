@@ -139,9 +139,11 @@ While::~While() {
 }
 Value* While::eval(Frame* frame) {
     Value* res = cond->eval(frame);
+    debug("while_restype=" << res->type);
     while (res->asBoolean()) {
         delete res;
         evalBlock(&block,frame);
+        res = cond->eval(frame);
     }
     delete res;
     return new Value();

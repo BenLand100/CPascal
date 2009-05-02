@@ -345,13 +345,13 @@ ArrayValue::ArrayValue(ArrayValue& val) : Value(TYPE_ARRAY,(Type*)val.typeObj) {
 
 ArrayValue::~ArrayValue() {
     if (*objrefcount) {
+        (*objrefcount)--;
+    } else {
         for (int i = 0; i < *asize; i++) {
             delete (*array)[i];
         }
         delete *array;
         delete objrefcount;
-    } else {
-        (*objrefcount)--;
     }
     if (*refcount) {
         (*refcount)--;
@@ -386,13 +386,13 @@ void ArrayValue::set(Value* val) {
     *asize = *((ArrayValue*)val)->asize;
     *start = *((ArrayValue*)val)->start;
     if (*objrefcount) {
+        (*objrefcount)--;
+    } else {
         for (int i = 0; i < *asize; i++) {
             delete (*array)[i];
         }
         delete *array;
         delete objrefcount;
-    } else {
-        (*objrefcount)--;
     }
     objrefcount = ((ArrayValue*)val)->objrefcount;
     (*objrefcount)++;
@@ -526,6 +526,8 @@ RecordValue::RecordValue(RecordValue& val) : Value(TYPE_RECORD,(Type*)val.typeOb
 
 RecordValue::~RecordValue() {
     if (*objrefcount) {
+        (*objrefcount)--;
+    } else {
         delete *types;
         std::map<int,Value*>::iterator iter = (*fields)->begin();
         std::map<int,Value*>::iterator end = (*fields)->end();
@@ -535,8 +537,6 @@ RecordValue::~RecordValue() {
         }
         delete *fields;
         delete objrefcount;
-    } else {
-        (*objrefcount)--;
     }
     if (*refcount) {
         (*refcount)--;
@@ -561,11 +561,11 @@ Value* RecordValue::clone() {
 
 void RecordValue::set(Value* val) {
     if (*objrefcount) {
+        (*objrefcount)--;
+    } else {
         delete *types;
         delete *fields;
         delete objrefcount;
-    } else {
-        (*objrefcount)--;
     }
     objrefcount = ((RecordValue*)val)->objrefcount;
     (*objrefcount)++;
