@@ -44,6 +44,10 @@ public:
     virtual int asInteger();
     virtual bool asBoolean();
 
+    virtual int bytes();
+    virtual void store(void* mem);
+    virtual void read(void* mem);
+
 protected:
     Value(int impl_type, Type* impl_typeObj);
     int* refcount;
@@ -64,6 +68,11 @@ public:
     void decr();
     double asReal();
     int asInteger();
+
+    int bytes();
+    void store(void* mem);
+    void read(void* mem);
+
 private:
     int* integer;
     IntegerValue(IntegerValue &val);
@@ -79,6 +88,11 @@ public:
     Value* clone();
     void set(Value* val);
     std::string asString();
+
+    int bytes();
+    void store(void* mem);
+    void read(void* mem);
+
 private:
     std::string* str;
     StringValue(StringValue &val);
@@ -96,6 +110,11 @@ public:
     void incr();
     void decr();
     double asReal();
+
+    int bytes();
+    void store(void* mem);
+    void read(void* mem);
+
 private:
     double* real;
     RealValue(RealValue &val);
@@ -113,6 +132,11 @@ public:
     void decr();
     char asChar();
     int asInteger();
+
+    int bytes();
+    void store(void* mem);
+    void read(void* mem);
+
 private:
     char* chr;
     CharValue(CharValue &val);
@@ -128,6 +152,11 @@ public:
     void set(Value* val);
     bool asBoolean();
     int asInteger();
+
+    int bytes();
+    void store(void* mem);
+    void read(void* mem);
+
 private:
     bool* boolean;
     BooleanValue(BooleanValue &val);
@@ -145,6 +174,7 @@ public:
     void resize(int size);
     Value* getIndex(int index);
     void setIndex(int index, Value* val);
+
 private:
     Type** elemType;
     int* objrefcount;
@@ -166,6 +196,7 @@ public:
     Value* clone();
     void set(Value* val);
     Value* getRef();
+
 private:
     Value** ref;
     Type** refType;
@@ -183,6 +214,7 @@ public:
     void set(Value* val);
     Value* getField(int name);
     void setField(int name, Value* value);
+
 private:
     int* objrefcount;
     std::map<int,Value*>** fields;

@@ -3,7 +3,8 @@
 #include "parser.h"
 
 #include <iostream>
-#define debug(x) std::cout << x << '\n'
+//#define debug(x) std::cout << x << '\n'
+#define debug(x)
 
 Interpreter::Interpreter(char* ppg) {
     char* tokens = lex(ppg,names);
@@ -24,6 +25,16 @@ void Interpreter::run() {
     Frame* frame = new Frame(prog);
     evalBlock(&prog->block, frame);
     delete frame;
+}
+
+void Interpreter::addCMethod(void* addr, char* def) {
+    char* tokens = lex(def,names);
+    char* cur = tokens;
+    Method* meth = parseMethod(cur);
+    meth->address = addr;
+    meth->mtype = C_METHOD;
+    prog->methods.push_back(meth);
+    freetoks(tokens);
 }
 
 Frame::Frame(Container* container) : typemap(container->types), parent(0) {
@@ -89,23 +100,91 @@ Value* Frame::resolve(int symbol, Value** args, int numArgs) {
         case SLOT_METHOD: {
             Method* meth = slot->method;
             if (numArgs != meth->arguments.size()) return 0;
-            Frame* frame = new Frame(this, meth);
-            debug("resolve_args");
-            for (int i = 0; i < numArgs; i++) {
-                Variable* var = meth->arguments[i];
-                frame->slots[var->name] = new Slot(var->byRef ? args[i]->duplicate() : args[i]->clone());
-            }
-            if (meth->type) frame->slots[RES_RESULT] = new Slot(Value::fromType(meth->type,typemap));
-            debug("resolve_method");
-            evalBlock(&meth->block,frame);
-            debug("resolve_return");
-            if (meth->type) {
-                Value* val = frame->slots[RES_RESULT]->value->duplicate();
-                delete frame;
-                return val;
+            if (meth->address) {
+                int argsz = 0;
+                for (int i = 0; i < numArgs; i++)
+                    argsz += args[i]->bytes();
+                char* cargs = new char[argsz];
+                char* stack = cargs;
+                for (int i = 0; i < numArgs; i++) {
+                    args[i]->store((void*)stack);
+                    stack += args[i]->bytes();
+                }
+                stack -= 4;
+                if (meth->type) {
+                    if (meth->type->type == TYPE_REAL) {
+                        double real;
+                        asm volatile (
+                             "cmpl  $0, %%edx \n"
+                             "jz mkcall_real \n"
+                             "start_real: pushl (%%eax) \n"
+                             "cmpl %%eax, %%ecx \n"
+                             "jz mkcall_real \n"
+                             "subl $4, %%eax \n"
+                             "jmp start_real \n"
+                             "mkcall_real: call *%%ebx \n"
+                             : "=t"(real)
+                             : "a"(stack), "b"(meth->address), "c"(cargs), "d"(argsz)
+                             : "memory"
+                        );
+                        delete[] cargs;
+                        return new RealValue(real);
+                    } else {
+                        void* eax;
+                        asm volatile (
+                             "cmpl  $0, %%edx \n"
+                             "jz mkcall_all \n"
+                             "start_all: pushl (%%eax) \n"
+                             "cmpl %%eax, %%ecx \n"
+                             "jz mkcall_all \n"
+                             "subl $4, %%eax \n"
+                             "jmp start_all \n"
+                             "mkcall_all: call *%%ebx \n"
+                             : "=a" (eax)
+                             : "a"(stack), "b"(meth->address), "c"(cargs), "d"(argsz)
+                             : "memory"
+                        );
+                        delete[] cargs;
+                        Value* val = Value::fromType(meth->type, typemap);
+                        val->read(eax);
+                        return val;
+                    }
+                } else {
+                    asm volatile (
+                         "cmpl  $0, %%edx \n"
+                         "jz mkcall_void \n"
+                         "start_void: pushl (%%eax) \n"
+                         "cmpl %%eax, %%ecx \n"
+                         "jz mkcall_void \n"
+                         "subl $4, %%eax \n"
+                         "jmp start_void \n"
+                         "mkcall_void: call *%%ebx \n"
+                         :
+                         : "a"(stack), "b"(meth->address), "c"(cargs), "d"(argsz)
+                         : "memory"
+                    );
+                    delete[] cargs;
+                    return new Value(); //leak
+                }
             } else {
-                delete frame;
-                return new Value();
+                Frame* frame = new Frame(this, meth);
+                debug("resolve_args");
+                for (int i = 0; i < numArgs; i++) {
+                    Variable* var = meth->arguments[i];
+                    frame->slots[var->name] = new Slot(var->byRef ? args[i]->duplicate() : args[i]->clone());
+                }
+                if (meth->type) frame->slots[RES_RESULT] = new Slot(Value::fromType(meth->type,typemap));
+                debug("resolve_method");
+                evalBlock(&meth->block,frame);
+                debug("resolve_return");
+                if (meth->type) {
+                    Value* val = frame->slots[RES_RESULT]->value->duplicate();//leak
+                    delete frame;
+                    return val;
+                } else {
+                    delete frame;
+                    return new Value();//leak
+                }
             }
         } break;
         case SLOT_VALUE: {

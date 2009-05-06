@@ -5,6 +5,10 @@ class Method;
 #ifndef _CONTAINER_H
 #define	_CONTAINER_H
 
+#define PAS_METHOD  0
+#define FPC_METHOD  1
+#define C_METHOD    2
+
 #include "Expression.h"
 #include "Variable.h"
 #include <vector>
@@ -32,6 +36,8 @@ public:
 class Method : public Container {
 public:
     std::vector<Variable*> arguments;
+    void* address;
+    int mtype;
     Type* type; //DO NOT FREE TYPES (they don't leak, they are managed by the Type class);
     Method(int name);
     ~Method();

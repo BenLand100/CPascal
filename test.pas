@@ -2,26 +2,6 @@ program Test;
 
 const 
     pi = 3.14159;
-    
-procedure writeln(str: string);
-begin
-end;
-    
-function chartostr(str: string) : string;
-begin
-end;
-
-function booltostr(str: string) : string;
-begin
-end;
-
-function realtostr(str: string) : string;
-begin
-end;
-
-function inttostr(str: string) : string;
-begin
-end;
 
 function multiply(a,b:integer):integer;
 begin  
@@ -356,6 +336,7 @@ begin
 end;
 
 begin 
+    writeLn(RealToStr(e)); 
     writeLn(IntToStr(multiply(4,2))); 
     writeLn(IntToStr(dividei(4,2))); 
     writeLn(RealToStr(dividef(4,2))); 

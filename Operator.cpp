@@ -359,7 +359,6 @@ public:
 };
 
 Operator* Operator::get(int type) {
-    std::cout << "Operator::get(" << type << ")\n";
     switch (type) {
         case OP_IDIV:
             return new IDiv();

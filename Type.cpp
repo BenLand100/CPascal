@@ -3,7 +3,8 @@
 #include <sstream>
 
 #include <iostream>
-#define debug(x) std::cout << x << '\n'
+//#define debug(x) std::cout << x << '\n'
+#define debug(x)
 
 Type* Type::nil = getType(RES_NIL);
 Type* Type::string = getType(RES_STRING);

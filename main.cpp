@@ -5,6 +5,7 @@
 #include "lexer.h"
 #include <map>
 #include <list>
+#include <sstream>
 
 using namespace std;
 
@@ -52,6 +53,57 @@ ostream& operator<< (ostream& out, Container* c) {
     return out;
 }
 
+void writeln(char* str) __attribute__((stdcall));
+void writeln(char* str) {
+    cout << str << '\n';
+}
+
+char* inttostr(int i) __attribute__((stdcall));
+char* inttostr(int i) {
+    stringstream strm;
+    strm << i;
+    string str = strm.str();
+    char* res = new char[str.length()+1];
+    strcpy(res,str.c_str());
+    return res;
+}
+
+char* chartostr(char i) __attribute__((stdcall));
+char* chartostr(char i) {
+    stringstream strm;
+    strm << i;
+    string str = strm.str();
+    char* res = new char[str.length()+1];
+    strcpy(res,str.c_str());
+    return res;
+}
+
+char* booltostr(bool i) __attribute__((stdcall));
+char* booltostr(bool i) {
+    stringstream strm;
+    strm << i;
+    string str = strm.str();
+    char* res = new char[str.length()+1];
+    strcpy(res,str.c_str());
+    return res;
+}
+
+char* realtostr(double i) __attribute__((stdcall));
+char* realtostr(double i) {
+    stringstream strm;
+    strm << i;
+    string str = strm.str();
+    char* res = new char[str.length()+1];
+    strcpy(res,str.c_str());
+    return res;
+}
+
+double e() __attribute__((stdcall));
+double e() {
+    return 2.78000000000;
+}
+
+
 int main(int argc, char** argv) {
     ifstream in;
     in.open("./test.pas", ifstream::ate | ifstream::binary);
@@ -63,6 +115,12 @@ int main(int argc, char** argv) {
     in.close();
     ppg[size] = '\0';
     Interpreter* interp = new Interpreter(ppg);
+    interp->addCMethod((void*)&writeln,(char*)"procedure writeln(str: string);");
+    interp->addCMethod((void*)&inttostr,(char*)"function inttostr(i: integer): string;");
+    interp->addCMethod((void*)&chartostr,(char*)"function chartostr(c: char): string;");
+    interp->addCMethod((void*)&booltostr,(char*)"function booltostr(b: boolean): string;");
+    interp->addCMethod((void*)&realtostr,(char*)"function realtostr(r: real): string;");
+    interp->addCMethod((void*)&e,(char*)"function e: real;");
     delete ppg;
     interp->run();
     delete interp;

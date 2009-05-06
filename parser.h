@@ -4,6 +4,7 @@
 #include "Container.h"
 
 Program* parse(char* tokens);
+Method* parseMethod(char* &cur);
 
 #endif	/* _PARSER_H */
 

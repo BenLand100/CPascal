@@ -1,7 +1,8 @@
 #include "Value.h"
 
 #include <iostream>
-#define debug(x) std::cout << x << '\n'
+//#define debug(x) std::cout << x << '\n'
+#define debug(x)
 
 Value* Value::fromType(Type* type, std::map<int,Type*> &typemap) {
     std::map<int,Type*>::iterator end = typemap.end();
@@ -53,6 +54,9 @@ char Value::asChar() { return 0; }
 double Value::asReal() { return 0; }
 int Value::asInteger() { return 0; }
 bool Value::asBoolean() { return false; }
+int Value::bytes() { return 0; }
+void Value::store(void* mem) { }
+void Value::read(void* mem) { }
 
 //**** BEGIN INTEGERVALUE DEFINITION ***
 
@@ -110,6 +114,10 @@ int IntegerValue::asInteger() {
     return *integer;
 }
 
+int IntegerValue::bytes() { return 4; }
+void IntegerValue::store(void* mem) { *(int*)mem = *integer; }
+void IntegerValue::read(void* mem) { *integer = (int)mem; }
+
 //**** BEGIN STRINGVALUE DEFINITION ***
 
 StringValue::StringValue(char* str_impl) : Value(TYPE_STRING,Type::getString()) {
@@ -153,6 +161,14 @@ void StringValue::set(Value* val) {
 
 std::string StringValue::asString() {
     return *str;
+}
+
+int StringValue::bytes() { return 4; }
+void StringValue::store(void* mem) { *(unsigned int*)mem = (unsigned int)str->c_str(); }
+void StringValue::read(void* mem) {
+    delete str;
+    str = new std::string((char*)mem);
+    delete (char*)mem;
 }
 
 //**** BEGIN REALVALUE DEFINITION ***
@@ -207,6 +223,12 @@ double RealValue::asReal() {
     return *real;
 }
 
+int RealValue::bytes() { return 8; }
+void RealValue::store(void* mem) { *(double*)mem =  *real; }
+void RealValue::read(void* mem) {
+    *real = *(double*)mem;
+}
+
 //**** BEGIN CHARVALUE DEFINITION ***
 
 CharValue::CharValue(char chr_impl) : Value(TYPE_CHAR,Type::getChar()) {
@@ -259,6 +281,12 @@ int CharValue::asInteger() {
     return *chr;
 }
 
+int CharValue::bytes() { return 4; }
+void CharValue::store(void* mem) { *(unsigned int*)mem = (unsigned int) *chr; }
+void CharValue::read(void* mem) {
+    *chr = (char) *(unsigned int*)mem;
+}
+
 //**** BEGIN BOOLEANVALUE DEFINITION ***
 
 BooleanValue::BooleanValue(bool boolean_impl) : Value(TYPE_BOOLEAN,Type::getBoolean()) {
@@ -301,6 +329,12 @@ bool BooleanValue::asBoolean() {
 
 int BooleanValue::asInteger() {
     return *boolean;
+}
+
+int BooleanValue::bytes() { return 4; }
+void BooleanValue::store(void* mem) { *(unsigned int*)mem = (unsigned int) *boolean; }
+void BooleanValue::read(void* mem) {
+    *boolean = (bool) *(unsigned int*)mem;
 }
 
 //**** BEGIN ARRAYVALUE DEFINITION ***

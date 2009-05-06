@@ -11,7 +11,8 @@
 #include <stack>
 
 #include <iostream>
-#define debug(x) std::cout << x << '\n'
+//#define debug(x) std::cout << x << '\n'
+#define debug(x)
 
 Expression* parseExpr(char* &cur);
 std::list<Expression*> parseBlock(char* &cur);
@@ -174,7 +175,7 @@ Method* parseMethod(char* &cur) {
     debug("parseMethod");
     cur = next(cur);
     Method* meth = new Method(*(int*)(cur+1));
-    std::stack<int> untyped;
+    std::list<int> untyped;
     bool byref = false;
     bool hasArgs = false;
     bool moreArgs = true;
@@ -196,8 +197,8 @@ Method* parseMethod(char* &cur) {
                         goto end_defparse;
                     } else {
                         while (!untyped.empty()) {
-                            meth->arguments.push_back(new Variable(untyped.top(), type, byref));
-                            untyped.pop();
+                            meth->arguments.push_back(new Variable(untyped.front(), type, byref));
+                            untyped.pop_front();
                         }
                         byref = false;
                     }
@@ -211,7 +212,7 @@ Method* parseMethod(char* &cur) {
             if (name == RES_VAR) {
                 byref = true;
             } else {
-                untyped.push(name);
+                untyped.push_back(name);
             }
         }
     }

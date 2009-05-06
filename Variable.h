@@ -11,8 +11,8 @@ public:
     const Type* type;
     const bool byRef;
 
-    Variable(int impl, Type* impl);
-    Variable(int impl, Type* impl, bool byRef);
+    Variable(int impl_name, Type* impl_type);
+    Variable(int impl_name, Type* impl_type, bool byRef);
 };
 
 
