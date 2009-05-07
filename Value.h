@@ -177,7 +177,7 @@ public:
 
 private:
     Type** elemType;
-    int* objrefcount;
+    int** objrefcount;
     Value*** array;
     bool* dynamic;
     int* start;
@@ -216,7 +216,7 @@ public:
     void setField(int name, Value* value);
 
 private:
-    int* objrefcount;
+    int** objrefcount;
     std::map<int,Value*>** fields;
     std::map<int,Type*>** types;
     RecordValue(RecordValue &val);

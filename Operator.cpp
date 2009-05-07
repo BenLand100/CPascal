@@ -457,8 +457,7 @@ void ArrayDef::preform(std::stack<Value*>& stack, Frame* frame) {
     for (int i = 0; i < numElems; i++)
         vals[i] = elems[i]->eval(frame);
     Type* arrType = Type::getDynamicArrayType((Type*)vals[0]->typeObj);
-    std::map<int,Type*> typemap;
-    ArrayValue* val = new ArrayValue((Array*)arrType,typemap);
+    ArrayValue* val = new ArrayValue((Array*)arrType,frame->typemap);
     val->resize(numElems);
     for (int i = 0; i < numElems; i++) {
         val->setIndex(i, vals[i]);
@@ -496,7 +495,8 @@ void ArrayGet::preform(std::stack<Value*>& stack, Frame* frame) {
     stack.pop();
     for (int i = 0; i < numIndexes; i++) {
         Value* index = indexes[i]->eval(frame);
-        res = res->getIndex(index->asInteger());
+        int i = index->asInteger();
+        res = res->getIndex(i);
         delete index;
     }
     stack.push(res->duplicate());

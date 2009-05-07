@@ -204,12 +204,14 @@ begin
     static[3]:=3;
     static[4]:=4;
     static[5]:=5;
+    writeln('assigned');
     writeln(inttostr(static[5]));
     ai := array(1,2,3,4,5,6);
     writeln(inttostr(ai[3]));
     writeln(inttostr(size(ai)));
     aii:= array(array(1,2,3,4),array(5,6,7,8),array(9,10,11,12));
     writeln(inttostr(aii[1][3])); //should be a 8
+    writeln('arrays work!');
 end;
 
 
@@ -241,6 +243,7 @@ begin
     contact.name:= 'Joe';
     writeln(contact.name);
     resize(contacts,2);
+    writeln('resized');
     contacts[0].name:= 'Ben';
     contacts[0].number:= 44531;
     contacts[1].name:= 'Joe';
@@ -355,11 +358,12 @@ begin
     testcase;
     testrepeatuntil;
     writeln('For exec: ' + RealToStr(forlooptime));
-    //doarraystuff; //arrays messed up, takes out three
-    //testtypes;
+    doarraystuff;
+    testtypes;
     //phonebook;
     //testtry; //doesn't check for any exception yet, but *works* 
     testref;
     writeln(inttostr(3*-1));
     //testpointer; //something is wrong with assigning values that contain references (objects)
+    writeln('great success!');
 end;        

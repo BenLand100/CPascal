@@ -3,7 +3,6 @@
 #include "Expression.h"
 #include "Operator.h"
 
-
 Expression::Expression() : length(0), elems(0) { }
 Expression::Expression(std::list<Element*> postfix) : length(postfix.size()), elems(new Element*[postfix.size()]) {
     debug("Expression()");

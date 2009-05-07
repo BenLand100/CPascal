@@ -340,6 +340,8 @@ void BooleanValue::read(void* mem) {
 //**** BEGIN ARRAYVALUE DEFINITION ***
 
 ArrayValue::ArrayValue(Array* arr, std::map<int,Type*> &typemap) : Value(TYPE_ARRAY,arr) {
+    refcount = new int;
+    *refcount = 0;
     elemType = new Type*;
     *elemType = (Type*)arr->element;
     dynamic = new bool;
@@ -348,8 +350,9 @@ ArrayValue::ArrayValue(Array* arr, std::map<int,Type*> &typemap) : Value(TYPE_AR
     *asize = arr->to - arr->from + 1; //to == -1 and from == 0 for dynamic just for this
     start = new int;
     *start = arr->from;
-    objrefcount = new int;
-    *objrefcount = 0;
+    objrefcount = new int*;
+    *objrefcount = new int;
+    **objrefcount = 0;
     array = new Value**;
     *array = new Value*[*asize];
     for (int i = 0; i < *asize; i++) {
@@ -362,6 +365,7 @@ ArrayValue::ArrayValue(Array* arr) : Value(TYPE_ARRAY,arr) {
     dynamic = new bool;
     asize = new int;
     start = new int;
+    objrefcount = new int*;
     array = new Value**;
 }
 
@@ -373,29 +377,29 @@ ArrayValue::ArrayValue(ArrayValue& val) : Value(TYPE_ARRAY,(Type*)val.typeObj) {
     asize = val.asize;
     start = val.start;
     objrefcount = val.objrefcount;
-    (*objrefcount)++;
     array = val.array;
 }
 
 ArrayValue::~ArrayValue() {
-    if (*objrefcount) {
-        (*objrefcount)--;
-    } else {
-        for (int i = 0; i < *asize; i++) {
-            delete (*array)[i];
-        }
-        delete *array;
-        delete objrefcount;
-    }
     if (*refcount) {
         (*refcount)--;
     } else {
+        if (**objrefcount) {
+            (**objrefcount)--;
+        } else {
+            for (int i = 0; i < *asize; i++) {
+                delete (*array)[i];
+            }
+            delete *array;
+            delete *objrefcount;
+        }
         delete elemType;
         delete refcount;
         delete dynamic;
         delete start;
         delete asize;
         delete array;
+        delete objrefcount;
     }
 }
 
@@ -409,28 +413,29 @@ Value* ArrayValue::clone() {
     *(arr->dynamic) = *dynamic;
     *(arr->asize) = *asize;
     *(arr->start) = *start;
-    arr->objrefcount = objrefcount;
-    (*objrefcount)++;
+    *(arr->objrefcount) = *objrefcount;
+    (**objrefcount)++;
     *(arr->array) = *array;
 }
 
 void ArrayValue::set(Value* val) {
-    *elemType = *((ArrayValue*)val)->elemType;
-    *dynamic = *((ArrayValue*)val)->dynamic;
-    *asize = *((ArrayValue*)val)->asize;
-    *start = *((ArrayValue*)val)->start;
-    if (*objrefcount) {
-        (*objrefcount)--;
+    ArrayValue* arr = (ArrayValue*)val;
+    if (**objrefcount) {
+        (**objrefcount)--;
     } else {
         for (int i = 0; i < *asize; i++) {
             delete (*array)[i];
         }
         delete *array;
-        delete objrefcount;
+        delete *objrefcount;
     }
-    objrefcount = ((ArrayValue*)val)->objrefcount;
-    (*objrefcount)++;
-    *array = *((ArrayValue*)val)->array;
+    *objrefcount = *arr->objrefcount;
+    (**objrefcount)++;
+    *array = *arr->array;
+    *elemType = *arr->elemType;
+    *dynamic = *arr->dynamic;
+    *asize = *arr->asize;
+    *start = *arr->start;
 }
 
 int ArrayValue::size() {
@@ -440,7 +445,7 @@ int ArrayValue::size() {
 void ArrayValue::resize(int size) {
     Value** oldarr = *array;
     Value** newarr = new Value*[size];
-    if (size >= *asize) {
+    if (size <= *asize) {
         int cutoff = size;
         for (int i = 0; i < cutoff; i++) {
             newarr[i] = oldarr[cutoff];
@@ -464,16 +469,19 @@ void ArrayValue::resize(int size) {
 }
 
 void ArrayValue::setIndex(int index, Value* val) {
-    (*array)[index + *start] = val->clone();
+    (*array)[index - *start]->set(val);
 }
 
 Value* ArrayValue::getIndex(int index) {
-    return (*array)[index + *start];
+    Value* res = (*array)[index - *start];
+    return res;
 }
 
 //**** BEGIN POINTERVALUE DEFINITION ***
 
 PointerValue::PointerValue(Pointer* pt, std::map<int,Type*> &typemap) : Value(TYPE_POINTER,pt) {
+    refcount = new int;
+    *refcount = 0;
     refType = new Type*;
     *refType = (Type*)pt->pointsTo;
     ref = new Value*;
@@ -527,6 +535,8 @@ Value* PointerValue::getRef() {
 //**** BEGIN RECORDVALUE DEFINITION ***
 
 RecordValue::RecordValue(Record* rec, std::map<int,Type*> &typemap) : Value(TYPE_RECORD,rec) {
+    refcount = new int;
+    *refcount = 0;
     fields = new std::map<int,Value*>*;
     *fields = new std::map<int,Value*>;
     types = new std::map<int,Type*>*;
@@ -539,45 +549,47 @@ RecordValue::RecordValue(Record* rec, std::map<int,Type*> &typemap) : Value(TYPE
         (*fields)->insert(std::pair<int,Value*>((*iter)->name, Value::fromType(ftype,typemap)));
         iter++;
     }
-    objrefcount = new int;
-    *objrefcount = 0;
+    objrefcount = new int*;
+    *objrefcount = new int;
+    **objrefcount = 0;
 }
 
 
 RecordValue::RecordValue(Record* rec) : Value(TYPE_RECORD,rec) {
     fields = new std::map<int,Value*>*;
     types = new std::map<int,Type*>*;
+    objrefcount = new int*;
 }
 
 RecordValue::RecordValue(RecordValue& val) : Value(TYPE_RECORD,(Type*)val.typeObj) {
     refcount = val.refcount;
     (*refcount)++;
     objrefcount = val.objrefcount;
-    (*objrefcount)++;
     fields = val.fields;
     types = val.types;
 }
 
 RecordValue::~RecordValue() {
-    if (*objrefcount) {
-        (*objrefcount)--;
-    } else {
-        delete *types;
-        std::map<int,Value*>::iterator iter = (*fields)->begin();
-        std::map<int,Value*>::iterator end = (*fields)->end();
-        while (iter != end) {
-            delete iter->second;
-            iter++;
-        }
-        delete *fields;
-        delete objrefcount;
-    }
     if (*refcount) {
         (*refcount)--;
     } else {
+        if (**objrefcount) {
+            (**objrefcount)--;
+        } else {
+            delete *types;
+            std::map<int,Value*>::iterator iter = (*fields)->begin();
+            std::map<int,Value*>::iterator end = (*fields)->end();
+            while (iter != end) {
+                delete iter->second;
+                iter++;
+            }
+            delete *fields;
+            delete *objrefcount;
+        }
         delete types;
         delete fields;
         delete refcount;
+        delete objrefcount;
     }
 }
 
@@ -587,24 +599,25 @@ Value* RecordValue::duplicate() {
 
 Value* RecordValue::clone() {
     RecordValue* rec = new RecordValue((Record*)typeObj);
-    rec->objrefcount = objrefcount;
-    (*objrefcount)++;
+    *(rec->objrefcount) = *objrefcount;
+    (**objrefcount)++;
     *(rec->types) = *types;
     *(rec->fields) = *fields;
 }
 
 void RecordValue::set(Value* val) {
-    if (*objrefcount) {
-        (*objrefcount)--;
+    RecordValue* rec = (RecordValue*)val;
+    if (**objrefcount) {
+        (**objrefcount)--;
     } else {
         delete *types;
         delete *fields;
-        delete objrefcount;
+        delete *objrefcount;
     }
-    objrefcount = ((RecordValue*)val)->objrefcount;
-    (*objrefcount)++;
-    *fields = *((RecordValue*)val)->fields;
-    *types = *((RecordValue*)val)->types;
+    *objrefcount = *rec->objrefcount;
+    (**objrefcount)++;
+    *fields = *rec->fields;
+    *types = *rec->types;
 }
 
 Value* RecordValue::getField(int name) {

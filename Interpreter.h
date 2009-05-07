@@ -40,9 +40,10 @@ public:
     } Slot;
 
     Value* resolve(int symbol, Value** args, int numArgs);
+
+    std::map<int,Type*> typemap;
 private:
     std::map<int,Slot*> slots;
-    std::map<int,Type*> typemap;
     Frame* parent;
 
     void init(Container* container);
