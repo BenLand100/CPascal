@@ -46,7 +46,7 @@ void Value::decr() { }
 Value* Value::getField(int name) { return 0; }
 void Value::setField(int name, Value* val) { }
 int Value::size() { return -1; }
-void Value::resize(int size) { }
+void Value::resize(int size, std::map<int,Type*>& typemap) { }
 void Value::setIndex(int index, Value* val) { }
 Value* Value::getIndex(int index) { return 0; }
 std::string Value::asString() { return NULL; }
@@ -234,8 +234,9 @@ void RealValue::read(void* mem) {
 CharValue::CharValue(char chr_impl) : Value(TYPE_CHAR,Type::getChar()) {
     refcount = new int;
     *refcount = 0;
-    chr = new char;
-    *chr = chr_impl;
+    chr = new char[2];
+    chr[0] = chr_impl;
+    chr[1] = 0;
 }
 
 CharValue::CharValue(CharValue& val) : Value(TYPE_CHAR,Type::getChar()) {
@@ -279,6 +280,11 @@ char CharValue::asChar() {
 
 int CharValue::asInteger() {
     return *chr;
+}
+
+std::string CharValue::asString() {
+    std::string str(chr);
+    return str;
 }
 
 int CharValue::bytes() { return 4; }
@@ -442,7 +448,7 @@ int ArrayValue::size() {
     return *asize;
 }
 
-void ArrayValue::resize(int size) {
+void ArrayValue::resize(int size, std::map<int,Type*>& typemap) {
     Value** oldarr = *array;
     Value** newarr = new Value*[size];
     if (size <= *asize) {
@@ -458,7 +464,6 @@ void ArrayValue::resize(int size) {
         for (int i = 0; i < cutoff; i++) {
             newarr[i] = oldarr[cutoff];
         }
-        std::map<int,Type*> typemap;
         for (int i = cutoff; i < size; i++) {
             newarr[i] = Value::fromType(*elemType,typemap);
         }

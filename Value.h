@@ -35,7 +35,7 @@ public:
     virtual Value* getField(int name);
     virtual void setField(int name, Value* val);
     virtual int size();
-    virtual void resize(int size);
+    virtual void resize(int size, std::map<int,Type*>& typemap);
     virtual void setIndex(int index, Value* val);
     virtual Value* getIndex(int index);
     virtual std::string asString();
@@ -132,6 +132,7 @@ public:
     void decr();
     char asChar();
     int asInteger();
+    std::string asString();
 
     int bytes();
     void store(void* mem);
@@ -171,7 +172,7 @@ public:
     Value* clone();
     void set(Value* val);
     int size();
-    void resize(int size);
+    void resize(int size, std::map<int,Type*>& typemap);
     Value* getIndex(int index);
     void setIndex(int index, Value* val);
 

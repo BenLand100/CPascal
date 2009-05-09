@@ -310,8 +310,7 @@ public:
         Value* val = stack.top();
         stack.pop();
         Pointer* pt = Type::getPointerType((Type*)val->typeObj);
-        std::map<int,Type*> typemap;
-        PointerValue* ref = new PointerValue(pt,typemap);
+        PointerValue* ref = new PointerValue(pt,frame->typemap);
         ref->set(val);
         stack.push(ref);
         delete val;
@@ -458,7 +457,7 @@ void ArrayDef::preform(std::stack<Value*>& stack, Frame* frame) {
         vals[i] = elems[i]->eval(frame);
     Type* arrType = Type::getDynamicArrayType((Type*)vals[0]->typeObj);
     ArrayValue* val = new ArrayValue((Array*)arrType,frame->typemap);
-    val->resize(numElems);
+    val->resize(numElems, frame->typemap);
     for (int i = 0; i < numElems; i++) {
         val->setIndex(i, vals[i]);
         delete vals[i];
@@ -471,7 +470,7 @@ Resize::~Resize() { delete array; delete dim; }
 void Resize::preform(std::stack<Value*>& stack, Frame* frame) {
     Value* arr = array->eval(frame);
     Value* size = dim->eval(frame);
-    arr->resize(size->asInteger());
+    arr->resize(size->asInteger(), frame->typemap);
     delete size;
     stack.push(arr);
 }
@@ -541,7 +540,7 @@ void FieldGet::preform(std::stack<Value*>& stack, Frame* frame) {
     stack.pop();
     Value* res = record->getField(name);
     delete record;
-    stack.push(res);
+    stack.push(res->duplicate());
 }
 
 FieldSet::FieldSet(int name_impl) : Operator(OP_FIELDSET), name(name_impl) { }

@@ -360,10 +360,10 @@ begin
     writeln('For exec: ' + RealToStr(forlooptime));
     doarraystuff;
     testtypes;
-    //phonebook;
+    phonebook;
     //testtry; //doesn't check for any exception yet, but *works* 
     testref;
     writeln(inttostr(3*-1));
-    //testpointer; //something is wrong with assigning values that contain references (objects)
+    //testpointer; //needs some work
     writeln('great success!');
 end;        

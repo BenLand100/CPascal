@@ -224,8 +224,11 @@ Method* parseMethod(char* &cur) {
 std::map<char,char> precedence_map() {
     std::map <char,char> prec;
     prec[OP_ARRAYGET] = 6; //Careful
+    prec[OP_ARRAYSET] = 6; //Careful
     prec[OP_FIELDGET] = 6; //Careful
+    prec[OP_FIELDSET] = 6; //Careful
     prec[OP_DEREFGET] = 6; //Careful
+    prec[OP_DEREFSET] = 6; //Careful
     
     prec[OP_ADDR] =     5; //Careful
     
@@ -320,7 +323,7 @@ Expression* parseExpr(char* &cur) {
                             }
                             oper->push(mk_opprec(new ArraySet(indexes),prec));
                         } else {
-                            char prec = precedence[OP_ARRAYSET];
+                            char prec = precedence[OP_ARRAYGET];
                             while (!oper->empty() && prec <= oper->top().prec) {
                                 expr.push_back(oper->top().op);
                                 oper->pop();
@@ -356,14 +359,14 @@ Expression* parseExpr(char* &cur) {
                         char* temp = next(tok);
                         if (temp[0] == POPERATOR && temp[1] == OP_ASGN) {
                             tok = temp;
-                            char prec = precedence[OP_ARRAYSET];
+                            char prec = precedence[OP_FIELDSET];
                             while (!oper->empty() && prec <= oper->top().prec) {
                                 expr.push_back(oper->top().op);
                                 oper->pop();
                             }
                             oper->push(mk_opprec(new FieldSet(name),prec));
                         } else {
-                            char prec = precedence[OP_ARRAYSET];
+                            char prec = precedence[OP_FIELDGET];
                             while (!oper->empty() && prec <= oper->top().prec) {
                                 expr.push_back(oper->top().op);
                                 oper->pop();

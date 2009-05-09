@@ -37,13 +37,17 @@ void Interpreter::addCMethod(void* addr, char* def) {
     freetoks(tokens);
 }
 
-Frame::Frame(Container* container) : typemap(container->types), parent(0) {
-    init(container);
+Frame::Frame(Container* container_impl) : typemap(container_impl->types), container(container_impl), parent(0) {
+    init(container_impl);
 }
 
-Frame::Frame(Frame* frame, Container* container) : parent(frame) {
-    typemap.insert(frame->typemap.begin(), frame->typemap.end());
-    init(container);
+Frame::Frame(Frame* frame, Container* container_impl) : slots(frame->slots), typemap(frame->typemap), container(container_impl), parent(frame) {
+    std::map<int,Type*>::iterator iter = container_impl->types.begin();
+    std::map<int,Type*>::iterator end = container_impl->types.end();
+    while (iter != end) {
+        typemap[iter->first] = iter->second;
+    }
+    init(container_impl);
 }
 
 void Frame::init(Container* container) {
@@ -71,29 +75,30 @@ void Frame::init(Container* container) {
 }
 
 Frame::~Frame() {
-    std::map<int,Slot*>::iterator iter = slots.begin();
-    std::map<int,Slot*>::iterator end = slots.end();
+    int numVariables = container->variables.size();
+    for (int i = 0; i < numVariables; i++) {
+        Slot* s = slots[container->variables[i]->name];
+        delete s->value;
+        delete s;
+    }
+    std::map<int,Expression*>::iterator iter = container->constants.begin();
+    std::map<int,Expression*>::iterator end = container->constants.end();
     while (iter != end) {
-        if (iter->second->type == SLOT_VALUE)
-            delete iter->second->value;
-        delete iter->second;
+        Slot* s = slots[iter->first];
+        delete s->value;
+        delete s;
         iter++;
     }
 }
 
-Frame::Slot* Frame::find(int symbol) {
-    Slot* slot = 0;
-    if (slots.find(symbol) != slots.end()) {
-        slot = slots[symbol];
-    } else if (parent) {
-        slot = parent->find(symbol);
-    }
-    return slot;
-}
-
 Value* Frame::resolve(int symbol, Value** args, int numArgs) {
     debug("resolve_symbol=" << symbol);
-    Slot* slot = find(symbol);
+    Slot* slot;
+    if (slots.find(symbol) != slots.end()) {
+        slot = slots[symbol];
+    } else {
+        //error
+    }
     debug("resolve_slot=" << (void*)slot);
     if (!slot) return 0;
     switch (slot->type) {

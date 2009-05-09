@@ -45,9 +45,9 @@ public:
 private:
     std::map<int,Slot*> slots;
     Frame* parent;
+    Container* container;
 
     void init(Container* container);
-    Slot* find(int symbol);
 };
 
 #endif	/* _INTERPRETER_H */
