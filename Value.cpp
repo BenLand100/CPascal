@@ -40,6 +40,7 @@ void Value::set(Value* val) { }
 Value* Value::clone() { return new Value(); }
 Value* Value::duplicate() { return new Value(); }
 Value* Value::getRef() { return 0; }
+void Value::setRef(Value* ref) { }
 void Value::negate() { }
 void Value::incr() { }
 void Value::decr() { }
@@ -490,7 +491,7 @@ PointerValue::PointerValue(Pointer* pt, std::map<int,Type*> &typemap) : Value(TY
     refType = new Type*;
     *refType = (Type*)pt->pointsTo;
     ref = new Value*;
-    *ref = 0;
+    *ref = new Value();
 }
 
 
@@ -529,12 +530,17 @@ Value* PointerValue::clone() {
 
 void PointerValue::set(Value* val) {
     *refType = *((PointerValue*)val)->refType;
-    if (*ref) delete *ref;
+    delete *ref;
     *ref = (*((PointerValue*)val)->ref)->duplicate();
 }
 
 Value* PointerValue::getRef() {
     return *ref;
+}
+
+void PointerValue::setRef(Value* ref_impl) {
+    delete *ref;
+    *ref = ref_impl->duplicate();
 }
 
 //**** BEGIN RECORDVALUE DEFINITION ***

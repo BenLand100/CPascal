@@ -311,7 +311,7 @@ public:
         stack.pop();
         Pointer* pt = Type::getPointerType((Type*)val->typeObj);
         PointerValue* ref = new PointerValue(pt,frame->typemap);
-        ref->set(val);
+        ref->setRef(val);
         stack.push(ref);
         delete val;
     }

@@ -363,7 +363,8 @@ begin
     phonebook;
     //testtry; //doesn't check for any exception yet, but *works* 
     testref;
+    testpointer;
     writeln(inttostr(3*-1));
-    //testpointer; //needs some work
+    writeln(inttostr(3+-(2*6)));
     writeln('great success!');
 end;        

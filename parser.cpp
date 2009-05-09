@@ -223,15 +223,14 @@ Method* parseMethod(char* &cur) {
 
 std::map<char,char> precedence_map() {
     std::map <char,char> prec;
-    prec[OP_ARRAYGET] = 6; //Careful
-    prec[OP_ARRAYSET] = 6; //Careful
-    prec[OP_FIELDGET] = 6; //Careful
-    prec[OP_FIELDSET] = 6; //Careful
-    prec[OP_DEREFGET] = 6; //Careful
-    prec[OP_DEREFSET] = 6; //Careful
+    prec[OP_ARRAYGET] = 5; //Careful
+    prec[OP_ARRAYSET] = 5; //Careful
+    prec[OP_FIELDGET] = 5; //Careful
+    prec[OP_FIELDSET] = 5; //Careful
+    prec[OP_DEREFGET] = 5; //Careful
+    prec[OP_DEREFSET] = 5; //Careful
     
-    prec[OP_ADDR] =     5; //Careful
-    
+    prec[OP_ADDR] =     4; //Careful
     prec[OP_NOT] =      4;
     prec[OP_NEG] =      4; //Careful, this has to be parsed from a urinary -
     
@@ -279,6 +278,7 @@ Expression* parseExpr(char* &cur) {
     std::stack<std::stack<opprec>*> parseStack;
     std::stack<opprec>* oper = new std::stack<opprec>();
     char lastType = -1, nextType = -1;
+    bool prefix = false;
     while (*cur) {
         char* tok = next(cur);
         lastType = nextType;
@@ -378,6 +378,14 @@ Expression* parseExpr(char* &cur) {
                 if (lastType == POPERATOR && tok[0] == POPERATOR && tok[1] == OP_SUB) //special operator renaming
                     tok[1] = OP_NEG;
                 char prec = precedence[tok[1]];
+                switch (tok[1]) {
+                    case OP_NEG:
+                    case OP_NOT:
+                    case OP_ADDR:
+                        prefix = true;
+                        oper->push(mk_opprec(Operator::get(tok[1]),prec));
+                        goto next_exprparse;
+                }
                 while (!oper->empty() && prec <= oper->top().prec) {
                     expr.push_back(oper->top().op);
                     oper->pop();
@@ -452,6 +460,11 @@ Expression* parseExpr(char* &cur) {
         next_exprparse:
         debug("next_exprparse");
         cur = tok;
+        if (!prefix && !oper->empty() && oper->top().prec == 4) {
+            expr.push_back(oper->top().op);
+            oper->pop();
+        }
+        if (prefix) prefix = false;
     }
     end_exprparse:
     debug("end_exprparse");

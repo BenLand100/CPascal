@@ -29,6 +29,7 @@ public:
     virtual Value* clone(); 
     virtual Value* duplicate();
     virtual Value* getRef();
+    virtual void setRef(Value* ref);
     virtual void negate();
     virtual void incr();
     virtual void decr();
@@ -197,6 +198,7 @@ public:
     Value* clone();
     void set(Value* val);
     Value* getRef();
+    void setRef(Value* ref);
 
 private:
     Value** ref;
