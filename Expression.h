@@ -15,6 +15,7 @@ typedef struct _Block {
     int length;
 } Block;
 
+#include "Exceptions.h"
 #include "Interpreter.h"
 #include "Element.h"
 #include "Value.h"
@@ -31,7 +32,7 @@ public:
     Expression(std::list<Element*> postfix);
     virtual ~Expression();
 
-    virtual Value* eval(Frame* frame);
+    virtual Value* eval(Frame* frame) throw(InterpEx, int);
 protected:
     Expression();
 private:
@@ -39,13 +40,22 @@ private:
     int length;
 };
 
-inline void evalBlock(Block* block, Frame* frame) {
+inline void evalBlock(Block* block, Frame* frame) throw(InterpEx) {
     int numElems = block->length;
     Expression** elems = block->elems;
     debug("evalBlock{" << elems << "," << numElems << "}");
     for (int i = 0; i < numElems; i++) {
         debug("eval " << elems[i]);
-        delete elems[i]->eval(frame);
+        try {
+            delete elems[i]->eval(frame);
+        } catch (InterpEx &e) {
+            //FIXME e.addTrace(elems[i]->pos);
+            throw e;
+        } catch (int i) {
+            InterpEx ex(i);
+            //FIXME ex.addTrace()
+            throw ex;
+        }
     }
 }
 
@@ -77,7 +87,7 @@ public:
     Until(std::list<Expression*> block, Expression* condition);
     ~Until();
 
-    Value* eval(Frame* frame);
+    Value* eval(Frame* frame) throw(InterpEx, int);
 private:
     Expression* cond;
     Block block;
@@ -90,7 +100,7 @@ public:
 
     void setDefault(std::list<Expression*> branch);
     void addBranch(int value, std::list<Expression*> branch);
-    Value* eval(Frame* frame);
+    Value* eval(Frame* frame) throw(InterpEx, int);
 private:
     Expression* value;
     std::map<int,Block*> branches;
@@ -103,7 +113,7 @@ public:
     For(int var, Expression* begin, bool inc, Expression* end, std::list<Expression*> block);
     ~For();
 
-    Value* eval(Frame* frame);
+    Value* eval(Frame* frame) throw(InterpEx, int);
 private:
     int var;
     Expression* begin;
@@ -117,7 +127,7 @@ public:
     While(Expression* condition, std::list<Expression*> block);
     ~While();
 
-    Value* eval(Frame* frame);
+    Value* eval(Frame* frame) throw(InterpEx, int);
 private:
     Expression* cond;
     Block block;
@@ -130,7 +140,7 @@ public:
 
     void addBranch(Expression* cond, std::list<Expression*> block);
     void setDefault(std::list<Expression*> block);
-    Value* eval(Frame* frame);
+    Value* eval(Frame* frame) throw(InterpEx, int);
 private:
     typedef struct {
         Expression* cond;
@@ -145,7 +155,7 @@ public:
     Try(std::list<Expression*> danger, std::list<Expression*> saftey, std::list<Expression*> always);
     ~Try();
 
-    Value* eval(Frame* frame);
+    Value* eval(Frame* frame) throw(InterpEx, int);
 private:
     Block danger;
     Block saftey;

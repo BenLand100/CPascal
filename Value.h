@@ -25,25 +25,25 @@ public:
     Value();
     virtual ~Value();
 
-    virtual void set(Value* val);
-    virtual Value* clone(); 
+    virtual void set(Value* val) throw(int);
+    virtual Value* clone();
     virtual Value* duplicate();
-    virtual Value* getRef();
-    virtual void setRef(Value* ref);
-    virtual void negate();
-    virtual void incr();
-    virtual void decr();
-    virtual Value* getField(int name);
-    virtual void setField(int name, Value* val);
-    virtual int size();
-    virtual void resize(int size, std::map<int,Type*>& typemap);
-    virtual void setIndex(int index, Value* val);
-    virtual Value* getIndex(int index);
-    virtual std::string asString();
-    virtual char asChar();
-    virtual double asReal();
-    virtual int asInteger();
-    virtual bool asBoolean();
+    virtual Value* getRef() throw(int);
+    virtual void setRef(Value* ref) throw(int);
+    virtual void negate() throw(int);
+    virtual void incr() throw(int);
+    virtual void decr() throw(int);
+    virtual Value* getField(int name) throw(int);
+    virtual void setField(int name, Value* val) throw(int);
+    virtual int size() throw(int);
+    virtual void resize(int size, std::map<int,Type*>& typemap) throw(int);
+    virtual void setIndex(int index, Value* val) throw(int);
+    virtual Value* getIndex(int index) throw(int);
+    virtual std::string asString() throw(int);
+    virtual char asChar() throw(int);
+    virtual double asReal() throw(int);
+    virtual int asInteger() throw(int);
+    virtual bool asBoolean() throw(int);
 
     virtual int bytes();
     virtual void store(void* mem);
@@ -63,12 +63,12 @@ public:
     
     Value* duplicate();
     Value* clone();
-    void set(Value* val);
-    void negate();
-    void incr();
-    void decr();
-    double asReal();
-    int asInteger();
+    void set(Value* val) throw(int);
+    void negate() throw(int);
+    void incr() throw(int);
+    void decr() throw(int);
+    double asReal() throw(int);
+    int asInteger() throw(int);
 
     int bytes();
     void store(void* mem);
@@ -87,8 +87,8 @@ public:
 
     Value* duplicate();
     Value* clone();
-    void set(Value* val);
-    std::string asString();
+    void set(Value* val) throw(int);
+    std::string asString() throw(int);
 
     int bytes();
     void store(void* mem);
@@ -103,14 +103,14 @@ class RealValue : public Value {
 public:
     RealValue(double real);
     ~RealValue();
-    
+
     Value* duplicate();
     Value* clone();
-    void set(Value* val);
-    void negate();
-    void incr();
-    void decr();
-    double asReal();
+    void set(Value* val) throw(int);
+    void negate() throw(int);
+    void incr() throw(int);
+    void decr() throw(int);
+    double asReal() throw(int);
 
     int bytes();
     void store(void* mem);
@@ -128,12 +128,12 @@ public:
 
     Value* duplicate();
     Value* clone();
-    void set(Value* val);
-    void incr();
-    void decr();
-    char asChar();
-    int asInteger();
-    std::string asString();
+    void set(Value* val) throw(int);
+    void incr() throw(int);
+    void decr() throw(int);
+    char asChar() throw(int);
+    int asInteger() throw(int);
+    std::string asString() throw(int);
 
     int bytes();
     void store(void* mem);
@@ -148,12 +148,12 @@ class BooleanValue : public Value {
 public:
     BooleanValue(bool b);
     ~BooleanValue();
-    
+
     Value* duplicate();
     Value* clone();
-    void set(Value* val);
-    bool asBoolean();
-    int asInteger();
+    void set(Value* val) throw(int);
+    bool asBoolean() throw(int);
+    int asInteger() throw(int);
 
     int bytes();
     void store(void* mem);
@@ -171,11 +171,11 @@ public:
 
     Value* duplicate();
     Value* clone();
-    void set(Value* val);
-    int size();
-    void resize(int size, std::map<int,Type*>& typemap);
-    Value* getIndex(int index);
-    void setIndex(int index, Value* val);
+    void set(Value* val) throw(int);
+    int size() throw(int);
+    void resize(int size, std::map<int,Type*>& typemap) throw(int);
+    Value* getIndex(int index) throw(int);
+    void setIndex(int index, Value* val) throw(int);
 
 private:
     Type** elemType;
@@ -196,9 +196,9 @@ public:
 
     Value* duplicate();
     Value* clone();
-    void set(Value* val);
-    Value* getRef();
-    void setRef(Value* ref);
+    void set(Value* val) throw(int);
+    Value* getRef() throw(int);
+    void setRef(Value* ref) throw(int);
 
 private:
     Value** ref;
@@ -214,9 +214,9 @@ public:
 
     Value* duplicate();
     Value* clone();
-    void set(Value* val);
-    Value* getField(int name);
-    void setField(int name, Value* value);
+    void set(Value* val) throw(int);
+    Value* getField(int name) throw(int);
+    void setField(int name, Value* value) throw(int);
 
 private:
     int** objrefcount;

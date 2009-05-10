@@ -6,6 +6,7 @@
                    projectFiles="true">
       <itemPath>Container.h</itemPath>
       <itemPath>Element.h</itemPath>
+      <itemPath>Exceptions.h</itemPath>
       <itemPath>Expression.h</itemPath>
       <itemPath>Interpreter.h</itemPath>
       <itemPath>lexer.h</itemPath>
@@ -24,6 +25,7 @@
                    projectFiles="true">
       <itemPath>Container.cpp</itemPath>
       <itemPath>Element.cpp</itemPath>
+      <itemPath>Exceptions.cpp</itemPath>
       <itemPath>Expression.cpp</itemPath>
       <itemPath>Interpreter.cpp</itemPath>
       <itemPath>lexer.cpp</itemPath>
@@ -64,6 +66,12 @@
         <itemTool>1</itemTool>
       </item>
       <item path="Element.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="Exceptions.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Exceptions.h">
         <itemTool>3</itemTool>
       </item>
       <item path="Expression.cpp">
@@ -149,6 +157,12 @@
         <itemTool>1</itemTool>
       </item>
       <item path="Element.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="Exceptions.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Exceptions.h">
         <itemTool>3</itemTool>
       </item>
       <item path="Expression.cpp">

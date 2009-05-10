@@ -23,7 +23,7 @@ public:
     static Operator* get(int type);
 
     const int type;
-    virtual void preform(std::stack<Value*> &stack, Frame* frame) = 0;
+    virtual void preform(std::stack<Value*> &stack, Frame* frame) throw(int) = 0;
 
 protected:
     Operator(int op);
@@ -40,7 +40,7 @@ public:
     const int numArgs;
     Expression** args;
 
-    void preform(std::stack<Value*> &stack, Frame* frame);
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int);
 };
 
 class Size : public Operator {
@@ -48,7 +48,7 @@ public:
     Size(Expression* array);
     ~Size();
 
-    void preform(std::stack<Value*> &stack, Frame* frame);
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int);
 private:
     Expression* array;
 };
@@ -58,7 +58,7 @@ public:
     ArrayDef(std::list<Expression*> elems);
     ~ArrayDef();
 
-    void preform(std::stack<Value*> &stack, Frame* frame);
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int);
 private:
     Expression** elems;
     int numElems;
@@ -69,7 +69,7 @@ public:
     Resize(Expression* array, Expression* dim);
     ~Resize();
 
-    void preform(std::stack<Value*> &stack, Frame* frame);
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int);
 private:
     Expression* array;
     Expression* dim;
@@ -80,7 +80,7 @@ public:
     ArrayGet(std::list<Expression*> indexes);
     ~ArrayGet();
 
-    void preform(std::stack<Value*> &stack, Frame* frame);
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int);
 private:
     Expression** indexes;
     int numIndexes;
@@ -91,7 +91,7 @@ public:
     ArraySet(std::list<Expression*> indexes);
     ~ArraySet();
 
-    void preform(std::stack<Value*> &stack, Frame* frame);
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int);
 private:
     Expression** indexes;
     int numIndexes;
@@ -102,7 +102,7 @@ public:
     FieldGet(int name);
     ~FieldGet();
 
-    void preform(std::stack<Value*> &stack, Frame* frame);
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int);
 private:
     int name;
 };
@@ -112,7 +112,7 @@ public:
     FieldSet(int name);
     ~FieldSet();
 
-    void preform(std::stack<Value*> &stack, Frame* frame);
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int);
 private:
     int name;
 };

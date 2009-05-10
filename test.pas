@@ -361,7 +361,7 @@ begin
     doarraystuff;
     testtypes;
     phonebook;
-    //testtry; //doesn't check for any exception yet, but *works* 
+    testtry; //doesn't check for any exception yet, but *works* 
     testref;
     testpointer;
     writeln(inttostr(3*-1));

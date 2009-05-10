@@ -1,4 +1,5 @@
 #include "Value.h"
+#include "Exceptions.h"
 
 #include <iostream>
 //#define debug(x) std::cout << x << '\n'
@@ -36,25 +37,25 @@ Value* Value::fromType(Type* type, std::map<int,Type*> &typemap) {
 Value::Value() : Element(ELEM_VALUE), type(TYPE_NIL), typeObj(Type::getNil()) { }
 Value::Value(int impl_type, Type* impl_typeObj) : Element(ELEM_VALUE), type(impl_type), typeObj(impl_typeObj) { }
 Value::~Value() { }
-void Value::set(Value* val) { }
+void Value::set(Value* val) throw(int) { throw E_NULL_VAL; }
 Value* Value::clone() { return new Value(); }
 Value* Value::duplicate() { return new Value(); }
-Value* Value::getRef() { return 0; }
-void Value::setRef(Value* ref) { }
-void Value::negate() { }
-void Value::incr() { }
-void Value::decr() { }
-Value* Value::getField(int name) { return 0; }
-void Value::setField(int name, Value* val) { }
-int Value::size() { return -1; }
-void Value::resize(int size, std::map<int,Type*>& typemap) { }
-void Value::setIndex(int index, Value* val) { }
-Value* Value::getIndex(int index) { return 0; }
-std::string Value::asString() { return NULL; }
-char Value::asChar() { return 0; }
-double Value::asReal() { return 0; }
-int Value::asInteger() { return 0; }
-bool Value::asBoolean() { return false; }
+Value* Value::getRef() throw(int) { throw E_NOT_POINTER; }
+void Value::setRef(Value* ref) throw(int) { throw E_NOT_POINTER; }
+void Value::negate() throw(int) { throw E_NON_NUMERIC; }
+void Value::incr() throw(int) { throw E_NON_NUMERIC; }
+void Value::decr() throw(int) { throw E_NON_NUMERIC; }
+Value* Value::getField(int name) throw(int) { throw E_NOT_RECORD; }
+void Value::setField(int name, Value* val)  throw(int) { throw E_NOT_RECORD; }
+int Value::size() throw(int) { throw E_NOT_ARRAY; }
+void Value::resize(int size, std::map<int,Type*>& typemap) throw(int) { throw E_NOT_ARRAY; }
+void Value::setIndex(int index, Value* val) throw(int) { throw E_NOT_ARRAY; }
+Value* Value::getIndex(int index) throw(int) { throw E_NOT_ARRAY; }
+std::string Value::asString() throw(int) { throw E_NOT_STRING; }
+char Value::asChar() throw(int) { throw E_NOT_CHAR; }
+double Value::asReal() throw(int) { throw E_NOT_REAL; }
+int Value::asInteger() throw(int) { throw E_NOT_INTEGER; }
+bool Value::asBoolean() throw(int) { throw E_NOT_BOOLEAN; }
 int Value::bytes() { return 0; }
 void Value::store(void* mem) { }
 void Value::read(void* mem) { }
@@ -91,27 +92,28 @@ Value* IntegerValue::clone() {
     return new IntegerValue(*integer);
 }
 
-void IntegerValue::set(Value* val) {
+void IntegerValue::set(Value* val) throw(int) {
+    if (val->type != TYPE_INTEGER) throw E_NOT_INTEGER;
     *integer = *((IntegerValue*)val)->integer;
 }
 
-void IntegerValue::negate() {
+void IntegerValue::negate() throw(int) {
     *integer = -(*integer);
 }
 
-void IntegerValue::incr() {
+void IntegerValue::incr() throw(int) {
     ++(*integer);
 }
 
-void IntegerValue::decr() {
+void IntegerValue::decr() throw(int) {
     --(*integer);
 }
 
-double IntegerValue::asReal() {
+double IntegerValue::asReal() throw(int) {
     return *integer;
 }
 
-int IntegerValue::asInteger() {
+int IntegerValue::asInteger() throw(int) {
     return *integer;
 }
 
@@ -156,11 +158,12 @@ Value* StringValue::clone() {
     return new StringValue(*str);
 }
 
-void StringValue::set(Value* val) {
+void StringValue::set(Value* val) throw(int) {
+    if (val->type != TYPE_STRING) throw E_NOT_STRING;
     *str = *((StringValue*)val)->str;
 }
 
-std::string StringValue::asString() {
+std::string StringValue::asString() throw(int) {
     return *str;
 }
 
@@ -204,23 +207,24 @@ Value* RealValue::clone() {
     return new RealValue(*real);
 }
 
-void RealValue::set(Value* val) {
+void RealValue::set(Value* val) throw(int) {
+    if (val->type != TYPE_REAL) throw E_NOT_REAL;
     *real = *((RealValue*)val)->real;
 }
 
-void RealValue::negate() {
+void RealValue::negate() throw(int) {
     *real = -(*real);
 }
 
-void RealValue::incr() {
+void RealValue::incr() throw(int) {
     ++(*real);
 }
 
-void RealValue::decr() {
+void RealValue::decr() throw(int) {
     --(*real);
 }
 
-double RealValue::asReal() {
+double RealValue::asReal() throw(int) {
     return *real;
 }
 
@@ -263,27 +267,28 @@ Value* CharValue::clone() {
     return new CharValue(*chr);
 }
 
-void CharValue::set(Value* val) {
+void CharValue::set(Value* val) throw(int) {
+    if (val->type != TYPE_CHAR) throw E_NOT_CHAR;
     *chr = *((CharValue*)val)->chr;
 }
 
-void CharValue::incr() {
+void CharValue::incr() throw(int) {
     ++(*chr);
 }
 
-void CharValue::decr() {
+void CharValue::decr() throw(int) {
     --(*chr);
 }
 
-char CharValue::asChar() {
+char CharValue::asChar() throw(int) {
     return *chr;
 }
 
-int CharValue::asInteger() {
+int CharValue::asInteger() throw(int) {
     return *chr;
 }
 
-std::string CharValue::asString() {
+std::string CharValue::asString() throw(int) {
     std::string str(chr);
     return str;
 }
@@ -326,15 +331,16 @@ Value* BooleanValue::clone() {
     return new BooleanValue(*boolean);
 }
 
-void BooleanValue::set(Value* val) {
+void BooleanValue::set(Value* val) throw(int) {
+    if (val->type != TYPE_BOOLEAN) throw E_NOT_BOOLEAN;
     *boolean = *((BooleanValue*)val)->boolean;
 }
 
-bool BooleanValue::asBoolean() {
+bool BooleanValue::asBoolean() throw(int) {
     return *boolean;
 }
 
-int BooleanValue::asInteger() {
+int BooleanValue::asInteger() throw(int) {
     return *boolean;
 }
 
@@ -425,7 +431,8 @@ Value* ArrayValue::clone() {
     *(arr->array) = *array;
 }
 
-void ArrayValue::set(Value* val) {
+void ArrayValue::set(Value* val) throw(int) {
+    if (val->type != TYPE_ARRAY) throw E_NOT_ARRAY;
     ArrayValue* arr = (ArrayValue*)val;
     if (**objrefcount) {
         (**objrefcount)--;
@@ -445,11 +452,11 @@ void ArrayValue::set(Value* val) {
     *start = *arr->start;
 }
 
-int ArrayValue::size() {
+int ArrayValue::size() throw(int) {
     return *asize;
 }
 
-void ArrayValue::resize(int size, std::map<int,Type*>& typemap) {
+void ArrayValue::resize(int size, std::map<int,Type*>& typemap) throw(int) {
     Value** oldarr = *array;
     Value** newarr = new Value*[size];
     if (size <= *asize) {
@@ -474,13 +481,16 @@ void ArrayValue::resize(int size, std::map<int,Type*>& typemap) {
     *asize = size;
 }
 
-void ArrayValue::setIndex(int index, Value* val) {
-    (*array)[index - *start]->set(val);
+void ArrayValue::setIndex(int index, Value* val) throw(int) {
+    index -= *start;
+    if (index >= *asize) throw E_INDEX_BOUNDS;
+    (*array)[index]->set(val);
 }
 
-Value* ArrayValue::getIndex(int index) {
-    Value* res = (*array)[index - *start];
-    return res;
+Value* ArrayValue::getIndex(int index) throw(int) {
+    index -= *start;
+    if (index >= *asize) throw E_INDEX_BOUNDS;
+    return (*array)[index];
 }
 
 //**** BEGIN POINTERVALUE DEFINITION ***
@@ -528,17 +538,19 @@ Value* PointerValue::clone() {
     *(pt->ref) = (*ref)->duplicate();
 }
 
-void PointerValue::set(Value* val) {
+void PointerValue::set(Value* val) throw(int) {
+    if (val->type != TYPE_POINTER) throw E_NOT_POINTER;
     *refType = *((PointerValue*)val)->refType;
     delete *ref;
     *ref = (*((PointerValue*)val)->ref)->duplicate();
 }
 
-Value* PointerValue::getRef() {
+Value* PointerValue::getRef() throw(int) {
     return *ref;
 }
 
-void PointerValue::setRef(Value* ref_impl) {
+//FIXME Should check assignment types
+void PointerValue::setRef(Value* ref_impl) throw(int) {
     delete *ref;
     *ref = ref_impl->duplicate();
 }
@@ -616,7 +628,9 @@ Value* RecordValue::clone() {
     *(rec->fields) = *fields;
 }
 
-void RecordValue::set(Value* val) {
+//FIXME should check type
+void RecordValue::set(Value* val) throw(int) {
+    if (val->type != TYPE_RECORD) throw E_NOT_RECORD;
     RecordValue* rec = (RecordValue*)val;
     if (**objrefcount) {
         (**objrefcount)--;
@@ -631,13 +645,12 @@ void RecordValue::set(Value* val) {
     *types = *rec->types;
 }
 
-Value* RecordValue::getField(int name) {
-    if ((*fields)->find(name) != (*fields)->end())
-        return (**fields)[name];
-    return 0;
+Value* RecordValue::getField(int name) throw(int) {
+    if ((*fields)->find(name) == (*fields)->end()) throw E_NO_FIELD;
+    return (**fields)[name];
 }
 
-void RecordValue::setField(int name, Value* value) {
-    if ((*fields)->find(name) != (*fields)->end())
-        (**fields)[name] = value->clone();
+void RecordValue::setField(int name, Value* value) throw(int) {
+    if ((*fields)->find(name) == (*fields)->end()) throw E_NO_FIELD;
+    (**fields)[name]->set(value);
 }
