@@ -16,6 +16,7 @@ class InterpEx;
 #define E_NON_NUMERIC   10
 #define E_INDEX_BOUNDS  11
 #define E_NO_FIELD      12
+#define E_UNRESOLVABLE  13
 
 #include <exception>
 #include <list>

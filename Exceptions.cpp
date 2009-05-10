@@ -48,6 +48,8 @@ const char* InterpEx::what() const throw() {
             return "Index out of bounds";
         case E_NO_FIELD:
             return "No such field";
+        case E_UNRESOLVABLE:
+            return "Symbol undefined";
     }
 }
 

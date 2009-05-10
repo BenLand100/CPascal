@@ -1,6 +1,7 @@
 #include "Interpreter.h"
 #include "lexer.h"
 #include "parser.h"
+#include "Exceptions.h"
 
 #include <iostream>
 //#define debug(x) std::cout << x << '\n'
@@ -91,13 +92,13 @@ Frame::~Frame() {
     }
 }
 
-Value* Frame::resolve(int symbol, Value** args, int numArgs) {
+Value* Frame::resolve(int symbol, Value** args, int numArgs) throw(int) {
     debug("resolve_symbol=" << symbol);
     Slot* slot;
     if (slots.find(symbol) != slots.end()) {
         slot = slots[symbol];
     } else {
-        //error
+        throw E_UNRESOLVABLE;
     }
     debug("resolve_slot=" << (void*)slot);
     if (!slot) return 0;
@@ -172,6 +173,7 @@ Value* Frame::resolve(int symbol, Value** args, int numArgs) {
                     return new Value(); //leak
                 }
             } else {
+                //FIXME must check method types
                 Frame* frame = new Frame(this, meth);
                 debug("resolve_args");
                 for (int i = 0; i < numArgs; i++) {

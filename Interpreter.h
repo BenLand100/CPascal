@@ -39,7 +39,7 @@ public:
         };
     } Slot;
 
-    Value* resolve(int symbol, Value** args, int numArgs);
+    Value* resolve(int symbol, Value** args, int numArgs) throw(int);
 
     std::map<int,Type*> typemap;
 private:
