@@ -14,7 +14,7 @@ public:
     ~Interpreter();
 
     void run();
-    void addCMethod(void* addr, char* def); //stdcall only
+    void addMethod(void* addr,  int conv, char* def);
 private:
     Program* prog;
     std::map<std::string,int> names;

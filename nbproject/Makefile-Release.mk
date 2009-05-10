@@ -35,6 +35,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/Element.o \
 	${OBJECTDIR}/Type.o \
 	${OBJECTDIR}/main.o \
+	${OBJECTDIR}/Exceptions.o \
 	${OBJECTDIR}/Value.o \
 	${OBJECTDIR}/parser.o \
 	${OBJECTDIR}/Expression.o \
@@ -88,6 +89,10 @@ ${OBJECTDIR}/Type.o: Type.cpp
 ${OBJECTDIR}/main.o: main.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	$(COMPILE.cc) -O2 -o ${OBJECTDIR}/main.o main.cpp
+
+${OBJECTDIR}/Exceptions.o: Exceptions.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	$(COMPILE.cc) -O2 -o ${OBJECTDIR}/Exceptions.o Exceptions.cpp
 
 ${OBJECTDIR}/Value.o: Value.cpp 
 	${MKDIR} -p ${OBJECTDIR}

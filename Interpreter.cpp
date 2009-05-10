@@ -28,12 +28,12 @@ void Interpreter::run() {
     delete frame;
 }
 
-void Interpreter::addCMethod(void* addr, char* def) {
+void Interpreter::addMethod(void* addr, int conv, char* def) {
     char* tokens = lex(def,names);
     char* cur = tokens;
     Method* meth = parseMethod(cur);
     meth->address = addr;
-    meth->mtype = C_METHOD;
+    meth->mtype = conv;
     prog->methods.push_back(meth);
     freetoks(tokens);
 }
@@ -116,61 +116,67 @@ Value* Frame::resolve(int symbol, Value** args, int numArgs) throw(int) {
                     args[i]->store((void*)stack);
                     stack += args[i]->bytes();
                 }
-                stack -= 4;
-                if (meth->type) {
-                    if (meth->type->type == TYPE_REAL) {
-                        double real;
-                        asm volatile (
-                             "cmpl  $0, %%edx \n"
-                             "jz mkcall_real \n"
-                             "start_real: pushl (%%eax) \n"
-                             "cmpl %%eax, %%ecx \n"
-                             "jz mkcall_real \n"
-                             "subl $4, %%eax \n"
-                             "jmp start_real \n"
-                             "mkcall_real: call *%%ebx \n"
-                             : "=t"(real)
-                             : "a"(stack), "b"(meth->address), "c"(cargs), "d"(argsz)
-                             : "memory"
-                        );
-                        delete[] cargs;
-                        return new RealValue(real);
-                    } else {
-                        void* eax;
-                        asm volatile (
-                             "cmpl  $0, %%edx \n"
-                             "jz mkcall_all \n"
-                             "start_all: pushl (%%eax) \n"
-                             "cmpl %%eax, %%ecx \n"
-                             "jz mkcall_all \n"
-                             "subl $4, %%eax \n"
-                             "jmp start_all \n"
-                             "mkcall_all: call *%%ebx \n"
-                             : "=a" (eax)
-                             : "a"(stack), "b"(meth->address), "c"(cargs), "d"(argsz)
-                             : "memory"
-                        );
-                        delete[] cargs;
-                        Value* val = Value::fromType(meth->type, typemap);
-                        val->read(eax);
-                        return val;
-                    }
-                } else {
-                    asm volatile (
-                         "cmpl  $0, %%edx \n"
-                         "jz mkcall_void \n"
-                         "start_void: pushl (%%eax) \n"
-                         "cmpl %%eax, %%ecx \n"
-                         "jz mkcall_void \n"
-                         "subl $4, %%eax \n"
-                         "jmp start_void \n"
-                         "mkcall_void: call *%%ebx \n"
-                         :
-                         : "a"(stack), "b"(meth->address), "c"(cargs), "d"(argsz)
-                         : "memory"
-                    );
-                    delete[] cargs;
-                    return new Value(); //leak
+                switch (meth->mtype) {
+                    case CONV_C_STDCALL:
+                        stack -= 4;
+                        if (meth->type) {
+                            if (meth->type->type == TYPE_REAL) {
+                                double real;
+                                asm volatile (
+                                     "cmpl  $0, %%edx \n"
+                                     "jz mkcall_real \n"
+                                     "start_real: pushl (%%eax) \n"
+                                     "cmpl %%eax, %%ecx \n"
+                                     "jz mkcall_real \n"
+                                     "subl $4, %%eax \n"
+                                     "jmp start_real \n"
+                                     "mkcall_real: call *%%ebx \n"
+                                     : "=t"(real)
+                                     : "a"(stack), "b"(meth->address), "c"(cargs), "d"(argsz)
+                                     : "memory"
+                                );
+                                delete[] cargs;
+                                return new RealValue(real);
+                            } else {
+                                void* eax;
+                                asm volatile (
+                                     "cmpl  $0, %%edx \n"
+                                     "jz mkcall_all \n"
+                                     "start_all: pushl (%%eax) \n"
+                                     "cmpl %%eax, %%ecx \n"
+                                     "jz mkcall_all \n"
+                                     "subl $4, %%eax \n"
+                                     "jmp start_all \n"
+                                     "mkcall_all: call *%%ebx \n"
+                                     : "=a" (eax)
+                                     : "a"(stack), "b"(meth->address), "c"(cargs), "d"(argsz)
+                                     : "memory"
+                                );
+                                delete[] cargs;
+                                Value* val = Value::fromType(meth->type, typemap);
+                                val->read(eax);
+                                return val;
+                            }
+                        } else {
+                            asm volatile (
+                                 "cmpl  $0, %%edx \n"
+                                 "jz mkcall_void \n"
+                                 "start_void: pushl (%%eax) \n"
+                                 "cmpl %%eax, %%ecx \n"
+                                 "jz mkcall_void \n"
+                                 "subl $4, %%eax \n"
+                                 "jmp start_void \n"
+                                 "mkcall_void: call *%%ebx \n"
+                                 :
+                                 : "a"(stack), "b"(meth->address), "c"(cargs), "d"(argsz)
+                                 : "memory"
+                            );
+                            delete[] cargs;
+                            return new Value(); //leak
+                        }
+                        break;
+                    case CONV_FPC_STDCALL:
+                        break;
                 }
             } else {
                 //FIXME must check method types

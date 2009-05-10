@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cstring>
 #include "parser.h"
 #include "lexer.h"
 #include <map>
@@ -107,7 +108,7 @@ double e() {
 int main(int argc, char** argv) {
     ifstream in;
     in.open("./test.pas", ifstream::ate | ifstream::binary);
-    if (!in) return EXIT_FAILURE;
+    if (!in) return 1;
     int size = in.tellg();
     char* ppg = new char[size+1];
     in.seekg(0,ios::beg);
@@ -115,15 +116,15 @@ int main(int argc, char** argv) {
     in.close();
     ppg[size] = '\0';
     Interpreter* interp = new Interpreter(ppg);
-    interp->addCMethod((void*)&writeln,(char*)"procedure writeln(str: string);");
-    interp->addCMethod((void*)&inttostr,(char*)"function inttostr(i: integer): string;");
-    interp->addCMethod((void*)&chartostr,(char*)"function chartostr(c: char): string;");
-    interp->addCMethod((void*)&booltostr,(char*)"function booltostr(b: boolean): string;");
-    interp->addCMethod((void*)&realtostr,(char*)"function realtostr(r: real): string;");
-    interp->addCMethod((void*)&e,(char*)"function e: real;");
+    interp->addMethod((void*)&writeln,CONV_C_STDCALL,(char*)"procedure writeln(str: string);");
+    interp->addMethod((void*)&inttostr,CONV_C_STDCALL,(char*)"function inttostr(i: integer): string;");
+    interp->addMethod((void*)&chartostr,CONV_C_STDCALL,(char*)"function chartostr(c: char): string;");
+    interp->addMethod((void*)&booltostr,CONV_C_STDCALL,(char*)"function booltostr(b: boolean): string;");
+    interp->addMethod((void*)&realtostr,CONV_C_STDCALL,(char*)"function realtostr(r: real): string;");
+    interp->addMethod((void*)&e,CONV_C_STDCALL,(char*)"function e: real;");
     delete ppg;
     interp->run();
     delete interp;
-    return (EXIT_SUCCESS);
+    return 0;
 }
 

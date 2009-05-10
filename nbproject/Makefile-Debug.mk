@@ -35,10 +35,12 @@ OBJECTFILES= \
 	${OBJECTDIR}/Element.o \
 	${OBJECTDIR}/Type.o \
 	${OBJECTDIR}/main.o \
+	${OBJECTDIR}/Exceptions.o \
 	${OBJECTDIR}/Value.o \
 	${OBJECTDIR}/parser.o \
 	${OBJECTDIR}/Expression.o \
 	${OBJECTDIR}/Operator.o
+
 
 # C Compiler Flags
 CFLAGS=
@@ -88,6 +90,10 @@ ${OBJECTDIR}/Type.o: Type.cpp
 ${OBJECTDIR}/main.o: main.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	$(COMPILE.cc) -g -o ${OBJECTDIR}/main.o main.cpp
+
+${OBJECTDIR}/Exceptions.o: Exceptions.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	$(COMPILE.cc) -g -o ${OBJECTDIR}/Exceptions.o Exceptions.cpp
 
 ${OBJECTDIR}/Value.o: Value.cpp 
 	${MKDIR} -p ${OBJECTDIR}

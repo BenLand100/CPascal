@@ -5,9 +5,9 @@ class Method;
 #ifndef _CONTAINER_H
 #define	_CONTAINER_H
 
-#define PAS_METHOD  0
-#define FPC_METHOD  1
-#define C_METHOD    2
+#define CONV_INTERNAL       0
+#define CONV_C_STDCALL      1
+#define CONV_FPC_STDCALL    2
 
 #include "Expression.h"
 #include "Variable.h"

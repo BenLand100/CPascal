@@ -90,6 +90,7 @@
 #define BOOL_TRUE       1
 
 #include <map>
+#include <string>
 
 /**
  * PBOOLEAN is followed by its BOOL_ definition
