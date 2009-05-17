@@ -116,10 +116,29 @@ bool Type::instanceOf(Type* type) {
     return this->type == TYPE_REF ? this->descr == type->descr : this->type == type->type;
 }
 
+int Type::sizeOf(std::map<int,Type*> &typemap) {
+    switch (type) {
+        case RES_NIL:
+            return 0;
+        case RES_STRING:
+        case RES_INTEGER:
+            return 4;
+        case RES_REAL:
+            return 8;
+        case RES_BOOLEAN:
+        case RES_CHAR:
+            return 1;
+    }
+}
+
 Pointer::Pointer(std::string descr_impl, Type* pointsTo_impl) : Type(descr_impl, TYPE_POINTER), pointsTo(pointsTo_impl) { }
 
 bool Pointer::instanceOf(Type* type) {
     return this->type == type->type && this->pointsTo == ((Pointer*)type)->pointsTo;
+}
+
+int Pointer::sizeOf(std::map<int,Type*>& typemap) {
+    return 4;
 }
 
 Array::Array(std::string descr_impl, Type* element_impl, int from_impl, int to_impl) : Type(descr_impl,TYPE_ARRAY), element(element_impl), dynamic(false), from(from_impl), to(to_impl) { }
@@ -130,14 +149,32 @@ bool Array::instanceOf(Type* type) {
     return this->type == type->type && this->element == ((Array*)type)->element;
 }
 
-Record::Record(std::string descr_impl, std::list<Variable*> fields_impl) : Type(descr_impl,TYPE_RECORD), fields(fields_impl) { }
+int Array::sizeOf(std::map<int,Type*>& typemap) {
+    return dynamic ? 4 : ((to - from + 1) * element->sizeOf(typemap));
+}
+
+Record::Record(std::string descr_impl, std::list<Variable*> fields_impl) : Type(descr_impl,TYPE_RECORD), fields(fields_impl), size(0) { }
 
 bool Record::instanceOf(Type* type) {
     return this->type == type->type && this->fields == ((Record*)type)->fields;
+}
+
+int Record::sizeOf(std::map<int,Type*>& typemap) {
+    if (size) return size;
+    std::list<Variable*>::iterator iter = fields.begin();
+    std::list<Variable*>::iterator end = fields.end();
+    while (iter != end) {
+        size+= (*iter)->type->sizeOf(typemap);
+        iter++;
+    }
 }
 
 RefType::RefType(std::string descr, int name_impl) : Type(descr,TYPE_REF), name(name_impl) { }
 
 bool RefType::instanceOf(Type* type) {
     return this->type == type->type && this->name == ((RefType*)type)->name;
+}
+
+int RefType::sizeOf(std::map<int,Type*>& typemap) {
+    return typemap[name]->sizeOf(typemap);
 }

@@ -8,7 +8,7 @@ class Variable;
 class Variable {
 public:
     const int name;
-    const Type* type;
+    Type* type;
     const bool byRef;
 
     Variable(int impl_name, Type* impl_type);

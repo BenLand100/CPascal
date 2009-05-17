@@ -46,7 +46,6 @@ public:
     virtual int asInteger() throw(int);
     virtual bool asBoolean() throw(int);
 
-    virtual int valSize();
     virtual int argSize();
     virtual void refArg(void* mem);
     virtual void valArg(void* mem);
@@ -75,7 +74,6 @@ public:
     double asReal() throw(int);
     int asInteger() throw(int);
 
-    int valSize();
     int argSize();
     void refArg(void* mem);
     void valArg(void* mem);
@@ -99,7 +97,6 @@ public:
     void set(Value* val) throw(int);
     char* asString() throw(int);
 
-    int valSize();
     int argSize();
     void refArg(void* mem);
     void valArg(void* mem);
@@ -128,7 +125,6 @@ public:
     void decr() throw(int);
     double asReal() throw(int);
 
-    int valSize();
     int argSize();
     void refArg(void* mem);
     void valArg(void* mem);
@@ -153,7 +149,6 @@ public:
     int asInteger() throw(int);
     char* asString() throw(int);
 
-    int valSize();
     int argSize();
     void refArg(void* mem);
     void valArg(void* mem);
@@ -178,7 +173,6 @@ public:
     bool asBoolean() throw(int);
     int asInteger() throw(int);
 
-    int valSize();
     int argSize();
     void refArg(void* mem);
     void valArg(void* mem);
@@ -204,7 +198,6 @@ public:
     Value* getIndex(int index) throw(int);
     void setIndex(int index, Value* val) throw(int);
 
-    int valSize();
     int argSize();
     void refArg(void* mem);
     void valArg(void* mem);
@@ -213,8 +206,8 @@ private:
     Type** elemType;
     bool* dynamic;
     int* start;
+    int* elemsz;
 
-    Value** temp;
     char** mem;
     int** objref;
     int** asize;
@@ -226,6 +219,7 @@ private:
 
 class PointerValue : public Value {
 public:
+    PointerValue(Pointer* pt, std::map<int,Type*> &typemap, void* mem);
     PointerValue(Pointer* pt, std::map<int,Type*> &typemap);
     PointerValue(Value* ref);
     ~PointerValue();
@@ -236,8 +230,14 @@ public:
     Value* getRef() throw(int);
     void setRef(Value* ref) throw(int);
 
+
+    int argSize();
+    void refArg(void* mem);
+    void valArg(void* mem);
+
 private:
     Value** ref;
+    void** pas_ref;
     Type** refType;
     PointerValue(PointerValue &val);
     PointerValue(Pointer* pt);
@@ -256,6 +256,7 @@ public:
 
 private:
     int** objrefcount;
+    void** mem;
     std::map<int,Value*>** fields;
     std::map<int,Type*>** types;
     RecordValue(RecordValue &val);

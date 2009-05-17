@@ -40,6 +40,7 @@ public:
     const std::string descr;
 
     virtual bool instanceOf(Type* type);
+    virtual int sizeOf(std::map<int,Type*> &typemap);
 protected:
     static Type* nil;
     static Type* string;
@@ -61,6 +62,7 @@ public:
     const int name;
 
     bool instanceOf(Type* type);
+    int sizeOf(std::map<int,Type*> &typemap);
 protected:
     RefType(std::string descr, int name);
 };
@@ -69,11 +71,12 @@ class Array : public Type {
     friend class Type;
 public:
     const bool dynamic;
-    const Type* element;
+    Type* element;
     const int from;
     const int to;
 
     bool instanceOf(Type* type);
+    int sizeOf(std::map<int,Type*> &typemap);
 protected:
     Array(std::string descr, Type* element, int from, int to);
     Array(std::string descr, Type* element);
@@ -82,9 +85,10 @@ protected:
 class Pointer : public Type {
     friend class Type;
 public:
-    const Type* pointsTo;
+    Type* pointsTo;
 
     bool instanceOf(Type* type);
+    int sizeOf(std::map<int,Type*> &typemap);
 protected:
     Pointer(std::string descr, Type* pointsTo);
 };
@@ -95,7 +99,9 @@ public:
     std::list<Variable*> fields;
 
     bool instanceOf(Type* type);
+    int sizeOf(std::map<int,Type*> &typemap);
 protected:
+    int size;
     Record(std::string descr, std::list<Variable*> fields);
 };
 
