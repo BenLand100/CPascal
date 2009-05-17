@@ -1,6 +1,7 @@
 #include "Value.h"
 #include "Exceptions.h"
 
+#include <cstring>
 #include <iostream>
 //#define debug(x) std::cout << x << '\n'
 #define debug(x)
@@ -722,8 +723,8 @@ PointerValue::PointerValue(Pointer* pt, std::map<int,Type*> &typemap, void* mem)
     *refType = (Type*)pt->pointsTo;
     ref = new Value*;
     *ref = new Value();
-    pas_ref = mem;
-    (*ref)->refArg(pas_ref);
+    pas_ref = (void**) mem;
+    (*ref)->refArg(*pas_ref);
 }
 
 PointerValue::PointerValue(Pointer* pt, std::map<int,Type*> &typemap) : Value(TYPE_POINTER,pt) {
@@ -734,7 +735,7 @@ PointerValue::PointerValue(Pointer* pt, std::map<int,Type*> &typemap) : Value(TY
     ref = new Value*;
     *ref = new Value();
     pas_ref = new void*;
-    (*ref)->refArg(pas_ref);
+    (*ref)->refArg(*pas_ref);
 }
 
 
@@ -770,7 +771,7 @@ Value* PointerValue::clone() {
     PointerValue* pt = new PointerValue((Pointer*)typeObj);
     *(pt->refType) = *refType;
     *(pt->ref) = (*ref)->duplicate();
-    (*ref)->refArg(pt->pas_ref);
+    (*ref)->refArg(*pt->pas_ref);
 }
 
 void PointerValue::set(Value* val) throw(int) {
@@ -778,7 +779,7 @@ void PointerValue::set(Value* val) throw(int) {
     *refType = *((PointerValue*)val)->refType;
     delete *ref;
     *ref = (*((PointerValue*)val)->ref)->duplicate();
-    (*ref)->refArg(pas_ref);
+    (*ref)->refArg(*pas_ref);
 }
 
 Value* PointerValue::getRef() throw(int) {
@@ -789,7 +790,7 @@ Value* PointerValue::getRef() throw(int) {
 void PointerValue::setRef(Value* ref_impl) throw(int) {
     delete *ref;
     *ref = ref_impl->duplicate();
-    (*ref)->refArg(pas_ref);
+    (*ref)->refArg(*pas_ref);
 }
 
 int PointerValue::argSize() { return 4; }
