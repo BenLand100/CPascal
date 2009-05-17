@@ -110,12 +110,17 @@ Value* Frame::resolve(int symbol, Value** args, int numArgs) throw (int) {
             if (meth->address) {
                 int argsz = 0;
                 for (int i = 0; i < numArgs; i++)
-                    argsz += args[i]->argSize();
+                    argsz += meth->arguments[i]->byRef ? 4 : args[i]->argSize();
                 char* cargs = new char[argsz];
                 char* stack = cargs;
                 for (int i = 0; i < numArgs; i++) {
-                    args[i]->valArg((void*) stack);
-                    stack += args[i]->argSize();
+                    if (meth->arguments[i]->byRef) {
+                        args[i]->refArg((void*) stack);
+                        stack += 4;
+                    } else {
+                        args[i]->valArg((void*) stack);
+                        stack += args[i]->argSize();
+                    }
                 }
                 stack -= 4;
                 if (meth->type) {
@@ -153,7 +158,14 @@ Value* Frame::resolve(int symbol, Value** args, int numArgs) throw (int) {
                                     );
                         delete[] cargs;
                         Value* val = Value::fromType(meth->type, typemap);
-                        //val->read(eax);
+                        switch (meth->mtype) {
+                            case CONV_C_STDCALL:
+                                val->read_c(eax);
+                                break;
+                            case CONV_FPC_STDCALL:
+                                val->read_fpc(eax);
+                                break;
+                        }
                         return val;
                     }
                 } else {

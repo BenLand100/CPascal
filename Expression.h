@@ -24,8 +24,8 @@ typedef struct _Block {
 #include <vector>
 
 #include <iostream>
-#define debug(x) std::cout << x << '\n'
-//#define debug(x)
+//#define debug(x) std::cout << x << '\n'
+#define debug(x)
 
 class Expression {
 public:

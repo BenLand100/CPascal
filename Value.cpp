@@ -89,6 +89,8 @@ int Value::valSize() { return -1; }
 int Value::argSize() { return -1; }
 void Value::valArg(void* mem) { }
 void Value::refArg(void* mem) { }
+void Value::read_c(void* res) { }
+void Value::read_fpc(void* res) { }
 
 //**** BEGIN INTEGERVALUE DEFINITION ***
 
@@ -156,6 +158,8 @@ int IntegerValue::valSize() { return 4; }
 int IntegerValue::argSize() { return 4; }
 void IntegerValue::valArg(void* mem) { *(int*)mem = *integer; }
 void IntegerValue::refArg(void* mem) { *(int**)mem = integer; }
+void IntegerValue::read_c(void* res) { *integer = (int)res; }
+void IntegerValue::read_fpc(void* res) { *integer = (int)res; }
 
 //**** BEGIN STRINGVALUE DEFINITION ***
 
@@ -263,6 +267,8 @@ int StringValue::valSize() { return 4; }
 int StringValue::argSize() { return 4; }
 void StringValue::valArg(void* mem) { *(char**)mem = *str; }
 void StringValue::refArg(void* mem) { *(char***)mem = str; }
+void StringValue::read_c(void* res) { StringValue val((char*)res); set(&val); delete (char*) res; }
+void StringValue::read_fpc(void* res) { StringValue val((char*)res); set(&val); } //leaks like hell
 
 //**** BEGIN REALVALUE DEFINITION ***
 
@@ -404,6 +410,8 @@ int CharValue::valSize() { return 1; }
 int CharValue::argSize() { return 4; }
 void CharValue::valArg(void* mem) { *(char*)mem = *chr; }
 void CharValue::refArg(void* mem) { *(char**)mem = chr; }
+void CharValue::read_c(void* res) { *chr = (char)(unsigned int)res; }
+void CharValue::read_fpc(void* res) { *chr = (char)(unsigned int)res; }
 
 //**** BEGIN BOOLEANVALUE DEFINITION ***
 
@@ -459,6 +467,8 @@ int BooleanValue::valSize() { return 1; }
 int BooleanValue::argSize() { return 4; }
 void BooleanValue::valArg(void* mem) { *(char*)mem = *boolean; }
 void BooleanValue::refArg(void* mem) { *(char**)mem = boolean; }
+void BooleanValue::read_c(void* res) { *boolean = (bool)res; }
+void BooleanValue::read_fpc(void* res) { *boolean = (char)(unsigned int)res; }
 
 //**** BEGIN ARRAYVALUE DEFINITION ***
 

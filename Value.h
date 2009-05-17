@@ -50,6 +50,8 @@ public:
     virtual int argSize();
     virtual void refArg(void* mem);
     virtual void valArg(void* mem);
+    virtual void read_c(void* res);
+    virtual void read_fpc(void* res);
 
 protected:
     Value(int impl_type, Type* impl_typeObj);
@@ -77,6 +79,8 @@ public:
     int argSize();
     void refArg(void* mem);
     void valArg(void* mem);
+    void read_c(void* res);
+    void read_fpc(void* res);
 
 private:
     int* integer;
@@ -99,6 +103,8 @@ public:
     int argSize();
     void refArg(void* mem);
     void valArg(void* mem);
+    void read_c(void* res);
+    void read_fpc(void* res);
 
 private:
     char** mem;
@@ -151,6 +157,8 @@ public:
     int argSize();
     void refArg(void* mem);
     void valArg(void* mem);
+    void read_c(void* res);
+    void read_fpc(void* res);
 
 private:
     char* chr;
@@ -174,6 +182,8 @@ public:
     int argSize();
     void refArg(void* mem);
     void valArg(void* mem);
+    void read_c(void* res);
+    void read_fpc(void* res);
 
 private:
     char* boolean;
