@@ -18,6 +18,7 @@ class PointerValue;
 class Value : public Element {
 public:
     static Value* fromType(Type* type, std::map<int,Type*> &typemap);
+    static Value* fromTypeMem(Type* type, std::map<int,Type*> &typemap, void* mem);
 
     const Type* typeObj;
     const int   type;
@@ -39,15 +40,16 @@ public:
     virtual void resize(int size, std::map<int,Type*>& typemap) throw(int);
     virtual void setIndex(int index, Value* val) throw(int);
     virtual Value* getIndex(int index) throw(int);
-    virtual std::string asString() throw(int);
+    virtual char* asString() throw(int);
     virtual char asChar() throw(int);
     virtual double asReal() throw(int);
     virtual int asInteger() throw(int);
     virtual bool asBoolean() throw(int);
 
-    virtual int bytes();
-    virtual void store(void* mem);
-    virtual void read(void* mem);
+    virtual int valSize();
+    virtual int argSize();
+    virtual void refArg(void* mem);
+    virtual void valArg(void* mem);
 
 protected:
     Value(int impl_type, Type* impl_typeObj);
@@ -58,6 +60,7 @@ private:
 
 class IntegerValue : public Value {
 public:
+    IntegerValue(void* mem);
     IntegerValue(int i);
     ~IntegerValue();
     
@@ -70,9 +73,10 @@ public:
     double asReal() throw(int);
     int asInteger() throw(int);
 
-    int bytes();
-    void store(void* mem);
-    void read(void* mem);
+    int valSize();
+    int argSize();
+    void refArg(void* mem);
+    void valArg(void* mem);
 
 private:
     int* integer;
@@ -81,6 +85,7 @@ private:
 
 class StringValue : public Value {
 public:
+    StringValue(void* mem);
     StringValue(char* str);
     StringValue(std::string str);
     ~StringValue();
@@ -88,19 +93,24 @@ public:
     Value* duplicate();
     Value* clone();
     void set(Value* val) throw(int);
-    std::string asString() throw(int);
+    char* asString() throw(int);
 
-    int bytes();
-    void store(void* mem);
-    void read(void* mem);
+    int valSize();
+    int argSize();
+    void refArg(void* mem);
+    void valArg(void* mem);
 
 private:
-    std::string* str;
+    char** mem;
+    int** objref;
+    int** size;
+    char** str;
     StringValue(StringValue &val);
 };
 
 class RealValue : public Value {
 public:
+    RealValue(void* mem);
     RealValue(double real);
     ~RealValue();
 
@@ -112,9 +122,10 @@ public:
     void decr() throw(int);
     double asReal() throw(int);
 
-    int bytes();
-    void store(void* mem);
-    void read(void* mem);
+    int valSize();
+    int argSize();
+    void refArg(void* mem);
+    void valArg(void* mem);
 
 private:
     double* real;
@@ -123,6 +134,7 @@ private:
 
 class CharValue : public Value {
 public:
+    CharValue(void* mem);
     CharValue(char c);
     ~CharValue();
 
@@ -133,19 +145,22 @@ public:
     void decr() throw(int);
     char asChar() throw(int);
     int asInteger() throw(int);
-    std::string asString() throw(int);
+    char* asString() throw(int);
 
-    int bytes();
-    void store(void* mem);
-    void read(void* mem);
+    int valSize();
+    int argSize();
+    void refArg(void* mem);
+    void valArg(void* mem);
 
 private:
     char* chr;
+    char** str; //temp
     CharValue(CharValue &val);
 };
 
 class BooleanValue : public Value {
 public:
+    BooleanValue(void* mem);
     BooleanValue(bool b);
     ~BooleanValue();
 
@@ -155,12 +170,13 @@ public:
     bool asBoolean() throw(int);
     int asInteger() throw(int);
 
-    int bytes();
-    void store(void* mem);
-    void read(void* mem);
+    int valSize();
+    int argSize();
+    void refArg(void* mem);
+    void valArg(void* mem);
 
 private:
-    bool* boolean;
+    char* boolean;
     BooleanValue(BooleanValue &val);
 };
 
@@ -179,11 +195,15 @@ public:
 
 private:
     Type** elemType;
-    int** objrefcount;
-    Value*** array;
     bool* dynamic;
     int* start;
-    int* asize;
+
+    Value** temp;
+    char** mem;
+    int** objref;
+    int** asize;
+    Value*** array;
+    char** pas_array;
     ArrayValue(Array* arr);
     ArrayValue(ArrayValue &val);
 };

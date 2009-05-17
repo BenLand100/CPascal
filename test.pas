@@ -187,7 +187,7 @@ procedure doarraystuff;
 var
     ai: array of integer;
     static: array[1..5] of integer;
-    aii: array of array of integer;
+    //aii: array of array of integer;
 begin
     resize(ai,5);
     writeln('sized');
@@ -209,8 +209,8 @@ begin
     ai := array(1,2,3,4,5,6);
     writeln(inttostr(ai[3]));
     writeln(inttostr(size(ai)));
-    aii:= array(array(1,2,3,4),array(5,6,7,8),array(9,10,11,12));
-    writeln(inttostr(aii[1][3])); //should be a 8
+    //aii:= array(array(1,2,3,4),array(5,6,7,8),array(9,10,11,12));
+    //writeln(inttostr(aii[1][3])); //should be a 8
     writeln('arrays work!');
 end;
 
@@ -229,7 +229,7 @@ begin
     resize(a,10);
 end;
 
-type 
+{type 
     entry = record
         name: string;
         number: integer;
@@ -249,7 +249,7 @@ begin
     contacts[1].name:= 'Joe';
     contacts[1].number:= 53166;
     writeln(contacts[1].name + '=' + inttostr(contacts[1].number));
-end;
+end;}
     
 procedure testtry;
 var
@@ -360,7 +360,7 @@ begin
     writeln('For exec: ' + RealToStr(forlooptime));
     doarraystuff;
     testtypes;
-    phonebook;
+    //phonebook;
     testtry;
     testref;
     testpointer;

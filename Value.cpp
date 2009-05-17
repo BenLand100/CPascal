@@ -34,6 +34,35 @@ Value* Value::fromType(Type* type, std::map<int,Type*> &typemap) {
     }
 }
 
+Value* Value::fromTypeMem(Type* type, std::map<int,Type*> &typemap, void* mem) {
+    std::map<int,Type*>::iterator end = typemap.end();
+    debug("fromType " << type->type);
+    while (type->type == TYPE_REF && typemap.find(((RefType*)type)->name) != end)
+        type = typemap[((RefType*)type)->name];
+    if (type->type == TYPE_REF) return 0;
+    debug("fromType " << type->type);
+    switch (type->type) {
+        case TYPE_STRING:
+            return new StringValue(mem);
+        case TYPE_CHAR:
+            return new CharValue(mem);
+        case TYPE_INTEGER:
+            return new IntegerValue(mem);
+        case TYPE_REAL:
+            return new RealValue(mem);
+        case TYPE_BOOLEAN:
+            return new BooleanValue(mem);
+        case TYPE_RECORD:
+            //return new RecordValue((Record*)type, typemap, mem);
+        case TYPE_ARRAY:
+            //return new ArrayValue((Array*)type, typemap, mem);
+        case TYPE_POINTER:
+            //return new PointerValue((Pointer*)type, typemap, mem);
+        default:
+            return 0;
+    }
+}
+
 Value::Value() : Element(ELEM_VALUE), type(TYPE_NIL), typeObj(Type::getNil()) { }
 Value::Value(int impl_type, Type* impl_typeObj) : Element(ELEM_VALUE), type(impl_type), typeObj(impl_typeObj) { }
 Value::~Value() { }
@@ -51,20 +80,28 @@ int Value::size() throw(int) { throw E_NOT_ARRAY; }
 void Value::resize(int size, std::map<int,Type*>& typemap) throw(int) { throw E_NOT_ARRAY; }
 void Value::setIndex(int index, Value* val) throw(int) { throw E_NOT_ARRAY; }
 Value* Value::getIndex(int index) throw(int) { throw E_NOT_ARRAY; }
-std::string Value::asString() throw(int) { throw E_NOT_STRING; }
+char* Value::asString() throw(int) { throw E_NOT_STRING; }
 char Value::asChar() throw(int) { throw E_NOT_CHAR; }
 double Value::asReal() throw(int) { throw E_NOT_REAL; }
 int Value::asInteger() throw(int) { throw E_NOT_INTEGER; }
 bool Value::asBoolean() throw(int) { throw E_NOT_BOOLEAN; }
-int Value::bytes() { return 0; }
-void Value::store(void* mem) { }
-void Value::read(void* mem) { }
+int Value::valSize() { return -1; }
+int Value::argSize() { return -1; }
+void Value::valArg(void* mem) { }
+void Value::refArg(void* mem) { }
 
 //**** BEGIN INTEGERVALUE DEFINITION ***
 
+IntegerValue::IntegerValue(void* mem) : Value(TYPE_INTEGER,Type::getInteger()) {
+    refcount = new int;
+    *refcount = 2; //ensure never freed
+    integer = (int*) mem;
+    *integer = 0;
+}
+
 IntegerValue::IntegerValue(int i) : Value(TYPE_INTEGER,Type::getInteger()) {
     refcount = new int;
-    *refcount = 0;
+    *refcount = 1;
     integer = new int;
     *integer = i;
 }
@@ -76,9 +113,7 @@ IntegerValue::IntegerValue(IntegerValue& val) : Value(TYPE_INTEGER,Type::getInte
 }
 
 IntegerValue::~IntegerValue() {
-    if (*refcount) {
-        (*refcount)--;
-    } else {
+    if (!(--*refcount)) {
         delete refcount;
         delete integer;
     }
@@ -117,35 +152,85 @@ int IntegerValue::asInteger() throw(int) {
     return *integer;
 }
 
-int IntegerValue::bytes() { return 4; }
-void IntegerValue::store(void* mem) { *(int*)mem = *integer; }
-void IntegerValue::read(void* mem) { *integer = (int)mem; }
+int IntegerValue::valSize() { return 4; }
+int IntegerValue::argSize() { return 4; }
+void IntegerValue::valArg(void* mem) { *(int*)mem = *integer; }
+void IntegerValue::refArg(void* mem) { *(int**)mem = integer; }
 
 //**** BEGIN STRINGVALUE DEFINITION ***
 
-StringValue::StringValue(char* str_impl) : Value(TYPE_STRING,Type::getString()) {
+StringValue::StringValue(void* mem_impl) : Value(TYPE_STRING,Type::getString()) {
     refcount = new int;
-    *refcount = 0;
-    str = new std::string(str_impl);
+    *refcount = 2;
+
+    int len = 0;
+    mem = (char**) mem_impl;
+    *mem = new char[8+len+1];
+    objref = new int*;
+    *objref = (int*)mem;
+    **objref = 1;
+    size = new int*;
+    *size = (int*)(mem+4);
+    **size = len;
+    str = new char*;
+    *str = (char*)(mem+8);
+    **str = 0;
 }
 
-StringValue::StringValue(std::string str_impl) : Value(TYPE_STRING,Type::getString()) {
+StringValue::StringValue(char* str_impl) : Value(TYPE_STRING,Type::getString()) {
     refcount = new int;
-    *refcount = 0;
-    str = new std::string(str_impl);
+    *refcount = 1;
+
+    int len = strlen(str_impl);
+    mem = new char*;
+    *mem = new char[8+len+1];
+    objref = new int*;
+    *objref = (int*)(*mem);
+    **objref = 1;
+    size = new int*;
+    *size = (int*)(*mem+4);
+    **size = len;
+    str = new char*;
+    *str = (char*)(*mem+8);
+    strcpy(*str,str_impl);
+}
+
+StringValue::StringValue(std::string cpp_str) : Value(TYPE_STRING,Type::getString()) {
+    refcount = new int;
+    *refcount = 1;
+
+    int len = cpp_str.length();
+    mem = new char*;
+    *mem = new char[8+len+1];
+    objref = new int*;
+    *objref = (int*)(*mem);
+    **objref = 1;
+    size = new int*;
+    *size = (int*)(*mem+4);
+    **size = len;
+    str = new char*;
+    *str = (char*)(*mem+8);
+    strcpy(*str,cpp_str.c_str());
 }
 
 StringValue::StringValue(StringValue& val) : Value(TYPE_STRING,Type::getString()) {
     refcount = val.refcount;
     (*refcount)++;
+    objref = val.objref;
+    size = val.size;
     str = val.str;
+    mem = val.mem;
 }
 
 StringValue::~StringValue() {
-    if (*refcount) {
-        (*refcount)--;
-    } else {
+    if (!(--*refcount)) {
+        if (!(--**objref)) {
+            delete [] *mem;
+        }
+        delete objref;
+        delete mem;
         delete refcount;
+        delete size;
         delete str;
     }
 }
@@ -160,26 +245,37 @@ Value* StringValue::clone() {
 
 void StringValue::set(Value* val) throw(int) {
     if (val->type != TYPE_STRING) throw E_NOT_STRING;
+    if (!(--**objref)) {
+        delete [] *mem;
+    }
+    *objref = *((StringValue*)val)->objref;
+    (**objref)++;
+    *size = *((StringValue*)val)->size;
     *str = *((StringValue*)val)->str;
+    *mem = *((StringValue*)val)->mem;
 }
 
-std::string StringValue::asString() throw(int) {
+char* StringValue::asString() throw(int) {
     return *str;
 }
 
-int StringValue::bytes() { return 4; }
-void StringValue::store(void* mem) { *(unsigned int*)mem = (unsigned int)str->c_str(); }
-void StringValue::read(void* mem) {
-    delete str;
-    str = new std::string((char*)mem);
-    delete (char*)mem;
-}
+int StringValue::valSize() { return 4; }
+int StringValue::argSize() { return 4; }
+void StringValue::valArg(void* mem) { *(char**)mem = *str; }
+void StringValue::refArg(void* mem) { *(char***)mem = str; }
 
 //**** BEGIN REALVALUE DEFINITION ***
 
+RealValue::RealValue(void* mem) : Value(TYPE_REAL,Type::getReal()) {
+    refcount = new int;
+    *refcount = 2;
+    real = (double*) mem;
+    *real = 0.0;
+}
+
 RealValue::RealValue(double real_impl) : Value(TYPE_REAL,Type::getReal()) {
     refcount = new int;
-    *refcount = 0;
+    *refcount = 1;
     real = new double;
     *real = real_impl;
 }
@@ -191,9 +287,7 @@ RealValue::RealValue(RealValue& val) : Value(TYPE_REAL,Type::getReal()) {
 }
 
 RealValue::~RealValue() {
-    if (*refcount) {
-        (*refcount)--;
-    } else {
+    if (!(--*refcount)) {
         delete refcount;
         delete real;
     }
@@ -228,34 +322,46 @@ double RealValue::asReal() throw(int) {
     return *real;
 }
 
-int RealValue::bytes() { return 8; }
-void RealValue::store(void* mem) { *(double*)mem =  *real; }
-void RealValue::read(void* mem) {
-    *real = *(double*)mem;
-}
+int RealValue::valSize() { return 8; }
+int RealValue::argSize() { return 8; }
+void RealValue::valArg(void* mem) { *(double*)mem = *real; }
+void RealValue::refArg(void* mem) { *(double**)mem = real; }
 
 //**** BEGIN CHARVALUE DEFINITION ***
 
+CharValue::CharValue(void* mem) : Value(TYPE_CHAR,Type::getChar()) {
+    refcount = new int;
+    *refcount = 2;
+    chr = (char*)mem;
+    *chr = 0;
+    str = new char*;
+    *str = new char[2];
+    (*str)[1] = 0;
+}
+
 CharValue::CharValue(char chr_impl) : Value(TYPE_CHAR,Type::getChar()) {
     refcount = new int;
-    *refcount = 0;
-    chr = new char[2];
-    chr[0] = chr_impl;
-    chr[1] = 0;
+    *refcount = 1;
+    chr = new char;
+    *chr = chr_impl;
+    str = new char*;
+    *str = new char[2];
+    (*str)[1] = 0;
 }
 
 CharValue::CharValue(CharValue& val) : Value(TYPE_CHAR,Type::getChar()) {
     refcount = val.refcount;
     (*refcount)++;
     chr = val.chr;
+    str = val.str;
 }
 
 CharValue::~CharValue() {
-    if (*refcount) {
-        (*refcount)--;
-    } else {
+    if (!(--*refcount)) {
         delete refcount;
         delete chr;
+        delete *str;
+        delete str;
     }
 }
 
@@ -288,24 +394,31 @@ int CharValue::asInteger() throw(int) {
     return *chr;
 }
 
-std::string CharValue::asString() throw(int) {
-    std::string str(chr);
-    return str;
+char* CharValue::asString() throw(int) {
+    **str = *chr;
+    return *str;
 }
 
-int CharValue::bytes() { return 4; }
-void CharValue::store(void* mem) { *(unsigned int*)mem = (unsigned int) *chr; }
-void CharValue::read(void* mem) {
-    *chr = (char) *(unsigned int*)mem;
-}
+
+int CharValue::valSize() { return 1; }
+int CharValue::argSize() { return 4; }
+void CharValue::valArg(void* mem) { *(char*)mem = *chr; }
+void CharValue::refArg(void* mem) { *(char**)mem = chr; }
 
 //**** BEGIN BOOLEANVALUE DEFINITION ***
 
+BooleanValue::BooleanValue(void* mem) : Value(TYPE_BOOLEAN,Type::getBoolean()) {
+    refcount = new int;
+    *refcount = 2;
+    boolean = (char*)mem;
+    *boolean = false;
+}
+
 BooleanValue::BooleanValue(bool boolean_impl) : Value(TYPE_BOOLEAN,Type::getBoolean()) {
     refcount = new int;
-    *refcount = 0;
-    boolean = new bool;
-    *boolean = boolean_impl;
+    *refcount = 1;
+    boolean = new char;
+    *boolean = boolean_impl != false ? 1 : 0;
 }
 
 BooleanValue::BooleanValue(BooleanValue& val) : Value(TYPE_BOOLEAN,Type::getBoolean()) {
@@ -315,9 +428,7 @@ BooleanValue::BooleanValue(BooleanValue& val) : Value(TYPE_BOOLEAN,Type::getBool
 }
 
 BooleanValue::~BooleanValue() {
-    if (*refcount) {
-        (*refcount)--;
-    } else {
+    if (!(--*refcount)) {
         delete refcount;
         delete boolean;
     }
@@ -337,49 +448,68 @@ void BooleanValue::set(Value* val) throw(int) {
 }
 
 bool BooleanValue::asBoolean() throw(int) {
-    return *boolean;
+    return *boolean != 0;
 }
 
 int BooleanValue::asInteger() throw(int) {
     return *boolean;
 }
 
-int BooleanValue::bytes() { return 4; }
-void BooleanValue::store(void* mem) { *(unsigned int*)mem = (unsigned int) *boolean; }
-void BooleanValue::read(void* mem) {
-    *boolean = (bool) *(unsigned int*)mem;
-}
+int BooleanValue::valSize() { return 1; }
+int BooleanValue::argSize() { return 4; }
+void BooleanValue::valArg(void* mem) { *(char*)mem = *boolean; }
+void BooleanValue::refArg(void* mem) { *(char**)mem = boolean; }
 
 //**** BEGIN ARRAYVALUE DEFINITION ***
 
 ArrayValue::ArrayValue(Array* arr, std::map<int,Type*> &typemap) : Value(TYPE_ARRAY,arr) {
     refcount = new int;
-    *refcount = 0;
+    *refcount = 1;
     elemType = new Type*;
     *elemType = (Type*)arr->element;
     dynamic = new bool;
     *dynamic = arr->dynamic;
-    asize = new int;
-    *asize = arr->to - arr->from + 1; //to == -1 and from == 0 for dynamic just for this
     start = new int;
     *start = arr->from;
-    objrefcount = new int*;
-    *objrefcount = new int;
-    **objrefcount = 0;
+
+    temp = new Value*;
+    *temp = Value::fromType(*elemType,typemap);
+    int elemsz = (*temp)->valSize();
+    int numelems = arr->to - arr->from + 1; //to == -1 and from == 0 for dynamic just for this
+
+    mem = new char*;
+    *mem = new char[8+elemsz*numelems];
+    objref = new int*;
+    *objref = (int*)*mem;
+    **objref = 1;
+    asize = new int*;
+    *asize = (int*)(*mem+4);
+    **asize = numelems;
+
     array = new Value**;
-    *array = new Value*[*asize];
-    for (int i = 0; i < *asize; i++) {
-        (*array)[i] = Value::fromType(*elemType,typemap);
+    *array = new Value*[**asize];
+    pas_array = new char*;
+    *pas_array = (char*)(*mem+8);
+
+    for (int i = 0; i < numelems; i++) {
+        (*array)[i] = Value::fromTypeMem(*elemType,typemap,(void*)(*pas_array+elemsz*i));
     }
 }
 
 ArrayValue::ArrayValue(Array* arr) : Value(TYPE_ARRAY,arr) {
+    refcount = new int;
+    (*refcount)++;
     elemType = new Type*;
     dynamic = new bool;
-    asize = new int;
     start = new int;
-    objrefcount = new int*;
+
+    temp = new Value*;
+
+    mem = new char*;
+    objref = new int*;
+    asize = new int*;
     array = new Value**;
+    pas_array = new char*;
 }
 
 ArrayValue::ArrayValue(ArrayValue& val) : Value(TYPE_ARRAY,(Type*)val.typeObj) {
@@ -387,32 +517,35 @@ ArrayValue::ArrayValue(ArrayValue& val) : Value(TYPE_ARRAY,(Type*)val.typeObj) {
     (*refcount)++;
     elemType = val.elemType;
     dynamic = val.dynamic;
-    asize = val.asize;
     start = val.start;
-    objrefcount = val.objrefcount;
+    mem = val.mem;
+    objref = val.objref;
+    asize = val.asize;
     array = val.array;
+    pas_array = val.pas_array;
+    temp = val.temp;
 }
 
 ArrayValue::~ArrayValue() {
-    if (*refcount) {
-        (*refcount)--;
-    } else {
-        if (**objrefcount) {
-            (**objrefcount)--;
-        } else {
-            for (int i = 0; i < *asize; i++) {
+    if (!(--(*refcount))) {
+        if (!(--(**objref))) {
+            for (int i = 0; i < **asize; i++) {
                 delete (*array)[i];
             }
             delete *array;
-            delete *objrefcount;
+            delete *mem;
+            delete *temp;
         }
-        delete elemType;
         delete refcount;
+        delete elemType;
         delete dynamic;
         delete start;
+        delete mem;
+        delete objref;
         delete asize;
         delete array;
-        delete objrefcount;
+        delete pas_array;
+        delete temp;
     }
 }
 
@@ -421,75 +554,124 @@ Value* ArrayValue::duplicate() {
 }
 
 Value* ArrayValue::clone() {
-    ArrayValue* arr = new ArrayValue((Array*)typeObj);
-    *(arr->elemType) = *elemType;
-    *(arr->dynamic) = *dynamic;
-    *(arr->asize) = *asize;
-    *(arr->start) = *start;
-    *(arr->objrefcount) = *objrefcount;
-    (**objrefcount)++;
-    *(arr->array) = *array;
+    ArrayValue* clone = new ArrayValue((Array*)typeObj);
+    *clone->elemType = *elemType;
+    *clone->dynamic = *dynamic;
+    *clone->start = *start;
+
+    *clone->temp = (*temp)->duplicate();
+    int elemsz = (*temp)->valSize();
+    Array* arr = (Array*)typeObj;
+    int numelems = arr->to - arr->from + 1; //to == -1 and from == 0 for dynamic just for this
+
+    *clone->mem = new char[8+elemsz*numelems];
+    *clone->objref = (int*)*mem;
+    **clone->objref = 1;
+    *clone->asize = (int*)(*mem+4);
+    **clone->asize = numelems;
+
+    *clone->array = new Value*[**asize];
+    *clone->pas_array = (char*)(*mem+8);
+
+    std::map<int,Type*> typemap;
+    for (int i = 0; i < numelems; i++) {
+        (*clone->array)[i] = Value::fromTypeMem(*elemType,typemap,(void*)(*clone->pas_array+elemsz*i));
+        (*clone->array)[i]->set((*array)[i]);
+    }
 }
 
 void ArrayValue::set(Value* val) throw(int) {
     if (val->type != TYPE_ARRAY) throw E_NOT_ARRAY;
     ArrayValue* arr = (ArrayValue*)val;
-    if (**objrefcount) {
-        (**objrefcount)--;
-    } else {
-        for (int i = 0; i < *asize; i++) {
+    if (!(--(**objref))) {
+        for (int i = 0; i < **asize; i++) {
             delete (*array)[i];
         }
         delete *array;
-        delete *objrefcount;
+        delete *mem;
+        delete *temp;
     }
-    *objrefcount = *arr->objrefcount;
-    (**objrefcount)++;
-    *array = *arr->array;
     *elemType = *arr->elemType;
     *dynamic = *arr->dynamic;
-    *asize = *arr->asize;
     *start = *arr->start;
+
+    *temp = (*arr->temp)->duplicate();
+    int elemsz = (*temp)->valSize();
+    int numelems = **arr->asize; //to == -1 and from == 0 for dynamic just for this
+
+    *mem = new char[8+elemsz*numelems];
+    *objref = (int*)*mem;
+    **objref = 1;
+    *asize = (int*)(*mem+4);
+    **asize = numelems;
+
+    *array = new Value*[**asize];
+    *pas_array = (char*)(*mem+8);
+
+    std::map<int,Type*> typemap;
+    for (int i = 0; i < numelems; i++) {
+        (*array)[i] = Value::fromTypeMem(*elemType,typemap,(void*)(*pas_array+elemsz*i));
+        (*array)[i]->set((*arr->array)[i]);
+    }
 }
 
 int ArrayValue::size() throw(int) {
-    return *asize;
+    return **asize;
 }
 
-void ArrayValue::resize(int size, std::map<int,Type*>& typemap) throw(int) {
+void ArrayValue::resize(int len, std::map<int,Type*>& typemap) throw(int) {
     Value** oldarr = *array;
-    Value** newarr = new Value*[size];
-    if (size <= *asize) {
-        int cutoff = size;
+
+    int elemsz = (*temp)->valSize();
+
+    char* newmem = new char[8+elemsz*len];
+    int* newobjref = (int*)newmem;
+    *newobjref = **objref;
+    int* newsize = (int*)(newmem+4);
+    *newsize = len;
+
+    Value** newarr = new Value*[len];
+    char* newpas_array = (char*)(newmem+8);
+
+    if (len <= **asize) {
+        int cutoff = len;
         for (int i = 0; i < cutoff; i++) {
-            newarr[i] = oldarr[cutoff];
+            newarr[i] = Value::fromTypeMem(*elemType,typemap,(void*)(newpas_array+elemsz*i));
+            newarr[i]->set(oldarr[i]);
+            delete oldarr[i];
         }
-        for (int i = cutoff; i < *asize; i++) {
-            delete oldarr[cutoff];
+        for (int i = cutoff; i < **this->asize; i++) {
+            delete oldarr[i];
         }
     } else {
-        int cutoff = *asize;
+        int cutoff = **this->asize;
         for (int i = 0; i < cutoff; i++) {
-            newarr[i] = oldarr[cutoff];
+            newarr[i] = Value::fromTypeMem(*elemType,typemap,(void*)(newpas_array+elemsz*i));
+            newarr[i]->set(oldarr[i]);
+            delete oldarr[i];
         }
-        for (int i = cutoff; i < size; i++) {
-            newarr[i] = Value::fromType(*elemType,typemap);
+        for (int i = cutoff; i < len; i++) {
+            newarr[i] = Value::fromTypeMem(*elemType,typemap,(void*)(newpas_array+elemsz*i));
         }
     }
-    delete oldarr;
+    delete *array;
+    delete *mem;
     *array = newarr;
-    *asize = size;
+    *mem = newmem;
+    *objref = newobjref;
+    *asize = newsize;
+    *pas_array = newpas_array;
 }
 
 void ArrayValue::setIndex(int index, Value* val) throw(int) {
     index -= *start;
-    if (index >= *asize) throw E_INDEX_BOUNDS;
+    if (index >= **asize) throw E_INDEX_BOUNDS;
     (*array)[index]->set(val);
 }
 
 Value* ArrayValue::getIndex(int index) throw(int) {
     index -= *start;
-    if (index >= *asize) throw E_INDEX_BOUNDS;
+    if (index >= **asize) throw E_INDEX_BOUNDS;
     return (*array)[index];
 }
 

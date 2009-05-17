@@ -437,7 +437,7 @@ void Symbol::preform(std::stack<Value*>& stack, Frame* frame)  throw(int) {
     for (int i = 0; i < numArgs; i++) {
         vals[i] = args[i]->eval(frame);
     }
-    stack.push(frame->resolve(name,vals,numArgs)->duplicate());
+    stack.push(frame->resolve(name,vals,numArgs));
     for (int i = 0; i < numArgs; i++) {
         delete vals[i];
     }

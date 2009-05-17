@@ -52,6 +52,7 @@
       </toolsSet>
       <compileType>
         <linkerTool>
+          <output>dist/Debug/${PLATFORM}/cpascal</output>
           <linkerLibItems>
           </linkerLibItems>
         </linkerTool>
