@@ -55,6 +55,7 @@ public:
 protected:
     Value(int impl_type, Type* impl_typeObj);
     int* refcount;
+    bool* owns_mem;
 private:
     Value(Value &val);
 };
@@ -265,7 +266,6 @@ private:
     int** indexes;
     char** mem;
     std::map<int,Value*>* fields;
-    std::map<int,Type*>* types;
     RecordValue(RecordValue &val);
     RecordValue(Record* rec);
 };

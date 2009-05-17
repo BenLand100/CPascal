@@ -96,7 +96,9 @@ void Value::read_fpc(void* res) { }
 
 IntegerValue::IntegerValue(void* mem) : Value(TYPE_INTEGER,Type::getInteger()) {
     refcount = new int;
-    *refcount = 2; //ensure never freed
+    *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = false;
     integer = (int*) mem;
     *integer = 0;
 }
@@ -104,6 +106,8 @@ IntegerValue::IntegerValue(void* mem) : Value(TYPE_INTEGER,Type::getInteger()) {
 IntegerValue::IntegerValue(int i) : Value(TYPE_INTEGER,Type::getInteger()) {
     refcount = new int;
     *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = true;
     integer = new int;
     *integer = i;
 }
@@ -111,13 +115,15 @@ IntegerValue::IntegerValue(int i) : Value(TYPE_INTEGER,Type::getInteger()) {
 IntegerValue::IntegerValue(IntegerValue& val) : Value(TYPE_INTEGER,Type::getInteger()) {
     refcount = val.refcount;
     (*refcount)++;
+    owns_mem = val.owns_mem;
     integer = val.integer;
 }
 
 IntegerValue::~IntegerValue() {
     if (!(--*refcount)) {
         delete refcount;
-        delete integer;
+        if (*owns_mem) delete integer;
+        delete owns_mem;
     }
 }
 
@@ -164,7 +170,9 @@ void IntegerValue::read_fpc(void* res) { *integer = (int)res; }
 
 StringValue::StringValue(void* mem_impl) : Value(TYPE_STRING,Type::getString()) {
     refcount = new int;
-    *refcount = 2;
+    *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = false;
 
     int len = 0;
     mem = (char**) mem_impl;
@@ -183,6 +191,8 @@ StringValue::StringValue(void* mem_impl) : Value(TYPE_STRING,Type::getString()) 
 StringValue::StringValue(char* str_impl) : Value(TYPE_STRING,Type::getString()) {
     refcount = new int;
     *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = true;
 
     int len = strlen(str_impl);
     mem = new char*;
@@ -201,6 +211,8 @@ StringValue::StringValue(char* str_impl) : Value(TYPE_STRING,Type::getString()) 
 StringValue::StringValue(std::string cpp_str) : Value(TYPE_STRING,Type::getString()) {
     refcount = new int;
     *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = true;
 
     int len = cpp_str.length();
     mem = new char*;
@@ -219,6 +231,7 @@ StringValue::StringValue(std::string cpp_str) : Value(TYPE_STRING,Type::getStrin
 StringValue::StringValue(StringValue& val) : Value(TYPE_STRING,Type::getString()) {
     refcount = val.refcount;
     (*refcount)++;
+    owns_mem = val.owns_mem;
     objref = val.objref;
     size = val.size;
     str = val.str;
@@ -227,9 +240,8 @@ StringValue::StringValue(StringValue& val) : Value(TYPE_STRING,Type::getString()
 
 StringValue::~StringValue() {
     if (!(--*refcount)) {
-        if (!(--**objref)) {
-            delete [] *mem;
-        }
+        if (*owns_mem) delete [] *mem;
+        delete owns_mem;
         delete objref;
         delete mem;
         delete refcount;
@@ -248,14 +260,16 @@ Value* StringValue::clone() {
 
 void StringValue::set(Value* val) throw(int) {
     if (val->type != TYPE_STRING) throw E_NOT_STRING;
-    if (!(--**objref)) {
-        delete [] *mem;
-    }
-    *objref = *((StringValue*)val)->objref;
-    (**objref)++;
-    *size = *((StringValue*)val)->size;
-    *str = *((StringValue*)val)->str;
-    *mem = *((StringValue*)val)->mem;
+    if (*owns_mem) delete [] *mem;
+    StringValue* sval = (StringValue*)val;
+    int len = **sval->size;
+    *mem = new char[8+len+1];
+    *objref = (int*)(*mem);
+    **objref = 1;
+    *size = (int*)(*mem+4);
+    **size = len;
+    *str = (char*)(*mem+8);
+    strcpy(*str,*sval->str);
 }
 
 char* StringValue::asString() throw(int) {
@@ -272,7 +286,9 @@ void StringValue::read_fpc(void* res) { StringValue val((char*)res); set(&val); 
 
 RealValue::RealValue(void* mem) : Value(TYPE_REAL,Type::getReal()) {
     refcount = new int;
-    *refcount = 2;
+    *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = false;
     real = (double*) mem;
     *real = 0.0;
 }
@@ -280,6 +296,8 @@ RealValue::RealValue(void* mem) : Value(TYPE_REAL,Type::getReal()) {
 RealValue::RealValue(double real_impl) : Value(TYPE_REAL,Type::getReal()) {
     refcount = new int;
     *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = true;
     real = new double;
     *real = real_impl;
 }
@@ -287,13 +305,15 @@ RealValue::RealValue(double real_impl) : Value(TYPE_REAL,Type::getReal()) {
 RealValue::RealValue(RealValue& val) : Value(TYPE_REAL,Type::getReal()) {
     refcount = val.refcount;
     (*refcount)++;
+    owns_mem = val.owns_mem;
     real = val.real;
 }
 
 RealValue::~RealValue() {
     if (!(--*refcount)) {
         delete refcount;
-        delete real;
+        if (*owns_mem) delete real;
+        delete owns_mem;
     }
 }
 
@@ -334,7 +354,9 @@ void RealValue::refArg(void* mem) { *(double**)mem = real; }
 
 CharValue::CharValue(void* mem) : Value(TYPE_CHAR,Type::getChar()) {
     refcount = new int;
-    *refcount = 2;
+    *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = false;
     chr = (char*)mem;
     *chr = 0;
     str = new char*;
@@ -345,6 +367,8 @@ CharValue::CharValue(void* mem) : Value(TYPE_CHAR,Type::getChar()) {
 CharValue::CharValue(char chr_impl) : Value(TYPE_CHAR,Type::getChar()) {
     refcount = new int;
     *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = true;
     chr = new char;
     *chr = chr_impl;
     str = new char*;
@@ -355,6 +379,7 @@ CharValue::CharValue(char chr_impl) : Value(TYPE_CHAR,Type::getChar()) {
 CharValue::CharValue(CharValue& val) : Value(TYPE_CHAR,Type::getChar()) {
     refcount = val.refcount;
     (*refcount)++;
+    owns_mem = val.owns_mem;
     chr = val.chr;
     str = val.str;
 }
@@ -362,8 +387,9 @@ CharValue::CharValue(CharValue& val) : Value(TYPE_CHAR,Type::getChar()) {
 CharValue::~CharValue() {
     if (!(--*refcount)) {
         delete refcount;
-        delete chr;
-        delete *str;
+        if (*owns_mem) delete chr;
+        delete owns_mem;
+        delete [] *str;
         delete str;
     }
 }
@@ -413,7 +439,9 @@ void CharValue::read_fpc(void* res) { *chr = (char)(unsigned int)res; }
 
 BooleanValue::BooleanValue(void* mem) : Value(TYPE_BOOLEAN,Type::getBoolean()) {
     refcount = new int;
-    *refcount = 2;
+    *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = false;
     boolean = (char*)mem;
     *boolean = false;
 }
@@ -421,6 +449,8 @@ BooleanValue::BooleanValue(void* mem) : Value(TYPE_BOOLEAN,Type::getBoolean()) {
 BooleanValue::BooleanValue(bool boolean_impl) : Value(TYPE_BOOLEAN,Type::getBoolean()) {
     refcount = new int;
     *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = true;
     boolean = new char;
     *boolean = boolean_impl != false ? 1 : 0;
 }
@@ -428,13 +458,15 @@ BooleanValue::BooleanValue(bool boolean_impl) : Value(TYPE_BOOLEAN,Type::getBool
 BooleanValue::BooleanValue(BooleanValue& val) : Value(TYPE_BOOLEAN,Type::getBoolean()) {
     refcount = val.refcount;
     (*refcount)++;
+    owns_mem = val.owns_mem;
     boolean = val.boolean;
 }
 
 BooleanValue::~BooleanValue() {
     if (!(--*refcount)) {
         delete refcount;
-        delete boolean;
+        if (*owns_mem) delete boolean;
+        delete owns_mem;
     }
 }
 
@@ -469,7 +501,9 @@ void BooleanValue::read_fpc(void* res) { *boolean = (char)(unsigned int)res; }
 
 ArrayValue::ArrayValue(Array* arr, std::map<int,Type*> &typemap, void* mem_impl) : Value(TYPE_ARRAY,arr) {
     refcount = new int;
-    *refcount = 2;
+    *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = false;
     elemType = new Type*;
     *elemType = (Type*)arr->element;
     dynamic = new bool;
@@ -508,6 +542,8 @@ ArrayValue::ArrayValue(Array* arr, std::map<int,Type*> &typemap, void* mem_impl)
 ArrayValue::ArrayValue(Array* arr, std::map<int,Type*> &typemap) : Value(TYPE_ARRAY,arr) {
     refcount = new int;
     *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = true;
     elemType = new Type*;
     *elemType = (Type*)arr->element;
     dynamic = new bool;
@@ -541,6 +577,8 @@ ArrayValue::ArrayValue(Array* arr, std::map<int,Type*> &typemap) : Value(TYPE_AR
 ArrayValue::ArrayValue(Array* arr) : Value(TYPE_ARRAY,arr) {
     refcount = new int;
     *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = true;
     elemType = new Type*;
     dynamic = new bool;
     start = new int;
@@ -556,6 +594,7 @@ ArrayValue::ArrayValue(Array* arr) : Value(TYPE_ARRAY,arr) {
 ArrayValue::ArrayValue(ArrayValue& val) : Value(TYPE_ARRAY,(Type*)val.typeObj) {
     refcount = val.refcount;
     (*refcount)++;
+    owns_mem = val.owns_mem;
     elemType = val.elemType;
     dynamic = val.dynamic;
     start = val.start;
@@ -569,18 +608,22 @@ ArrayValue::ArrayValue(ArrayValue& val) : Value(TYPE_ARRAY,(Type*)val.typeObj) {
 
 ArrayValue::~ArrayValue() {
     if (!(--(*refcount))) {
-        if (!(--(**objref))) {
-            for (int i = 0; i < **asize; i++) {
-                delete (*array)[i];
-            }
-            delete *array;
-            delete *mem;
+        for (int i = 0; i < **asize; i++) {
+            delete (*array)[i];
         }
+        delete *array;
+        if (*dynamic) {
+            delete [] *mem;
+            if (*owns_mem) delete mem;
+        } else {
+            if (*owns_mem) delete [] *mem;
+            delete mem;
+        }
+        delete owns_mem;
         delete refcount;
         delete elemType;
         delete dynamic;
         delete start;
-        delete mem;
         delete objref;
         delete asize;
         delete array;
@@ -622,33 +665,41 @@ Value* ArrayValue::clone() {
 void ArrayValue::set(Value* val) throw(int) {
     if (val->type != TYPE_ARRAY) throw E_NOT_ARRAY;
     ArrayValue* arr = (ArrayValue*)val;
-    if (!(--(**objref))) {
+    int numelems = **arr->asize;
+    if (*dynamic) {
         for (int i = 0; i < **asize; i++) {
             delete (*array)[i];
         }
         delete *array;
-        delete *mem;
-    }
-    *elemType = *arr->elemType;
-    *dynamic = *arr->dynamic;
-    *start = *arr->start;
+        delete [] *mem;
 
-    *elemsz = *arr->elemsz;
-    int numelems = **arr->asize; //to == -1 and from == 0 for dynamic just for this
+        *elemType = *arr->elemType;
+        *dynamic = *arr->dynamic;
+        *start = *arr->start;
 
-    *mem = new char[8+(*elemsz)*numelems];
-    *objref = (int*)*mem;
-    **objref = 1;
-    *asize = (int*)(*mem+4);
-    **asize = numelems;
+        *elemsz = *arr->elemsz;
+        int numelems = **arr->asize;
 
-    *array = new Value*[**asize];
-    *pas_array = (char*)(*mem+8);
+        *mem = new char[8+(*elemsz)*numelems];
+        *objref = (int*)*mem;
+        **objref = 1;
+        *asize = (int*)(*mem+4);
+        **asize = numelems;
 
-    std::map<int,Type*> typemap;
-    for (int i = 0; i < numelems; i++) {
-        (*array)[i] = Value::fromTypeMem(*elemType,typemap,(void*)(*pas_array+(*elemsz)*i));
-        (*array)[i]->set((*arr->array)[i]);
+        *array = new Value*[**asize];
+        *pas_array = (char*)(*mem+8);
+
+        std::map<int,Type*> typemap;
+        for (int i = 0; i < numelems; i++) {
+            (*array)[i] = Value::fromTypeMem(*elemType,typemap,(void*)(*pas_array+(*elemsz)*i));
+            (*array)[i]->set((*arr->array)[i]);
+        }
+    } else {
+        if (**arr->asize != **asize) throw E_INDEX_BOUNDS;
+        int numelems = **arr->asize;
+        for (int i = 0; i < numelems; i++) {
+            (*array)[i]->set((*arr->array)[i]);
+        }
     }
 }
 
@@ -657,17 +708,15 @@ int ArrayValue::size() throw(int) {
 }
 
 void ArrayValue::resize(int len, std::map<int,Type*>& typemap) throw(int) {
+    if (!*dynamic) throw E_STATIC_ARRAY;
     Value** oldarr = *array;
-
     char* newmem = new char[8+(*elemsz)*len];
     int* newobjref = (int*)newmem;
     *newobjref = **objref;
     int* newsize = (int*)(newmem+4);
     *newsize = len;
-
     Value** newarr = new Value*[len];
     char* newpas_array = (char*)(newmem+8);
-
     if (len <= **asize) {
         int cutoff = len;
         for (int i = 0; i < cutoff; i++) {
@@ -718,7 +767,9 @@ void ArrayValue::refArg(void* mem) { *(char***)mem = pas_array; }
 
 PointerValue::PointerValue(Pointer* pt, std::map<int,Type*> &typemap, void* mem) {
     refcount = new int;
-    *refcount = 2;
+    *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = false;
     refType = new Type*;
     *refType = (Type*)pt->pointsTo;
     ref = new Value*;
@@ -730,6 +781,8 @@ PointerValue::PointerValue(Pointer* pt, std::map<int,Type*> &typemap, void* mem)
 PointerValue::PointerValue(Pointer* pt, std::map<int,Type*> &typemap) : Value(TYPE_POINTER,pt) {
     refcount = new int;
     *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = true;
     refType = new Type*;
     *refType = (Type*)pt->pointsTo;
     ref = new Value*;
@@ -742,6 +795,8 @@ PointerValue::PointerValue(Pointer* pt, std::map<int,Type*> &typemap) : Value(TY
 PointerValue::PointerValue(Pointer* pt) : Value(TYPE_POINTER,pt) {
     refcount = new int;
     *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = true;
     refType = new Type*;
     ref = new Value*;
     pas_ref = new void*;
@@ -750,6 +805,7 @@ PointerValue::PointerValue(Pointer* pt) : Value(TYPE_POINTER,pt) {
 PointerValue::PointerValue(PointerValue& val) : Value(TYPE_POINTER,(Type*)val.typeObj) {
     refcount = val.refcount;
     (*refcount)++;
+    owns_mem = val.owns_mem;
     refType = val.refType;
     ref = val.ref;
     pas_ref = val.pas_ref;
@@ -761,7 +817,7 @@ PointerValue::~PointerValue() {
         delete refType;
         delete *ref;
         delete ref;
-        delete pas_ref;
+        if (*owns_mem) delete pas_ref;
     }
 }
 
@@ -802,50 +858,48 @@ void PointerValue::refArg(void* mem) { *(void***)mem = pas_ref; }
 //**** BEGIN RECORDVALUE DEFINITION ***
 
 RecordValue::RecordValue(Record* rec, std::map<int,Type*> &typemap, void* mem_impl) : Value(TYPE_RECORD,rec) {
+    refcount = new int;
+    *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = false;
     memsize = new int;
     *memsize = rec->sizeOf(typemap);
     indexes = new int*;
     *indexes = new int[rec->fields.size()];
     mem = new char*;
     *mem = (char*)mem_impl;
-    refcount = new int;
-    *refcount = 2;
     fields = new std::map<int,Value*>;
-    types = new std::map<int,Type*>;
     std::list<Variable*>::iterator iter = rec->fields.begin();
     std::list<Variable*>::iterator end = rec->fields.end();
     int pos = 0;
-    for (int i = 0; iter != end; i++) {
+    for (int i = 0; iter != end; i++, iter++) {
         Type* ftype = (Type*)(*iter)->type;
-        (*types)[(*iter)->name] = ftype;
         (*fields)[(*iter)->name] = Value::fromTypeMem(ftype,typemap,*mem + pos);
         (*indexes)[i] = ftype->sizeOf(typemap);
         pos += (*indexes)[i];
-        iter++;
     }
 }
 
 RecordValue::RecordValue(Record* rec, std::map<int,Type*> &typemap) : Value(TYPE_RECORD,rec) {
+    refcount = new int;
+    *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = true;
     memsize = new int;
     *memsize = rec->sizeOf(typemap);
     indexes = new int*;
     *indexes = new int[rec->fields.size()];
     mem = new char*;
     *mem = new char[*memsize];
-    refcount = new int;
-    *refcount = 1;
     fields = new std::map<int,Value*>;
-    types = new std::map<int,Type*>;
     std::list<Variable*>::iterator iter = rec->fields.begin();
     std::list<Variable*>::iterator end = rec->fields.end();
     int pos = 0;
-    for (int i = 0; iter != end; i++) {
+    for (int i = 0; iter != end; i++, iter++) {
         Type* ftype = (Type*)(*iter)->type;
-        (*types)[(*iter)->name] = ftype;
         (*fields)[(*iter)->name] = Value::fromTypeMem(ftype,typemap,*mem + pos);
         (*indexes)[i] = ftype->sizeOf(typemap);
-        pos += 4;//(*indexes)[i];
-        iter++;
+        pos += (*indexes)[i];
     }
 }
 
@@ -853,38 +907,39 @@ RecordValue::RecordValue(Record* rec, std::map<int,Type*> &typemap) : Value(TYPE
 RecordValue::RecordValue(Record* rec) : Value(TYPE_RECORD,rec) {
     refcount = new int;
     *refcount = 1;
+    owns_mem = new bool;
+    *owns_mem = true;
     memsize = new int;
     indexes = new int*;
     fields = new std::map<int,Value*>;
-    types = new std::map<int,Type*>;
     mem = new char*;
 }
 
 RecordValue::RecordValue(RecordValue& val) : Value(TYPE_RECORD,(Type*)val.typeObj) {
     refcount = val.refcount;
     (*refcount)++;
+    owns_mem = val.owns_mem;
     memsize = val.memsize;
     indexes = val.indexes;
     fields = val.fields;
-    types = val.types;
     mem = val.mem;
 }
 
 RecordValue::~RecordValue() {
-    if (!(--*refcount)) {
+    if (!(--(*refcount))) {
         std::map<int,Value*>::iterator iter = fields->begin();
         std::map<int,Value*>::iterator end = fields->end();
+        //FIXME - serious leak, some error somewhere
         while (iter != end) {
-            delete iter->second;
+            //delete iter->second;
             iter++;
         }
-        //FIXME this needs to be freed
-        //delete *mem;
+        //if (*owns_mem) delete *mem;
         delete *indexes;
 
+        delete owns_mem;
         delete indexes;
         delete memsize;
-        delete types;
         delete fields;
         delete refcount;
         delete mem;
@@ -901,23 +956,18 @@ Value* RecordValue::clone() {
     *rec->memsize = *memsize;
     *rec->indexes = new int[((Record*)typeObj)->fields.size()];
     *rec->mem = new char[*memsize];
-    rec->fields = new std::map<int,Value*>;
-    rec->types = new std::map<int,Type*>;
     std::list<Variable*>::iterator iter = ((Record*)typeObj)->fields.begin();
     std::list<Variable*>::iterator end = ((Record*)typeObj)->fields.end();
     int pos = 0;
     std::map<int,Type*> typemap;
-    for (int i = 0; iter != end; i++) {
+    for (int i = 0; iter != end; i++, iter++) {
         Type* ftype = (*iter)->type;
-        (*rec->types)[(*iter)->name] = ftype;
         (*rec->fields)[(*iter)->name] = Value::fromTypeMem(ftype,typemap,*mem + pos);
         (*rec->indexes)[i] = (*indexes)[i];
         pos += (*indexes)[i];
-        iter++;
     }
 }
 
-//FIXME should check type
 void RecordValue::set(Value* val) throw(int) {
     if (val->type != TYPE_RECORD) throw E_NOT_RECORD;
     RecordValue* rec = (RecordValue*)val;

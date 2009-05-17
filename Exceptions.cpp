@@ -50,6 +50,8 @@ const char* InterpEx::what() const throw() {
             return "No such field";
         case E_UNRESOLVABLE:
             return "Symbol undefined";
+        case E_STATIC_ARRAY:
+            return "Array is not dynamic";
     }
 }
 

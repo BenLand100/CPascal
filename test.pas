@@ -98,13 +98,13 @@ function forlooptime: real;
 var
     i, t: integer;
 begin
-    {writeln(inttostr(time));
-    wait(1000);
-    writeln(inttostr(time));
-    t:= time;
-    for i:= 1 to 10000 do 
-        i:= i;
-    result:= (time - t) / 10000;}
+    //writeln(inttostr(time));
+    //wait(1000);
+    //writeln(inttostr(time));
+    //t:= time;
+    //for i:= 1 to 10000 do 
+    //    i:= i;
+    //result:= (time - t) / 10000;
 end;
 
 function testrepeatuntil;
