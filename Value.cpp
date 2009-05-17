@@ -55,7 +55,7 @@ Value* Value::fromTypeMem(Type* type, std::map<int,Type*> &typemap, void* mem) {
         case TYPE_RECORD:
             //return new RecordValue((Record*)type, typemap, mem);
         case TYPE_ARRAY:
-            //return new ArrayValue((Array*)type, typemap, mem);
+            return new ArrayValue((Array*)type, typemap, mem);
         case TYPE_POINTER:
             //return new PointerValue((Pointer*)type, typemap, mem);
         default:
@@ -472,6 +472,45 @@ void BooleanValue::read_fpc(void* res) { *boolean = (char)(unsigned int)res; }
 
 //**** BEGIN ARRAYVALUE DEFINITION ***
 
+ArrayValue::ArrayValue(Array* arr, std::map<int,Type*> &typemap, void* mem_impl) : Value(TYPE_ARRAY,arr) {
+    refcount = new int;
+    *refcount = 2;
+    elemType = new Type*;
+    *elemType = (Type*)arr->element;
+    dynamic = new bool;
+    *dynamic = arr->dynamic;
+    start = new int;
+    *start = arr->from;
+
+    temp = new Value*;
+    *temp = Value::fromType(*elemType,typemap);
+    int elemsz = (*temp)->valSize();
+    int numelems = arr->to - arr->from + 1; //to == -1 and from == 0 for dynamic just for this
+
+    if (arr->dynamic) {
+        mem = (char**) mem_impl;
+        *mem = new char[8+elemsz*numelems];
+    } else {
+        mem = new char*;
+        *mem = (char*)mem_impl;
+    }
+    objref = new int*;
+    *objref = (int*)*mem;
+    **objref = 1;
+    asize = new int*;
+    *asize = (int*)(*mem+4);
+    **asize = numelems;
+
+    array = new Value**;
+    *array = new Value*[**asize];
+    pas_array = new char*;
+    *pas_array = (char*)(*mem+8);
+
+    for (int i = 0; i < numelems; i++) {
+        (*array)[i] = Value::fromTypeMem(*elemType,typemap,(void*)(*pas_array+elemsz*i));
+    }
+}
+
 ArrayValue::ArrayValue(Array* arr, std::map<int,Type*> &typemap) : Value(TYPE_ARRAY,arr) {
     refcount = new int;
     *refcount = 1;
@@ -684,6 +723,17 @@ Value* ArrayValue::getIndex(int index) throw(int) {
     if (index >= **asize) throw E_INDEX_BOUNDS;
     return (*array)[index];
 }
+
+int ArrayValue::valSize() {
+    if (*dynamic) {
+        return 4;
+    } else { 
+        return 8 + (*temp)->valSize() * (**asize);
+    }
+}
+int ArrayValue::argSize() { return 4; }
+void ArrayValue::valArg(void* mem) { *(char**)mem = *pas_array; }
+void ArrayValue::refArg(void* mem) { *(char***)mem = pas_array; }
 
 //**** BEGIN POINTERVALUE DEFINITION ***
 

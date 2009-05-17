@@ -192,6 +192,7 @@ private:
 
 class ArrayValue : public Value {
 public:
+    ArrayValue(Array* arr, std::map<int,Type*> &typemap, void* mem);
     ArrayValue(Array* arr, std::map<int,Type*> &typemap);
     ~ArrayValue();
 
@@ -202,6 +203,11 @@ public:
     void resize(int size, std::map<int,Type*>& typemap) throw(int);
     Value* getIndex(int index) throw(int);
     void setIndex(int index, Value* val) throw(int);
+
+    int valSize();
+    int argSize();
+    void refArg(void* mem);
+    void valArg(void* mem);
 
 private:
     Type** elemType;
