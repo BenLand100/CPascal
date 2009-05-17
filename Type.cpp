@@ -118,15 +118,15 @@ bool Type::instanceOf(Type* type) {
 
 int Type::sizeOf(std::map<int,Type*> &typemap) {
     switch (type) {
-        case RES_NIL:
+        case TYPE_NIL:
             return 0;
-        case RES_STRING:
-        case RES_INTEGER:
+        case TYPE_STRING:
+        case TYPE_INTEGER:
             return 4;
-        case RES_REAL:
+        case TYPE_REAL:
             return 8;
-        case RES_BOOLEAN:
-        case RES_CHAR:
+        case TYPE_BOOLEAN:
+        case TYPE_CHAR:
             return 1;
     }
 }
@@ -164,9 +164,10 @@ int Record::sizeOf(std::map<int,Type*>& typemap) {
     std::list<Variable*>::iterator iter = fields.begin();
     std::list<Variable*>::iterator end = fields.end();
     while (iter != end) {
-        size+= (*iter)->type->sizeOf(typemap);
+        size += (*iter)->type->sizeOf(typemap);
         iter++;
     }
+    return size;
 }
 
 RefType::RefType(std::string descr, int name_impl) : Type(descr,TYPE_REF), name(name_impl) { }

@@ -54,7 +54,7 @@ Value* Value::fromTypeMem(Type* type, std::map<int,Type*> &typemap, void* mem) {
         case TYPE_BOOLEAN:
             return new BooleanValue(mem);
         case TYPE_RECORD:
-            //return new RecordValue((Record*)type, typemap, mem);
+            return new RecordValue((Record*)type, typemap, mem);
         case TYPE_ARRAY:
             return new ArrayValue((Array*)type, typemap, mem);
         case TYPE_POINTER:
@@ -540,7 +540,7 @@ ArrayValue::ArrayValue(Array* arr, std::map<int,Type*> &typemap) : Value(TYPE_AR
 
 ArrayValue::ArrayValue(Array* arr) : Value(TYPE_ARRAY,arr) {
     refcount = new int;
-    (*refcount)++;
+    *refcount = 1;
     elemType = new Type*;
     dynamic = new bool;
     start = new int;
@@ -740,6 +740,8 @@ PointerValue::PointerValue(Pointer* pt, std::map<int,Type*> &typemap) : Value(TY
 
 
 PointerValue::PointerValue(Pointer* pt) : Value(TYPE_POINTER,pt) {
+    refcount = new int;
+    *refcount = 1;
     refType = new Type*;
     ref = new Value*;
     pas_ref = new void*;
@@ -799,62 +801,93 @@ void PointerValue::refArg(void* mem) { *(void***)mem = pas_ref; }
 
 //**** BEGIN RECORDVALUE DEFINITION ***
 
-RecordValue::RecordValue(Record* rec, std::map<int,Type*> &typemap) : Value(TYPE_RECORD,rec) {
+RecordValue::RecordValue(Record* rec, std::map<int,Type*> &typemap, void* mem_impl) : Value(TYPE_RECORD,rec) {
+    memsize = new int;
+    *memsize = rec->sizeOf(typemap);
+    indexes = new int*;
+    *indexes = new int[rec->fields.size()];
+    mem = new char*;
+    *mem = (char*)mem_impl;
     refcount = new int;
-    *refcount = 0;
-    fields = new std::map<int,Value*>*;
-    *fields = new std::map<int,Value*>;
-    types = new std::map<int,Type*>*;
-    *types = new std::map<int,Type*>;
+    *refcount = 2;
+    fields = new std::map<int,Value*>;
+    types = new std::map<int,Type*>;
     std::list<Variable*>::iterator iter = rec->fields.begin();
     std::list<Variable*>::iterator end = rec->fields.end();
-    while (iter != end) {
+    int pos = 0;
+    for (int i = 0; iter != end; i++) {
         Type* ftype = (Type*)(*iter)->type;
-        (*types)->insert(std::pair<int,Type*>((*iter)->name,ftype));
-        (*fields)->insert(std::pair<int,Value*>((*iter)->name, Value::fromType(ftype,typemap)));
+        (*types)[(*iter)->name] = ftype;
+        (*fields)[(*iter)->name] = Value::fromTypeMem(ftype,typemap,*mem + pos);
+        (*indexes)[i] = ftype->sizeOf(typemap);
+        pos += (*indexes)[i];
         iter++;
     }
-    objrefcount = new int*;
-    *objrefcount = new int;
-    **objrefcount = 0;
+}
+
+RecordValue::RecordValue(Record* rec, std::map<int,Type*> &typemap) : Value(TYPE_RECORD,rec) {
+    memsize = new int;
+    *memsize = rec->sizeOf(typemap);
+    indexes = new int*;
+    *indexes = new int[rec->fields.size()];
+    mem = new char*;
+    *mem = new char[*memsize];
+    refcount = new int;
+    *refcount = 1;
+    fields = new std::map<int,Value*>;
+    types = new std::map<int,Type*>;
+    std::list<Variable*>::iterator iter = rec->fields.begin();
+    std::list<Variable*>::iterator end = rec->fields.end();
+    int pos = 0;
+    for (int i = 0; iter != end; i++) {
+        Type* ftype = (Type*)(*iter)->type;
+        (*types)[(*iter)->name] = ftype;
+        (*fields)[(*iter)->name] = Value::fromTypeMem(ftype,typemap,*mem + pos);
+        (*indexes)[i] = ftype->sizeOf(typemap);
+        pos += 4;//(*indexes)[i];
+        iter++;
+    }
 }
 
 
 RecordValue::RecordValue(Record* rec) : Value(TYPE_RECORD,rec) {
-    fields = new std::map<int,Value*>*;
-    types = new std::map<int,Type*>*;
-    objrefcount = new int*;
+    refcount = new int;
+    *refcount = 1;
+    memsize = new int;
+    indexes = new int*;
+    fields = new std::map<int,Value*>;
+    types = new std::map<int,Type*>;
+    mem = new char*;
 }
 
 RecordValue::RecordValue(RecordValue& val) : Value(TYPE_RECORD,(Type*)val.typeObj) {
     refcount = val.refcount;
     (*refcount)++;
-    objrefcount = val.objrefcount;
+    memsize = val.memsize;
+    indexes = val.indexes;
     fields = val.fields;
     types = val.types;
+    mem = val.mem;
 }
 
 RecordValue::~RecordValue() {
-    if (*refcount) {
-        (*refcount)--;
-    } else {
-        if (**objrefcount) {
-            (**objrefcount)--;
-        } else {
-            delete *types;
-            std::map<int,Value*>::iterator iter = (*fields)->begin();
-            std::map<int,Value*>::iterator end = (*fields)->end();
-            while (iter != end) {
-                delete iter->second;
-                iter++;
-            }
-            delete *fields;
-            delete *objrefcount;
+    if (!(--*refcount)) {
+        std::map<int,Value*>::iterator iter = fields->begin();
+        std::map<int,Value*>::iterator end = fields->end();
+        while (iter != end) {
+            delete iter->second;
+            iter++;
         }
+        //FIXME this needs to be freed
+        //delete *mem;
+        delete *indexes;
+
+        delete indexes;
+        delete memsize;
         delete types;
         delete fields;
         delete refcount;
-        delete objrefcount;
+        delete mem;
     }
 }
 
@@ -864,35 +897,49 @@ Value* RecordValue::duplicate() {
 
 Value* RecordValue::clone() {
     RecordValue* rec = new RecordValue((Record*)typeObj);
-    *(rec->objrefcount) = *objrefcount;
-    (**objrefcount)++;
-    *(rec->types) = *types;
-    *(rec->fields) = *fields;
+    
+    *rec->memsize = *memsize;
+    *rec->indexes = new int[((Record*)typeObj)->fields.size()];
+    *rec->mem = new char[*memsize];
+    rec->fields = new std::map<int,Value*>;
+    rec->types = new std::map<int,Type*>;
+    std::list<Variable*>::iterator iter = ((Record*)typeObj)->fields.begin();
+    std::list<Variable*>::iterator end = ((Record*)typeObj)->fields.end();
+    int pos = 0;
+    std::map<int,Type*> typemap;
+    for (int i = 0; iter != end; i++) {
+        Type* ftype = (*iter)->type;
+        (*rec->types)[(*iter)->name] = ftype;
+        (*rec->fields)[(*iter)->name] = Value::fromTypeMem(ftype,typemap,*mem + pos);
+        (*rec->indexes)[i] = (*indexes)[i];
+        pos += (*indexes)[i];
+        iter++;
+    }
 }
 
 //FIXME should check type
 void RecordValue::set(Value* val) throw(int) {
     if (val->type != TYPE_RECORD) throw E_NOT_RECORD;
     RecordValue* rec = (RecordValue*)val;
-    if (**objrefcount) {
-        (**objrefcount)--;
-    } else {
-        delete *types;
-        delete *fields;
-        delete *objrefcount;
+    std::map<int,Value*>::iterator iter = rec->fields->begin();
+    std::map<int,Value*>::iterator end = rec->fields->end();
+    while (iter != end) {
+        (*fields)[iter->first]->set(iter->second);
+        iter++;
     }
-    *objrefcount = *rec->objrefcount;
-    (**objrefcount)++;
-    *fields = *rec->fields;
-    *types = *rec->types;
 }
 
 Value* RecordValue::getField(int name) throw(int) {
-    if ((*fields)->find(name) == (*fields)->end()) throw E_NO_FIELD;
-    return (**fields)[name];
+    if (fields->find(name) == fields->end()) throw E_NO_FIELD;
+    return (*fields)[name];
 }
 
 void RecordValue::setField(int name, Value* value) throw(int) {
-    if ((*fields)->find(name) == (*fields)->end()) throw E_NO_FIELD;
-    (**fields)[name]->set(value);
+    if (fields->find(name) == fields->end()) throw E_NO_FIELD;
+    (*fields)[name]->set(value);
 }
+
+int RecordValue::argSize() { return *memsize; }
+void RecordValue::valArg(void* mem_impl) { *(char**)mem_impl = *mem; }
+void RecordValue::refArg(void* mem_impl) { *(char***)mem_impl = mem; }
+

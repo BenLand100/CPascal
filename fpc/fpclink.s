@@ -318,23 +318,72 @@ P$FPCLINK_TEST_ANSI_STRING$$ANSISTRING:
 
 .section .text
 	.balign 16,0x90
+.globl	P$FPCLINK_GETANDPASS$REC$$REC
+	.type	P$FPCLINK_GETANDPASS$REC$$REC,@function
+P$FPCLINK_GETANDPASS$REC$$REC:
+.Lc26:
+# Temps allocated between ebp-544 and ebp-268
+# [116] begin
+	pushl	%ebp
+.Lc28:
+.Lc29:
+	movl	%esp,%ebp
+.Lc30:
+	subl	$544,%esp
+	movl	%esi,-544(%ebp)
+	movl	%edi,-540(%ebp)
+# Var r located at ebp+12
+# Var $result located at ebp+8
+# Var i located at ebp-268
+	movl	12(%ebp),%esi
+	leal	-536(%ebp),%edi
+	cld
+	movl	$67,%ecx
+	rep
+	movsl
+# [117] i:= r;
+	leal	-268(%ebp),%edi
+	leal	-536(%ebp),%esi
+	cld
+	movl	$67,%ecx
+	rep
+	movsl
+# [118] getandpass:= i;
+	movl	8(%ebp),%edi
+	leal	-268(%ebp),%esi
+	cld
+	movl	$67,%ecx
+	rep
+	movsl
+# [119] end;
+	movl	-544(%ebp),%esi
+	movl	-540(%ebp),%edi
+	leave
+	ret	$8
+.Lc27:
+.Le5:
+	.size	P$FPCLINK_GETANDPASS$REC$$REC, .Le5 - P$FPCLINK_GETANDPASS$REC$$REC
+
+.section .text
+	.balign 16,0x90
 .globl	PASCALMAIN
 	.type	PASCALMAIN,@function
 PASCALMAIN:
 .globl	main
 	.type	main,@function
 main:
-.Lc26:
-# Temps allocated between ebp-80 and ebp+0
-# [107] begin
+.Lc31:
+# Temps allocated between ebp-360 and ebp+0
+# [126] begin
 	pushl	%ebp
-.Lc28:
-.Lc29:
+.Lc33:
+.Lc34:
 	movl	%esp,%ebp
-.Lc30:
-	subl	$80,%esp
-	movl	%ebx,-80(%ebp)
-	movl	%esi,-76(%ebp)
+.Lc35:
+	subl	$360,%esp
+	movl	%ebx,-360(%ebp)
+	movl	%esi,-356(%ebp)
+	movl	%edi,-352(%ebp)
 	call	FPC_INITIALIZEUNITS
 	movl	$0,-72(%ebp)
 	movl	$0,-68(%ebp)
@@ -345,8 +394,8 @@ main:
 	call	FPC_SETJMP
 	pushl	%eax
 	testl	%eax,%eax
-	jne	.Lj142
-# [108] global_static_arr:= test_static_array;
+	jne	.Lj148
+# [127] global_static_arr:= test_static_array;
 	leal	-64(%ebp),%eax
 	call	P$FPCLINK_TEST_STATIC_ARRAY$$TINTARRAY
 	movl	-64(%ebp),%eax
@@ -355,7 +404,7 @@ main:
 	movl	%eax,U_P$FPCLINK_GLOBAL_STATIC_ARR+4
 	movw	-56(%ebp),%ax
 	movw	%ax,U_P$FPCLINK_GLOBAL_STATIC_ARR+8
-# [109] global_dyn_array:= test_dynamic_array;
+# [128] global_dyn_array:= test_dynamic_array;
 	movl	$INIT_P$FPCLINK_TDYNINTARRAY,%ebx
 	movl	$U_P$FPCLINK_GLOBAL_DYN_ARRAY,%esi
 	movl	$INIT_P$FPCLINK_TDYNINTARRAY,%edx
@@ -367,7 +416,7 @@ main:
 	movl	%ebx,%ecx
 	movl	%esi,%edx
 	call	fpc_copy
-# [110] global_ansi_string:= test_ansi_string;
+# [129] global_ansi_string:= test_ansi_string;
 	leal	-72(%ebp),%eax
 	call	FPC_ANSISTR_DECR_REF
 	movl	$0,-72(%ebp)
@@ -379,9 +428,36 @@ main:
 	call	FPC_ANSISTR_DECR_REF
 	movl	-72(%ebp),%eax
 	movl	%eax,U_P$FPCLINK_GLOBAL_ANSI_STRING
-.Lj142:
+# [130] r.i:= 1;
+	movw	$1,U_P$FPCLINK_R
+# [131] r.r:= 3.14;
+	movl	_$FPCLINK$_Ld1,%eax
+	movl	%eax,U_P$FPCLINK_R+2
+	movl	_$FPCLINK$_Ld1+4,%eax
+	movl	%eax,U_P$FPCLINK_R+6
+# [132] r.b:= false;
+	movb	$0,U_P$FPCLINK_R+10
+# [133] r.c:= #10;
+	movb	$10,U_P$FPCLINK_R+11
+# [134] r.s:= 'hi, freak';
+	movl	$U_P$FPCLINK_R+12,%ecx
+	movl	$_$FPCLINK$_Ld2,%edx
+	movl	$255,%eax
+	call	fpc_shortstr_to_shortstr
+# [135] r:= getandpass(r);
+	pushl	$U_P$FPCLINK_R
+	leal	-344(%ebp),%eax
+	pushl	%eax
+	call	P$FPCLINK_GETANDPASS$REC$$REC
+	movl	$U_P$FPCLINK_R,%edi
+	leal	-344(%ebp),%esi
+	cld
+	movl	$67,%ecx
+	rep
+	movsl
+.Lj148:
 	call	FPC_POPADDRSTACK
-# [111] end.
+# [136] end.
 	leal	-72(%ebp),%eax
 	call	FPC_ANSISTR_DECR_REF
 	movl	$0,-72(%ebp)
@@ -390,17 +466,18 @@ main:
 	call	FPC_FINALIZE
 	popl	%eax
 	testl	%eax,%eax
-	je	.Lj143
+	je	.Lj149
 	call	FPC_RERAISE
-.Lj143:
+.Lj149:
 	call	FPC_DO_EXIT
-	movl	-80(%ebp),%ebx
-	movl	-76(%ebp),%esi
+	movl	-360(%ebp),%ebx
+	movl	-356(%ebp),%esi
+	movl	-352(%ebp),%edi
 	leave
 	ret
-.Lc27:
-.Le5:
-	.size	main, .Le5 - main
+.Lc32:
+.Le6:
+	.size	main, .Le6 - main
 
 .section .text
 	.balign 16,0x90
@@ -410,20 +487,20 @@ INIT$_P$FPCLINK:
 .globl	P$FPCLINK_init_implicit
 	.type	P$FPCLINK_init_implicit,@function
 P$FPCLINK_init_implicit:
-.Lc31:
+.Lc36:
 # Temps allocated between ebp+0 and ebp+0
 	pushl	%ebp
-.Lc33:
-.Lc34:
+.Lc38:
+.Lc39:
 	movl	%esp,%ebp
-.Lc35:
+.Lc40:
 	movl	$0,U_P$FPCLINK_GLOBAL_DYN_ARRAY
 	movl	$0,U_P$FPCLINK_GLOBAL_ANSI_STRING
 	leave
 	ret
-.Lc32:
-.Le6:
-	.size	P$FPCLINK_init_implicit, .Le6 - P$FPCLINK_init_implicit
+.Lc37:
+.Le7:
+	.size	P$FPCLINK_init_implicit, .Le7 - P$FPCLINK_init_implicit
 
 .section .text
 	.balign 16,0x90
@@ -433,13 +510,13 @@ FINALIZE$_P$FPCLINK:
 .globl	P$FPCLINK_finalize_implicit
 	.type	P$FPCLINK_finalize_implicit,@function
 P$FPCLINK_finalize_implicit:
-.Lc36:
+.Lc41:
 # Temps allocated between ebp+0 and ebp+0
 	pushl	%ebp
-.Lc38:
-.Lc39:
+.Lc43:
+.Lc44:
 	movl	%esp,%ebp
-.Lc40:
+.Lc45:
 	movl	$INIT_P$FPCLINK_TDYNINTARRAY,%edx
 	movl	$U_P$FPCLINK_GLOBAL_DYN_ARRAY,%eax
 	call	fpc_finalize
@@ -448,9 +525,9 @@ P$FPCLINK_finalize_implicit:
 	movl	$0,U_P$FPCLINK_GLOBAL_ANSI_STRING
 	leave
 	ret
-.Lc37:
-.Le7:
-	.size	P$FPCLINK_finalize_implicit, .Le7 - P$FPCLINK_finalize_implicit
+.Lc42:
+.Le8:
+	.size	P$FPCLINK_finalize_implicit, .Le8 - P$FPCLINK_finalize_implicit
 
 .section .text
 # End asmlist al_procedures
@@ -459,18 +536,23 @@ P$FPCLINK_finalize_implicit:
 .section .bss
 	.balign 16
 # [fpclink.pas]
-# [104] global_static_arr: tintarray;
+# [122] global_static_arr: tintarray;
 	.lcomm	U_P$FPCLINK_GLOBAL_STATIC_ARR,10
 
 .section .bss
 	.balign 4
-# [105] global_dyn_array: tdynintarray;
+# [123] global_dyn_array: tdynintarray;
 	.lcomm	U_P$FPCLINK_GLOBAL_DYN_ARRAY,4
 
 .section .bss
 	.balign 4
-# [106] global_ansi_string: tansistring;
+# [124] global_ansi_string: tansistring;
 	.lcomm	U_P$FPCLINK_GLOBAL_ANSI_STRING,4
+
+.section .bss
+	.balign 16
+# [125] r: rec;
+	.lcomm	U_P$FPCLINK_R,268
 
 .section .data
 	.balign 4
@@ -478,8 +560,8 @@ P$FPCLINK_finalize_implicit:
 	.type	THREADVARLIST_P$FPCLINK,@object
 THREADVARLIST_P$FPCLINK:
 	.long	0
-.Le8:
-	.size	THREADVARLIST_P$FPCLINK, .Le8 - THREADVARLIST_P$FPCLINK
+.Le9:
+	.size	THREADVARLIST_P$FPCLINK, .Le9 - THREADVARLIST_P$FPCLINK
 
 .section .data
 	.balign 4
@@ -491,8 +573,8 @@ INITFINAL:
 	.long	0
 	.long	INIT$_P$FPCLINK
 	.long	FINALIZE$_P$FPCLINK
-.Le9:
-	.size	INITFINAL, .Le9 - INITFINAL
+.Le10:
+	.size	INITFINAL, .Le10 - INITFINAL
 
 .section .data
 	.balign 4
@@ -503,8 +585,8 @@ FPC_THREADVARTABLES:
 	.long	THREADVARLIST_SYSTEM
 	.long	THREADVARLIST_SI_PRC
 	.long	THREADVARLIST_P$FPCLINK
-.Le10:
-	.size	FPC_THREADVARTABLES, .Le10 - FPC_THREADVARTABLES
+.Le11:
+	.size	FPC_THREADVARTABLES, .Le11 - FPC_THREADVARTABLES
 
 .section .data
 	.balign 4
@@ -512,8 +594,8 @@ FPC_THREADVARTABLES:
 	.type	FPC_RESOURCESTRINGTABLES,@object
 FPC_RESOURCESTRINGTABLES:
 	.long	0
-.Le11:
-	.size	FPC_RESOURCESTRINGTABLES, .Le11 - FPC_RESOURCESTRINGTABLES
+.Le12:
+	.size	FPC_RESOURCESTRINGTABLES, .Le12 - FPC_RESOURCESTRINGTABLES
 
 .section .fpc
 	.balign 8
@@ -546,6 +628,19 @@ FPC_RESLOCATION:
 # Begin asmlist al_const
 # End asmlist al_const
 # Begin asmlist al_typedconsts
+
+.section .data
+	.balign 8
+.globl	_$FPCLINK$_Ld1
+_$FPCLINK$_Ld1:
+# value: 0d+3.140000000000000E+000
+	.byte	31,133,235,81,184,30,9,64
+
+.section .data
+	.balign 4
+.globl	_$FPCLINK$_Ld2
+_$FPCLINK$_Ld2:
+	.ascii	"\011hi, freak\000"
 # End asmlist al_typedconsts
 # Begin asmlist al_rotypedconsts
 # End asmlist al_rotypedconsts
@@ -569,15 +664,15 @@ INIT_P$FPCLINK_TDYNINTARRAY:
 	.long	4
 	.long	INIT_SYSTEM_LONGINT
 	.long	3
-.Le12:
-	.size	INIT_P$FPCLINK_TDYNINTARRAY, .Le12 - INIT_P$FPCLINK_TDYNINTARRAY
+.Le13:
+	.size	INIT_P$FPCLINK_TDYNINTARRAY, .Le13 - INIT_P$FPCLINK_TDYNINTARRAY
 # End asmlist al_rtti
 # Begin asmlist al_dwarf
 
 .section .debug_frame
-.Lc41:
-	.long	.Lc43-.Lc42
-.Lc42:
+.Lc46:
+	.long	.Lc48-.Lc47
+.Lc47:
 	.long	-1
 	.byte	1
 	.byte	0
@@ -591,10 +686,10 @@ INIT_P$FPCLINK_TDYNINTARRAY:
 	.uleb128	8
 	.uleb128	1
 	.balign 4,0
-.Lc43:
-	.long	.Lc45-.Lc44
-.Lc44:
-	.long	.Lc41
+.Lc48:
+	.long	.Lc50-.Lc49
+.Lc49:
+	.long	.Lc46
 	.long	.Lc1
 	.long	.Lc2-.Lc1
 	.byte	4
@@ -611,10 +706,10 @@ INIT_P$FPCLINK_TDYNINTARRAY:
 	.byte	13
 	.uleb128	5
 	.balign 4,0
-.Lc45:
-	.long	.Lc47-.Lc46
-.Lc46:
-	.long	.Lc41
+.Lc50:
+	.long	.Lc52-.Lc51
+.Lc51:
+	.long	.Lc46
 	.long	.Lc6
 	.long	.Lc7-.Lc6
 	.byte	4
@@ -631,10 +726,10 @@ INIT_P$FPCLINK_TDYNINTARRAY:
 	.byte	13
 	.uleb128	5
 	.balign 4,0
-.Lc47:
-	.long	.Lc49-.Lc48
-.Lc48:
-	.long	.Lc41
+.Lc52:
+	.long	.Lc54-.Lc53
+.Lc53:
+	.long	.Lc46
 	.long	.Lc11
 	.long	.Lc12-.Lc11
 	.byte	4
@@ -651,10 +746,10 @@ INIT_P$FPCLINK_TDYNINTARRAY:
 	.byte	13
 	.uleb128	5
 	.balign 4,0
-.Lc49:
-	.long	.Lc51-.Lc50
-.Lc50:
-	.long	.Lc41
+.Lc54:
+	.long	.Lc56-.Lc55
+.Lc55:
+	.long	.Lc46
 	.long	.Lc16
 	.long	.Lc17-.Lc16
 	.byte	4
@@ -671,10 +766,10 @@ INIT_P$FPCLINK_TDYNINTARRAY:
 	.byte	13
 	.uleb128	5
 	.balign 4,0
-.Lc51:
-	.long	.Lc53-.Lc52
-.Lc52:
-	.long	.Lc41
+.Lc56:
+	.long	.Lc58-.Lc57
+.Lc57:
+	.long	.Lc46
 	.long	.Lc21
 	.long	.Lc22-.Lc21
 	.byte	4
@@ -691,10 +786,10 @@ INIT_P$FPCLINK_TDYNINTARRAY:
 	.byte	13
 	.uleb128	5
 	.balign 4,0
-.Lc53:
-	.long	.Lc55-.Lc54
-.Lc54:
-	.long	.Lc41
+.Lc58:
+	.long	.Lc60-.Lc59
+.Lc59:
+	.long	.Lc46
 	.long	.Lc26
 	.long	.Lc27-.Lc26
 	.byte	4
@@ -711,10 +806,10 @@ INIT_P$FPCLINK_TDYNINTARRAY:
 	.byte	13
 	.uleb128	5
 	.balign 4,0
-.Lc55:
-	.long	.Lc57-.Lc56
-.Lc56:
-	.long	.Lc41
+.Lc60:
+	.long	.Lc62-.Lc61
+.Lc61:
+	.long	.Lc46
 	.long	.Lc31
 	.long	.Lc32-.Lc31
 	.byte	4
@@ -731,10 +826,10 @@ INIT_P$FPCLINK_TDYNINTARRAY:
 	.byte	13
 	.uleb128	5
 	.balign 4,0
-.Lc57:
-	.long	.Lc59-.Lc58
-.Lc58:
-	.long	.Lc41
+.Lc62:
+	.long	.Lc64-.Lc63
+.Lc63:
+	.long	.Lc46
 	.long	.Lc36
 	.long	.Lc37-.Lc36
 	.byte	4
@@ -751,7 +846,27 @@ INIT_P$FPCLINK_TDYNINTARRAY:
 	.byte	13
 	.uleb128	5
 	.balign 4,0
-.Lc59:
+.Lc64:
+	.long	.Lc66-.Lc65
+.Lc65:
+	.long	.Lc46
+	.long	.Lc41
+	.long	.Lc42-.Lc41
+	.byte	4
+	.long	.Lc43-.Lc41
+	.byte	14
+	.uleb128	8
+	.byte	4
+	.long	.Lc44-.Lc43
+	.byte	5
+	.uleb128	5
+	.uleb128	2
+	.byte	4
+	.long	.Lc45-.Lc44
+	.byte	13
+	.uleb128	5
+	.balign 4,0
+.Lc66:
 # End asmlist al_dwarf
 # Begin asmlist al_dwarf_info
 # End asmlist al_dwarf_info

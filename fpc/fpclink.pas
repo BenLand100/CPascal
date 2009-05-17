@@ -32,7 +32,7 @@ type
     pdynintarray = ^tdynintarray;
     
 //works - translate to C
-function test_dynamic_array: tdynintarray;
+function test_dynamic_array: tdynintarray;stdcall;
 type 
     tbytearray = array[-1..0] of byte;
     pbytearray = ^tbytearray;
@@ -68,7 +68,7 @@ type
     pansistring = ^tansistring;
    
 //needs work
-function test_ansi_string: tansistring;
+function test_ansi_string: tansistring; stdcall;
 type 
     tbytearray = array[-1..0] of byte;
     pbytearray = ^tbytearray;
@@ -100,13 +100,38 @@ begin
     test_ansi_string:= aptr^;
 end;
 
+
+type rec = packed record
+    i: integer;
+    r: double;
+    b: boolean;
+    c: char;
+    s: string;
+end;
+
+
+function getandpass(r: rec): rec; stdcall;
+var 
+    i: rec;
+begin
+    i:= r;
+    getandpass:= i;
+end;
+
 var
     global_static_arr: tintarray;
     global_dyn_array: tdynintarray;
     global_ansi_string: tansistring;
+    r: rec;
 begin
     global_static_arr:= test_static_array;
     global_dyn_array:= test_dynamic_array;
     global_ansi_string:= test_ansi_string;
+    r.i:= 1;
+    r.r:= 3.14;
+    r.b:= false;
+    r.c:= #10;
+    r.s:= 'hi, freak';
+    r:= getandpass(r);
 end.
 

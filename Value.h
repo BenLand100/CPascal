@@ -245,6 +245,7 @@ private:
 
 class RecordValue : public Value {
 public:
+    RecordValue(Record* rec, std::map<int,Type*> &typemap, void* mem);
     RecordValue(Record* rec, std::map<int,Type*> &typemap);
     ~RecordValue();
 
@@ -254,11 +255,17 @@ public:
     Value* getField(int name) throw(int);
     void setField(int name, Value* value) throw(int);
 
+    int argSize();
+    void refArg(void* mem);
+    void valArg(void* mem);
+
 private:
     int** objrefcount;
-    void** mem;
-    std::map<int,Value*>** fields;
-    std::map<int,Type*>** types;
+    int* memsize;
+    int** indexes;
+    char** mem;
+    std::map<int,Value*>* fields;
+    std::map<int,Type*>* types;
     RecordValue(RecordValue &val);
     RecordValue(Record* rec);
 };
