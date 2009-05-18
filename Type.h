@@ -24,6 +24,8 @@ class Record;
 
 class Type {
 public:
+    static std::map<std::string,Type*>* alltypes();
+
     static Type* getNil();
     static Type* getString();
     static Type* getInteger();
@@ -42,17 +44,8 @@ public:
     virtual bool instanceOf(Type* type);
     virtual int sizeOf(std::map<int,Type*> &typemap);
 protected:
-    static Type* nil;
-    static Type* string;
-    static Type* integer;
-    static Type* real;
-    static Type* boolean;
-    static Type* chr;
-
     Type(std::string descr, int type);
 private:
-    static std::map<std::string,Type*> types;
-
     Type(int name); //only for reserved types
 };
 

@@ -28,19 +28,20 @@ OBJECTDIR=build/Debug/${PLATFORM}
 
 # Object Files
 OBJECTFILES= \
+	${OBJECTDIR}/EFence.o \
 	${OBJECTDIR}/Interpreter.o \
 	${OBJECTDIR}/LeakTracer.o \
 	${OBJECTDIR}/Container.o \
 	${OBJECTDIR}/lexer.o \
+	${OBJECTDIR}/main.o \
+	${OBJECTDIR}/Type.o \
+	${OBJECTDIR}/Expression.o \
+	${OBJECTDIR}/parser.o \
+	${OBJECTDIR}/Value.o \
+	${OBJECTDIR}/Operator.o \
 	${OBJECTDIR}/Variable.o \
 	${OBJECTDIR}/Element.o \
-	${OBJECTDIR}/Type.o \
-	${OBJECTDIR}/main.o \
-	${OBJECTDIR}/Value.o \
-	${OBJECTDIR}/parser.o \
-	${OBJECTDIR}/Expression.o \
-	${OBJECTDIR}/Exceptions.o \
-	${OBJECTDIR}/Operator.o
+	${OBJECTDIR}/Exceptions.o
 
 # C Compiler Flags
 CFLAGS=
@@ -63,57 +64,61 @@ dist/Debug/${PLATFORM}/cpascal: ${OBJECTFILES}
 	${MKDIR} -p dist/Debug/${PLATFORM}
 	${LINK.cc} -o dist/Debug/${PLATFORM}/cpascal ${OBJECTFILES} ${LDLIBSOPTIONS} 
 
+${OBJECTDIR}/EFence.o: EFence.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	$(COMPILE.cc) -g -o ${OBJECTDIR}/EFence.o EFence.cpp
+
 ${OBJECTDIR}/Interpreter.o: Interpreter.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -O -o ${OBJECTDIR}/Interpreter.o Interpreter.cpp
+	$(COMPILE.cc) -g -o ${OBJECTDIR}/Interpreter.o Interpreter.cpp
 
 ${OBJECTDIR}/LeakTracer.o: LeakTracer.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -O -o ${OBJECTDIR}/LeakTracer.o LeakTracer.cpp
+	$(COMPILE.cc) -g -o ${OBJECTDIR}/LeakTracer.o LeakTracer.cpp
 
 ${OBJECTDIR}/Container.o: Container.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -O -o ${OBJECTDIR}/Container.o Container.cpp
+	$(COMPILE.cc) -g -o ${OBJECTDIR}/Container.o Container.cpp
 
 ${OBJECTDIR}/lexer.o: lexer.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -O -o ${OBJECTDIR}/lexer.o lexer.cpp
-
-${OBJECTDIR}/Variable.o: Variable.cpp 
-	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -O -o ${OBJECTDIR}/Variable.o Variable.cpp
-
-${OBJECTDIR}/Element.o: Element.cpp 
-	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -O -o ${OBJECTDIR}/Element.o Element.cpp
-
-${OBJECTDIR}/Type.o: Type.cpp 
-	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -O -o ${OBJECTDIR}/Type.o Type.cpp
+	$(COMPILE.cc) -g -o ${OBJECTDIR}/lexer.o lexer.cpp
 
 ${OBJECTDIR}/main.o: main.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -O -o ${OBJECTDIR}/main.o main.cpp
+	$(COMPILE.cc) -g -o ${OBJECTDIR}/main.o main.cpp
 
-${OBJECTDIR}/Value.o: Value.cpp 
+${OBJECTDIR}/Type.o: Type.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -O -o ${OBJECTDIR}/Value.o Value.cpp
-
-${OBJECTDIR}/parser.o: parser.cpp 
-	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -O -o ${OBJECTDIR}/parser.o parser.cpp
+	$(COMPILE.cc) -g -o ${OBJECTDIR}/Type.o Type.cpp
 
 ${OBJECTDIR}/Expression.o: Expression.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -O -o ${OBJECTDIR}/Expression.o Expression.cpp
+	$(COMPILE.cc) -g -o ${OBJECTDIR}/Expression.o Expression.cpp
 
-${OBJECTDIR}/Exceptions.o: Exceptions.cpp 
+${OBJECTDIR}/parser.o: parser.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -O -o ${OBJECTDIR}/Exceptions.o Exceptions.cpp
+	$(COMPILE.cc) -g -o ${OBJECTDIR}/parser.o parser.cpp
+
+${OBJECTDIR}/Value.o: Value.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	$(COMPILE.cc) -g -o ${OBJECTDIR}/Value.o Value.cpp
 
 ${OBJECTDIR}/Operator.o: Operator.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -O -o ${OBJECTDIR}/Operator.o Operator.cpp
+	$(COMPILE.cc) -g -o ${OBJECTDIR}/Operator.o Operator.cpp
+
+${OBJECTDIR}/Variable.o: Variable.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	$(COMPILE.cc) -g -o ${OBJECTDIR}/Variable.o Variable.cpp
+
+${OBJECTDIR}/Element.o: Element.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	$(COMPILE.cc) -g -o ${OBJECTDIR}/Element.o Element.cpp
+
+${OBJECTDIR}/Exceptions.o: Exceptions.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	$(COMPILE.cc) -g -o ${OBJECTDIR}/Exceptions.o Exceptions.cpp
 
 # Subprojects
 .build-subprojects:

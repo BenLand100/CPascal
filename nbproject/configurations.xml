@@ -24,6 +24,7 @@
                    displayName="Source Files"
                    projectFiles="true">
       <itemPath>Container.cpp</itemPath>
+      <itemPath>EFence.cpp</itemPath>
       <itemPath>Element.cpp</itemPath>
       <itemPath>Exceptions.cpp</itemPath>
       <itemPath>Expression.cpp</itemPath>
@@ -40,7 +41,9 @@
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
                    projectFiles="false">
+      <itemPath>fpc/cpascal.pas</itemPath>
       <itemPath>Makefile</itemPath>
+      <itemPath>fpc/test.pas</itemPath>
     </logicalFolder>
   </logicalFolder>
   <projectmakefile>Makefile</projectmakefile>
@@ -52,9 +55,6 @@
         <platform>2</platform>
       </toolsSet>
       <compileType>
-        <ccCompilerTool>
-          <developmentMode>2</developmentMode>
-        </ccCompilerTool>
         <linkerTool>
           <output>dist/Debug/${PLATFORM}/cpascal</output>
           <linkerLibItems>
@@ -66,6 +66,9 @@
       </item>
       <item path="Container.h">
         <itemTool>3</itemTool>
+      </item>
+      <item path="EFence.cpp">
+        <itemTool>1</itemTool>
       </item>
       <item path="Element.cpp">
         <itemTool>1</itemTool>
@@ -162,6 +165,9 @@
       </item>
       <item path="Container.h">
         <itemTool>3</itemTool>
+      </item>
+      <item path="EFence.cpp">
+        <itemTool>1</itemTool>
       </item>
       <item path="Element.cpp">
         <itemTool>1</itemTool>

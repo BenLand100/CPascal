@@ -6,14 +6,10 @@
 //#define debug(x) std::cout << x << '\n'
 #define debug(x)
 
-Type* Type::nil = getType(RES_NIL);
-Type* Type::string = getType(RES_STRING);
-Type* Type::integer = getType(RES_INTEGER);
-Type* Type::real = getType(RES_REAL);
-Type* Type::boolean = getType(RES_BOOLEAN);
-Type* Type::chr = getType(RES_CHAR);
-
-std::map<std::string, Type*> Type::types;
+std::map<std::string, Type*>* Type::alltypes() {
+    static std::map<std::string, Type*> types;
+    return &types;
+}
 
 Record* Type::getRecordType(std::map<int,Type*> fields) {
     std::stringstream str;
@@ -27,8 +23,9 @@ Record* Type::getRecordType(std::map<int,Type*> fields) {
     }
     str << '}';
     std::string descr(str.str());
-    if (types.find(descr) != types.end())
-        return (Record*)types[descr];
+    std::map<std::string, Type*>* types = alltypes();
+    if (types->find(descr) != types->end())
+        return (Record*)(*types)[descr];
     return new Record(descr, vars);
 }
 
@@ -36,18 +33,19 @@ Array* Type::getBoundArrayType(Type* element, int from, int to) {
     std::stringstream str;
     str << '[' << from << ".." << to << ']' << element->descr;
     std::string descr(str.str());
-    if (types.find(descr) != types.end())
-        return (Array*)types[descr];
+    std::map<std::string, Type*>* types = alltypes();
+    if (types->find(descr) != types->end())
+        return (Array*)(*types)[descr];
     return new Array(descr, element, from, to);
 
 }
 
 Array* Type::getDynamicArrayType(Type* element) {
-    std::stringstream str;
-    str << '[' << element->descr;
-    std::string descr(str.str());
-    if (types.find(descr) != types.end())
-        return (Array*)types[descr];
+    std::string descr("[");
+    descr.append(element->descr);
+    std::map<std::string, Type*>* types = alltypes();
+    if (types->find(descr) != types->end())
+        return (Array*)(*types)[descr];
     return new Array(descr, element);
 }
 
@@ -55,8 +53,9 @@ Pointer* Type::getPointerType(Type* type) {
     std::stringstream str;
     str << type->descr << '^';
     std::string descr(str.str());
-    if (types.find(descr) != types.end())
-        return (Pointer*)types[descr];
+    std::map<std::string, Type*>* types = alltypes();
+    if (types->find(descr) != types->end())
+        return (Pointer*)(*types)[descr];
     return new Pointer(descr, type);
 }
 
@@ -64,48 +63,64 @@ Type* Type::getType(int name) {
     std::stringstream str;
     str << name;
     std::string descr(str.str());
-    if (types.find(descr) != types.end())
-        return types[descr];
-    debug("getType=" << name);
+    std::map<std::string, Type*>* types = alltypes();
+    if (types->find(descr) != types->end())
+        return (*types)[descr];
+    debug("getType=" << name << ' ' << descr);
+    Type* res;
     switch (name) {
         case RES_NIL:
-            return new Type(descr, TYPE_NIL);
+            res = new Type(descr, TYPE_NIL);
+            break;
         case RES_STRING:
-            return new Type(descr, TYPE_STRING);
+            res = new Type(descr, TYPE_STRING);
+            break;
         case RES_INTEGER:
-            return new Type(descr, TYPE_INTEGER);
+            res = new Type(descr, TYPE_INTEGER);
+            break;
         case RES_REAL:
-            return new Type(descr, TYPE_REAL);
+            res = new Type(descr, TYPE_REAL);
+            break;
         case RES_BOOLEAN:
-            return new Type(descr, TYPE_BOOLEAN);
+            res = new Type(descr, TYPE_BOOLEAN);
+            break;
         case RES_CHAR:
-            return new Type(descr, TYPE_CHAR);
+            res = new Type(descr, TYPE_CHAR);
+            break;
         default:
-            return new RefType(descr, name);
+            res = new RefType(descr, name);
     }
+    (*types)[descr] = res;
+    return res;
 }
 
 Type* Type::getNil() {
+    static Type* nil = getType(RES_NIL);
     return nil;
 }
 
 Type* Type::getString() {
+    static Type* string = getType(RES_STRING);
     return string;
 }
 
 Type* Type::getInteger() {
+    static Type* integer = getType(RES_INTEGER);
     return integer;
 }
 
 Type* Type::getReal() {
+    static Type* real = getType(RES_REAL);
     return real;
 }
 
 Type* Type::getBoolean() {
+    static Type* boolean = getType(RES_BOOLEAN);
     return boolean;
 }
 
 Type* Type::getChar() {
+    static Type* chr = getType(RES_CHAR);
     return chr;
 }
 

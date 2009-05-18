@@ -1,6 +1,6 @@
-//#define TRACE
+//#define MEMORY_TRACE
 
-#ifdef TRACE
+#ifdef MEMORY_TRACE
 
 #include <sys/types.h>
 #include <sys/stat.h>
