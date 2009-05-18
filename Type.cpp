@@ -119,7 +119,7 @@ bool Type::instanceOf(Type* type) {
 int Type::sizeOf(std::map<int,Type*> &typemap) {
     switch (type) {
         case TYPE_NIL:
-            return 0;
+            return *((char*)0);
         case TYPE_STRING:
         case TYPE_INTEGER:
             return 4;

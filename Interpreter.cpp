@@ -3,14 +3,65 @@
 #include "parser.h"
 #include "Exceptions.h"
 
+#include <sstream>
 #include <iostream>
 //#define debug(x) std::cout << x << '\n'
 #define debug(x)
+
+void writeln(char* str) __attribute__((stdcall));
+void writeln(char* str) {
+    std::cout << str << '\n';
+}
+
+char* inttostr(int i) __attribute__((stdcall));
+char* inttostr(int i) {
+    std::stringstream strm;
+    strm << i;
+    std::string str = strm.str();
+    char* res = new char[str.length()+1];
+    strcpy(res,str.c_str());
+    return res;
+}
+
+char* chartostr(char i) __attribute__((stdcall));
+char* chartostr(char i) {
+    std::stringstream strm;
+    strm << i;
+    std::string str = strm.str();
+    char* res = new char[str.length()+1];
+    strcpy(res,str.c_str());
+    return res;
+}
+
+char* booltostr(bool i) __attribute__((stdcall));
+char* booltostr(bool i) {
+    std::stringstream strm;
+    strm << i;
+    std::string str = strm.str();
+    char* res = new char[str.length()+1];
+    strcpy(res,str.c_str());
+    return res;
+}
+
+char* realtostr(double i) __attribute__((stdcall));
+char* realtostr(double i) {
+    std::stringstream strm;
+    strm << i;
+    std::string str = strm.str();
+    char* res = new char[str.length()+1];
+    strcpy(res,str.c_str());
+    return res;
+}
 
 Interpreter::Interpreter(char* ppg) {
     char* tokens = lex(ppg, names);
     prog = parse(tokens);
     freetoks(tokens);
+    addMethod((void*)&writeln,CONV_C_STDCALL,(char*)"procedure writeln(str: string);");
+    addMethod((void*)&inttostr,CONV_C_STDCALL,(char*)"function inttostr(i: integer): string;");
+    addMethod((void*)&chartostr,CONV_C_STDCALL,(char*)"function chartostr(c: char): string;");
+    addMethod((void*)&booltostr,CONV_C_STDCALL,(char*)"function booltostr(b: boolean): string;");
+    addMethod((void*)&realtostr,CONV_C_STDCALL,(char*)"function realtostr(r: real): string;");
 }
 
 Interpreter::~Interpreter() {
@@ -217,3 +268,18 @@ Value* Frame::resolve(int symbol, Value** args, int numArgs) throw (int) {
     }
 }
 
+void* interp_init(char* ppg) {
+    return (void*) new Interpreter(ppg);
+}
+
+void interp_meth(void* interp, void* addr, char* def) {
+    ((Interpreter*)interp)->addMethod(addr, CONV_FPC_STDCALL, def);
+}
+
+void interp_run(void* interp) {
+    ((Interpreter*)interp)->run();
+}
+
+void interp_free(void* interp) {
+    delete (Interpreter*)interp;
+}

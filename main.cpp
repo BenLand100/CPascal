@@ -54,50 +54,7 @@ ostream& operator<< (ostream& out, Container* c) {
     return out;
 }
 
-void writeln(char* str) __attribute__((stdcall));
-void writeln(char* str) {
-    cout << str << '\n';
-}
 
-char* inttostr(int i) __attribute__((stdcall));
-char* inttostr(int i) {
-    stringstream strm;
-    strm << i;
-    string str = strm.str();
-    char* res = new char[str.length()+1];
-    strcpy(res,str.c_str());
-    return res;
-}
-
-char* chartostr(char i) __attribute__((stdcall));
-char* chartostr(char i) {
-    stringstream strm;
-    strm << i;
-    string str = strm.str();
-    char* res = new char[str.length()+1];
-    strcpy(res,str.c_str());
-    return res;
-}
-
-char* booltostr(bool i) __attribute__((stdcall));
-char* booltostr(bool i) {
-    stringstream strm;
-    strm << i;
-    string str = strm.str();
-    char* res = new char[str.length()+1];
-    strcpy(res,str.c_str());
-    return res;
-}
-
-char* realtostr(double i) __attribute__((stdcall));
-char* realtostr(double i) {
-    stringstream strm;
-    strm << i;
-    string str = strm.str();
-    char* res = new char[str.length()+1];
-    strcpy(res,str.c_str());
-    return res;
-}
 
 double e() __attribute__((stdcall));
 double e() {
@@ -116,13 +73,8 @@ int main(int argc, char** argv) {
     in.close();
     ppg[size] = '\0';
     Interpreter* interp = new Interpreter(ppg);
-    interp->addMethod((void*)&writeln,CONV_C_STDCALL,(char*)"procedure writeln(str: string);");
-    interp->addMethod((void*)&inttostr,CONV_C_STDCALL,(char*)"function inttostr(i: integer): string;");
-    interp->addMethod((void*)&chartostr,CONV_C_STDCALL,(char*)"function chartostr(c: char): string;");
-    interp->addMethod((void*)&booltostr,CONV_C_STDCALL,(char*)"function booltostr(b: boolean): string;");
-    interp->addMethod((void*)&realtostr,CONV_C_STDCALL,(char*)"function realtostr(r: real): string;");
     interp->addMethod((void*)&e,CONV_C_STDCALL,(char*)"function e: real;");
-    delete ppg;
+    delete [] ppg;
     interp->run();
     delete interp;
     return 0;

@@ -50,5 +50,12 @@ private:
     void init(Container* container);
 };
 
+extern "C" {
+    void* interp_init(char* pchar) __attribute__((cdecl));
+    void interp_meth(void* interp, void* addr, char* def) __attribute__((cdecl));
+    void interp_run(void* interp) __attribute__((cdecl));
+    void interp_free(void* interp) __attribute__((cdecl));
+};
+
 #endif	/* _INTERPRETER_H */
 

@@ -430,7 +430,7 @@ Symbol::~Symbol() {
     for (int i = 0; i < numArgs; i++) {
         delete args[i];
     }
-    delete args;
+    delete [] args;
 }
 void Symbol::preform(std::stack<Value*>& stack, Frame* frame)  throw(int) {
     Value** vals = new Value*[numArgs];
@@ -462,7 +462,7 @@ ArrayDef::~ArrayDef() {
     for (int i = 0; i < numElems; i++) {
         delete elems[i];
     }
-    delete elems;
+    delete [] elems;
 }
 void ArrayDef::preform(std::stack<Value*>& stack, Frame* frame) throw(int) {
     Value** vals = new Value*[numElems];
@@ -499,7 +499,7 @@ ArrayGet::~ArrayGet() {
     for (int i = 0; i < numIndexes; i++) {
         delete indexes[i];
     }
-    delete indexes;
+    delete [] indexes;
 }
 void ArrayGet::preform(std::stack<Value*>& stack, Frame* frame) throw(int) {
     Value* arr = stack.top();
@@ -526,7 +526,7 @@ ArraySet::~ArraySet() {
     for (int i = 0; i < numIndexes; i++) {
         delete indexes[i];
     }
-    delete indexes;
+    delete [] indexes;
 }
 void ArraySet::preform(std::stack<Value*>& stack, Frame* frame) throw(int) {
     Value* value = stack.top();

@@ -178,13 +178,13 @@ StringValue::StringValue(void* mem_impl) : Value(TYPE_STRING,Type::getString()) 
     mem = (char**) mem_impl;
     *mem = new char[8+len+1];
     objref = new int*;
-    *objref = (int*)mem;
+    *objref = (int*)*mem;
     **objref = 1;
     size = new int*;
-    *size = (int*)(mem+4);
+    *size = (int*)(*mem+4);
     **size = len;
     str = new char*;
-    *str = (char*)(mem+8);
+    *str = (char*)(*mem+8);
     **str = 0;
 }
 
@@ -239,11 +239,11 @@ StringValue::StringValue(StringValue& val) : Value(TYPE_STRING,Type::getString()
 }
 
 StringValue::~StringValue() {
-    if (!(--*refcount)) {
-        if (*owns_mem) delete [] *mem;
-        delete owns_mem;
+    if (!(--(*refcount))) {
+        delete [] *mem;
         delete objref;
-        delete mem;
+        if (*owns_mem) delete mem;
+        delete owns_mem;
         delete refcount;
         delete size;
         delete str;
@@ -260,7 +260,7 @@ Value* StringValue::clone() {
 
 void StringValue::set(Value* val) throw(int) {
     if (val->type != TYPE_STRING) throw E_NOT_STRING;
-    if (*owns_mem) delete [] *mem;
+    delete [] *mem;
     StringValue* sval = (StringValue*)val;
     int len = **sval->size;
     *mem = new char[8+len+1];
@@ -279,8 +279,8 @@ char* StringValue::asString() throw(int) {
 int StringValue::argSize() { return 4; }
 void StringValue::valArg(void* mem) { *(char**)mem = *str; }
 void StringValue::refArg(void* mem) { *(char***)mem = str; }
-void StringValue::read_c(void* res) { StringValue val((char*)res); set(&val); delete (char*) res; }
-void StringValue::read_fpc(void* res) { StringValue val((char*)res); set(&val); } //leaks like hell
+void StringValue::read_c(void* res) { StringValue val((char*)res); set(&val); delete [] (char*) res; }
+void StringValue::read_fpc(void* res) { StringValue val((char*)res); set(&val); } //FIXME leaks like hell
 
 //**** BEGIN REALVALUE DEFINITION ***
 
@@ -552,7 +552,7 @@ ArrayValue::ArrayValue(Array* arr, std::map<int,Type*> &typemap) : Value(TYPE_AR
     *start = arr->from;
 
     elemsz = new int;
-    *elemsz = arr->sizeOf(typemap);
+    *elemsz = arr->element->sizeOf(typemap);
     int numelems = arr->to - arr->from + 1; //to == -1 and from == 0 for dynamic just for this
 
     mem = new char*;
@@ -611,7 +611,7 @@ ArrayValue::~ArrayValue() {
         for (int i = 0; i < **asize; i++) {
             delete (*array)[i];
         }
-        delete *array;
+        delete [] *array;
         if (*dynamic) {
             delete [] *mem;
             if (*owns_mem) delete mem;
@@ -670,7 +670,7 @@ void ArrayValue::set(Value* val) throw(int) {
         for (int i = 0; i < **asize; i++) {
             delete (*array)[i];
         }
-        delete *array;
+        delete [] *array;
         delete [] *mem;
 
         *elemType = *arr->elemType;
@@ -738,8 +738,8 @@ void ArrayValue::resize(int len, std::map<int,Type*>& typemap) throw(int) {
             newarr[i] = Value::fromTypeMem(*elemType,typemap,(void*)(newpas_array+(*elemsz)*i));
         }
     }
-    delete *array;
-    delete *mem;
+    delete [] *array;
+    delete [] *mem;
     *array = newarr;
     *mem = newmem;
     *objref = newobjref;
@@ -931,11 +931,11 @@ RecordValue::~RecordValue() {
         std::map<int,Value*>::iterator end = fields->end();
         //FIXME - serious leak, some error somewhere
         while (iter != end) {
-            //delete iter->second;
+            delete iter->second;
             iter++;
         }
-        //if (*owns_mem) delete *mem;
-        delete *indexes;
+        if (*owns_mem) delete [] *mem;
+        delete [] *indexes;
 
         delete owns_mem;
         delete indexes;
@@ -962,7 +962,7 @@ Value* RecordValue::clone() {
     std::map<int,Type*> typemap;
     for (int i = 0; iter != end; i++, iter++) {
         Type* ftype = (*iter)->type;
-        (*rec->fields)[(*iter)->name] = Value::fromTypeMem(ftype,typemap,*mem + pos);
+        (*rec->fields)[(*iter)->name] = Value::fromTypeMem(ftype,typemap,*rec->mem + pos);
         (*rec->indexes)[i] = (*indexes)[i];
         pos += (*indexes)[i];
     }

@@ -360,5 +360,5 @@ char* lex(char* ppg, std::map<std::string,int> &names) {
 }
 
 void freetoks(char* tokens) {
-    delete tokens;
+    delete [] tokens;
 }

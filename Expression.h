@@ -66,7 +66,7 @@ inline void cleanBlock(Block* block) {
         for (int i = 0; i < numElems; i++) {
             delete elems[i];
         }
-        delete elems;
+        delete [] elems;
     }
     block->elems = 0;
     block->length = 0;

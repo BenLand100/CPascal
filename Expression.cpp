@@ -14,7 +14,7 @@ Expression::~Expression() {
     if (elems) {
         for (int i = 0; i < length; i++)
             delete elems[i];
-        delete elems;
+        delete [] elems;
     }
 }
 Value* Expression::eval(Frame* frame) throw(InterpEx, int) {

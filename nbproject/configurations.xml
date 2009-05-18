@@ -28,6 +28,7 @@
       <itemPath>Exceptions.cpp</itemPath>
       <itemPath>Expression.cpp</itemPath>
       <itemPath>Interpreter.cpp</itemPath>
+      <itemPath>LeakTracer.cpp</itemPath>
       <itemPath>lexer.cpp</itemPath>
       <itemPath>main.cpp</itemPath>
       <itemPath>Operator.cpp</itemPath>
@@ -86,6 +87,9 @@
       </item>
       <item path="Interpreter.h">
         <itemTool>3</itemTool>
+      </item>
+      <item path="LeakTracer.cpp">
+        <itemTool>1</itemTool>
       </item>
       <item path="Operator.cpp">
         <itemTool>1</itemTool>
@@ -177,6 +181,9 @@
       </item>
       <item path="Interpreter.h">
         <itemTool>3</itemTool>
+      </item>
+      <item path="LeakTracer.cpp">
+        <itemTool>1</itemTool>
       </item>
       <item path="Operator.cpp">
         <itemTool>1</itemTool>

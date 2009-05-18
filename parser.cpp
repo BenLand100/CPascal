@@ -472,6 +472,7 @@ Expression* parseExpr(char* &cur) {
         expr.push_back(oper->top().op);
         oper->pop();
     }
+    delete oper;
     debug("expr_created");
     return new Expression(expr);
 }
