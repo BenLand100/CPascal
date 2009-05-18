@@ -52,6 +52,9 @@
         <platform>2</platform>
       </toolsSet>
       <compileType>
+        <ccCompilerTool>
+          <developmentMode>2</developmentMode>
+        </ccCompilerTool>
         <linkerTool>
           <output>dist/Debug/${PLATFORM}/cpascal</output>
           <linkerLibItems>
@@ -142,12 +145,14 @@
           <developmentMode>5</developmentMode>
         </cCompilerTool>
         <ccCompilerTool>
-          <developmentMode>5</developmentMode>
+          <developmentMode>6</developmentMode>
+          <stripSymbols>true</stripSymbols>
         </ccCompilerTool>
         <fortranCompilerTool>
           <developmentMode>5</developmentMode>
         </fortranCompilerTool>
         <linkerTool>
+          <stripSymbols>true</stripSymbols>
           <linkerLibItems>
           </linkerLibItems>
         </linkerTool>

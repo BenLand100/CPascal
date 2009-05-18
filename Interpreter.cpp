@@ -3,6 +3,7 @@
 #include "parser.h"
 #include "Exceptions.h"
 
+#include <cstring>
 #include <sstream>
 #include <iostream>
 //#define debug(x) std::cout << x << '\n'
@@ -10,7 +11,7 @@
 
 void writeln(char* str) __attribute__((stdcall));
 void writeln(char* str) {
-    std::cout << str << '\n';
+    printf("%s\n",str);
 }
 
 char* inttostr(int i) __attribute__((stdcall));
@@ -178,6 +179,7 @@ Value* Frame::resolve(int symbol, Value** args, int numArgs) throw (int) {
                     if (meth->type->type == TYPE_REAL) {
                         double real;
                         asm volatile (
+                                    "pushl %%ecx \n"
                                     "cmpl  $0, %%edx \n"
                                     "jz mkcall_real \n"
                                     "start_real: pushl (%%eax) \n"
@@ -186,6 +188,7 @@ Value* Frame::resolve(int symbol, Value** args, int numArgs) throw (int) {
                                     "subl $4, %%eax \n"
                                     "jmp start_real \n"
                                     "mkcall_real: call *%%ebx \n"
+                                    "popl %%ecx \n"
                                     : "=t"(real)
                                     : "a"(stack), "b"(meth->address), "c"(cargs), "d"(argsz)
                                     : "memory"
@@ -195,6 +198,7 @@ Value* Frame::resolve(int symbol, Value** args, int numArgs) throw (int) {
                     } else {
                         void* eax;
                         asm volatile (
+                                    "pushl %%ecx \n"
                                     "cmpl  $0, %%edx \n"
                                     "jz mkcall_all \n"
                                     "start_all: pushl (%%eax) \n"
@@ -203,6 +207,7 @@ Value* Frame::resolve(int symbol, Value** args, int numArgs) throw (int) {
                                     "subl $4, %%eax \n"
                                     "jmp start_all \n"
                                     "mkcall_all: call *%%ebx \n"
+                                    "popl %%ecx \n"
                                     : "=a" (eax)
                                     : "a"(stack), "b"(meth->address), "c"(cargs), "d"(argsz)
                                     : "memory"
@@ -221,6 +226,7 @@ Value* Frame::resolve(int symbol, Value** args, int numArgs) throw (int) {
                     }
                 } else {
                     asm volatile (
+                                "pushl %%ecx \n"
                                 "cmpl  $0, %%edx \n"
                                 "jz mkcall_void \n"
                                 "start_void: pushl (%%eax) \n"
@@ -229,6 +235,7 @@ Value* Frame::resolve(int symbol, Value** args, int numArgs) throw (int) {
                                 "subl $4, %%eax \n"
                                 "jmp start_void \n"
                                 "mkcall_void: call *%%ebx \n"
+                                "popl %%ecx \n"
                                 :
                                 : "a"(stack), "b"(meth->address), "c"(cargs), "d"(argsz)
                                 : "memory"

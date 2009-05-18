@@ -80,7 +80,6 @@ inline void tolower(char* ppg) {
 
 char* lex(char* ppg, std::map<std::string,int> &names) {
     int nextord = reserved(names);
-    std::cout << ppg << '\n';
     char* res = new char[strlen(ppg)*2]; //this should suffice, haha.
     char* toks = res;
     whitespace(ppg);

@@ -357,12 +357,12 @@ begin
     testcase;
     testrepeatuntil;
     writeln('For exec: ' + RealToStr(forlooptime));
-    doarraystuff;
+    //doarraystuff;
     testtypes;
     phonebook;
-    testtry;
+    //testtry;
     testref;
-    testpointer;
+    //testpointer;
     writeln(inttostr(3*-1));
     writeln(inttostr(3+-(2*6)));
     writeln('great success!');
