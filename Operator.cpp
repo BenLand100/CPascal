@@ -21,9 +21,9 @@ public:
         stack.pop();
         int res;
         if (b->type == TYPE_REAL) {
-            int idiv = (int)b->asReal();
-            if (idiv == 0) throw E_DIV_ZERO;
-            res = (a->type == TYPE_REAL ? ((int)a->asReal()) : a->asInteger()) / idiv;
+            double fdiv = (int)b->asReal();
+            if (fdiv == 0) throw E_DIV_ZERO;
+            res = (a->type == TYPE_REAL ? ((int)a->asReal()) : a->asInteger()) / fdiv;
         } else {
             int idiv = b->asInteger();
             if (idiv == 0) throw E_DIV_ZERO;

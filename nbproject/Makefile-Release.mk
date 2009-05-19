@@ -62,7 +62,7 @@ LDLIBSOPTIONS=
 
 dist/Release/${PLATFORM}/cpascal: ${OBJECTFILES}
 	${MKDIR} -p dist/Release/${PLATFORM}
-	${LINK.cc} -o dist/Release/${PLATFORM}/cpascal -s ${OBJECTFILES} ${LDLIBSOPTIONS} 
+	${LINK.cc} --eh-frame-hdr -o dist/Release/${PLATFORM}/cpascal -s ${OBJECTFILES} ${LDLIBSOPTIONS} 
 
 ${OBJECTDIR}/EFence.o: EFence.cpp 
 	${MKDIR} -p ${OBJECTDIR}

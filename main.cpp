@@ -19,6 +19,16 @@ double e() {
     return 2.78000000000;
 }
 
+void add1p(int* i) __attribute__((stdcall));
+void add1p(int* i) {
+    (*i)++;
+}
+
+void add1v(int& i) __attribute__((stdcall));
+void add1v(int& i) {
+    i++;
+}
+
 int main(int argc, char** argv) {
     ifstream in;
     in.open("./fpc/test.pas", ifstream::ate | ifstream::binary);
@@ -31,6 +41,8 @@ int main(int argc, char** argv) {
     ppg[size] = '\0';
     Interpreter* interp = new Interpreter(ppg);
     interp->addMethod((void*)&e,CONV_C_STDCALL,(char*)"function e: real;");
+    interp->addMethod((void*)&add1v,CONV_C_STDCALL,(char*)"procedure add1v(var i: integer);");
+    interp->addMethod((void*)&add1p,CONV_C_STDCALL,(char*)"procedure add1p(i: ^integer);");
     delete [] ppg;
     interp->run();
     delete interp;

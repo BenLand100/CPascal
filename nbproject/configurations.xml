@@ -59,6 +59,7 @@
           <output>dist/Debug/${PLATFORM}/cpascal</output>
           <linkerLibItems>
           </linkerLibItems>
+          <commandLine>--eh-frame-hdr</commandLine>
         </linkerTool>
       </compileType>
       <item path="Container.cpp">
@@ -158,6 +159,7 @@
           <stripSymbols>true</stripSymbols>
           <linkerLibItems>
           </linkerLibItems>
+          <commandLine>--eh-frame-hdr</commandLine>
         </linkerTool>
       </compileType>
       <item path="Container.cpp">

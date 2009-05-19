@@ -337,6 +337,8 @@ begin
   writeln(inttostr(i));
 end;
 
+var
+    i: integer;
 begin 
     writeLn(RealToStr(e)); 
     writeLn(IntToStr(multiply(4,2))); 
@@ -360,10 +362,15 @@ begin
     doarraystuff;
     testtypes;
     phonebook;
-    //testtry;
+    testtry;
     testref;
     testpointer;
     writeln(inttostr(3*-1));
     writeln(inttostr(3+-(2*6)));
+    i:= 5;
+    add1v(i);
+    writeln(inttostr(i));
+    add1p(@i);
+    writeln(inttostr(i));
     writeln('great success!');
 end;        

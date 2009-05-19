@@ -29,6 +29,20 @@ begin
     e:= 2.78;
 end;
 
+procedure add1v(var i: integer); stdcall;
+begin
+    i:= i + 1;
+end;
+
+type
+    pinteger = ^integer;
+
+procedure add1p(i: pinteger); stdcall;
+begin
+    i^:= i^ + 1;
+end;
+
+
 function readfile(const path: ansistring): ansistring;
 var
   a: TFileStream;
@@ -53,6 +67,8 @@ begin
     writeln(str);
     interp:= interp_init(PChar(str));
     interp_meth(interp, @e, 'function e: real;');
+    interp_meth(interp, @add1v, 'procedure add1v(var i: integer);');
+    interp_meth(interp, @add1p, 'procedure add1p(i: ^integer);');
     interp_run(interp);
     interp_free(interp);
 end.
