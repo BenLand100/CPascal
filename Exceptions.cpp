@@ -1,4 +1,5 @@
 #include "Exceptions.h"
+#include <cstdio>
 
 InterpEx::InterpEx(int cause_impl) : cause(cause_impl) {
 
@@ -18,6 +19,17 @@ int InterpEx::getCause() {
 
 std::list<int> InterpEx::getTrace() {
     return trace;
+}
+
+void InterpEx::printStackTrace() {
+    std::list<int>::iterator trace_iter = trace.begin();
+    std::list<int>::iterator trace_end = trace.end();
+    printf("Exception at position %i: %s\n", *trace_iter, what());
+    trace_iter++;
+    while (trace_iter != trace_end) {
+        printf("\t-%i\n",*trace_iter);
+        trace_iter++;
+    }
 }
 
 const char* InterpEx::what() const throw() {

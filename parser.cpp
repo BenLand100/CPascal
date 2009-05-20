@@ -15,8 +15,29 @@
 #define debug(x)
 
 Expression* parseExpr(char* &cur);
+std::list<Variable*> parseVars(char* &cur);
 std::list<Expression*> parseBlock(char* &cur);
 void parseContainer(char* &cur, Container* container);
+
+inline int offset(char* cur) {
+    switch (*cur) {
+        case PBOOLEAN:
+        case POPERATOR:
+        case PSPECIAL:
+        case PCHAR:
+            return *(int*)(cur + 2);
+        case PNAME:
+        case PINTEGER:
+            return *(int*)(cur + sizeof(long) + 1);
+        case PREAL:
+            return *(int*)(cur + sizeof(float) + 1);
+        case PSTRING: //sort of slow...
+            char* res = cur + 1;
+            while (*(res++)); //keeps going until next is one past null
+            return *(int*)res;
+    }
+    return -1;
+}
 
 inline char* next(char* cur) {
     switch (*cur) {
@@ -25,19 +46,19 @@ inline char* next(char* cur) {
         case PSPECIAL:
         case PCHAR:
             debug("next(" << (int)*cur << "," << (int)*(cur+1) << ")");
-            return cur + 2;
+            return cur + 2 + 4;
         case PNAME:
         case PINTEGER:
             debug("next(" << (int)*cur << "," << *(int*)(cur+1) << ")");
-            return cur + sizeof(long) + 1;
+            return cur + sizeof(long) + 1 + 4;
         case PREAL:
             debug("next(" << (int)*cur << "," << *(float*)(cur+1) << ")");
-            return cur + sizeof(float) + 1;
+            return cur + sizeof(float) + 1 + 4;
         case PSTRING:
             debug("next(" << (int)*cur << "," << (cur+1) << ")");
             char* res = cur + 1;
             while (*(res++)); //keeps going until next is one past null
-            return res;
+            return res + 4;
     }
     return 0;
 }
@@ -84,19 +105,19 @@ Type* parseType(char* &cur) {
             } else { //Already ate the of
                 return Type::getDynamicArrayType(parseType(cur));
             }
-        case RES_RECORD: {
+        case RES_RECORD: { //FIXME this is wrong, lol
+            std::list<Variable*> vars = parseVars(cur);
+            cur = next(cur);
             std::map<int,Type*> fields;
-            while (*cur) {
-                cur = next(cur);
-                int field = *(int*)&cur[1];
-                if (reserved(field)) {
-                    return Type::getRecordType(fields);
-                }
-                cur = next(cur);
-                Type* type = parseType(cur);
-                cur = next(cur);
-                fields[field] = type;
+            std::list<Variable*>::iterator iter = vars.begin();
+            std::list<Variable*>::iterator end = vars.end();
+            while (iter != end) {
+                Variable* var = *iter;
+                fields[var->name] = var->type;
+                delete var;
+                iter++;
             }
+            return Type::getRecordType(fields);
         }
         default:
             return Type::getType(name);
@@ -279,6 +300,7 @@ Expression* parseExpr(char* &cur) {
     std::stack<opprec>* oper = new std::stack<opprec>();
     char lastType = -1, nextType = -1;
     bool prefix = false;
+    int off = offset(cur);
     while (*cur) {
         char* tok = next(cur);
         lastType = nextType;
@@ -474,22 +496,24 @@ Expression* parseExpr(char* &cur) {
     }
     delete oper;
     debug("expr_created");
-    return new Expression(expr);
+    return new Expression(expr, off);
 }
 
 Until* parseUntil(char* &cur)  {
    debug("parseUntil");
+   int off = offset(cur);
    std::list<Expression*> block = parseBlock(cur); //eats the until
    Expression* cond = parseExpr(cur);
-   return new Until(block,cond);
+   return new Until(block,cond,off);
 }
 
 Case* parseCase(char* &cur) {
     debug("parseCase");
+    int off = offset(cur);
     cur = next(cur); //skip case
     Expression* cond = parseExpr(cur);
     cur = next(cur); //skip of
-    Case* pcase = new Case(cond);
+    Case* pcase = new Case(cond,off);
     parsecase:
     while (*cur) {
         cur = next(cur);
@@ -525,6 +549,7 @@ Case* parseCase(char* &cur) {
 
 For* parseFor(char* &cur) {
     debug("parseFor");
+    int off = offset(cur);
     cur = next(cur); //skip for
     cur = next(cur); //get var
     int var = *(int*)(cur+1);
@@ -536,25 +561,27 @@ For* parseFor(char* &cur) {
     cur = next(cur); //skip do
     //System.out.println("End: " + end);
     std::list<Expression*> block = parseBlock(cur);
-    return new For(var,begin,inc,end,block);
+    return new For(var,begin,inc,end,block,off);
 }
 
 While* parseWhile(char* &cur) {
     debug("parseWhile");
+    int off = offset(cur);
     cur = next(cur); //skip while
     Expression* cond = parseExpr(cur);
     cur = next(cur); //skip do
     std::list<Expression*> block = parseBlock(cur);
-    return new While(cond,block);
+    return new While(cond,block,off);
 }
 
 If* parseIf(char* &cur) {
     debug("parseIf");
+    int off = offset(cur);
     cur = next(cur); //skip if
     Expression* cond = parseExpr(cur);
     cur = next(cur); //skip then
     std::list<Expression*> block = parseBlock(cur);
-    If* res = new If(cond,block);
+    If* res = new If(cond,block,off);
     while (*cur) {
         char* tok = next(cur);
         if (tok[0] == PNAME && *(int*)(tok+1) == RES_ELSE) {
@@ -579,6 +606,7 @@ If* parseIf(char* &cur) {
 
 Try* parseTry(char* &cur) {
     debug("parseTry");
+    int off = offset(cur);
     std::list<Expression*> danger = parseBlock(cur);
     std::list<Expression*> saftey;
     std::list<Expression*> always;
@@ -592,7 +620,7 @@ Try* parseTry(char* &cur) {
         case RES_FINALLY:
             always = parseBlock(cur);
     }
-    return new Try(danger,saftey,always);
+    return new Try(danger,saftey,always,off);
 }
 
 std::list<Expression*> parseBlock(char* &cur) {

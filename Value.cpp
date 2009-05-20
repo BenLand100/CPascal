@@ -67,25 +67,25 @@ Value* Value::fromTypeMem(Type* type, std::map<int,Type*> &typemap, void* mem) {
 Value::Value() : Element(ELEM_VALUE), type(TYPE_NIL), typeObj(Type::getNil()) { }
 Value::Value(int impl_type, Type* impl_typeObj) : Element(ELEM_VALUE), type(impl_type), typeObj(impl_typeObj) { }
 Value::~Value() { }
-void Value::set(Value* val) throw(int) { throw E_NULL_VAL; }
+void Value::set(Value* val) throw(int,InterpEx*) { throw E_NULL_VAL; }
 Value* Value::clone() { return new Value(); }
 Value* Value::duplicate() { return new Value(); }
-Value* Value::getRef() throw(int) { throw E_NOT_POINTER; }
-void Value::setRef(Value* ref) throw(int) { throw E_NOT_POINTER; }
-void Value::negate() throw(int) { throw E_NON_NUMERIC; }
-void Value::incr() throw(int) { throw E_NON_NUMERIC; }
-void Value::decr() throw(int) { throw E_NON_NUMERIC; }
-Value* Value::getField(int name) throw(int) { throw E_NOT_RECORD; }
-void Value::setField(int name, Value* val)  throw(int) { throw E_NOT_RECORD; }
-int Value::size() throw(int) { throw E_NOT_ARRAY; }
-void Value::resize(int size, std::map<int,Type*>& typemap) throw(int) { throw E_NOT_ARRAY; }
-void Value::setIndex(int index, Value* val) throw(int) { throw E_NOT_ARRAY; }
-Value* Value::getIndex(int index) throw(int) { throw E_NOT_ARRAY; }
-char* Value::asString() throw(int) { throw E_NOT_STRING; }
-char Value::asChar() throw(int) { throw E_NOT_CHAR; }
-double Value::asReal() throw(int) { throw E_NOT_REAL; }
-int Value::asInteger() throw(int) { throw E_NOT_INTEGER; }
-bool Value::asBoolean() throw(int) { throw E_NOT_BOOLEAN; }
+Value* Value::getRef() throw(int,InterpEx*) { throw E_NOT_POINTER; }
+void Value::setRef(Value* ref) throw(int,InterpEx*) { throw E_NOT_POINTER; }
+void Value::negate() throw(int,InterpEx*) { throw E_NON_NUMERIC; }
+void Value::incr() throw(int,InterpEx*) { throw E_NON_NUMERIC; }
+void Value::decr() throw(int,InterpEx*) { throw E_NON_NUMERIC; }
+Value* Value::getField(int name) throw(int,InterpEx*) { throw E_NOT_RECORD; }
+void Value::setField(int name, Value* val)  throw(int,InterpEx*) { throw E_NOT_RECORD; }
+int Value::size() throw(int,InterpEx*) { throw E_NOT_ARRAY; }
+void Value::resize(int size, std::map<int,Type*>& typemap) throw(int,InterpEx*) { throw E_NOT_ARRAY; }
+void Value::setIndex(int index, Value* val) throw(int,InterpEx*) { throw E_NOT_ARRAY; }
+Value* Value::getIndex(int index) throw(int,InterpEx*) { throw E_NOT_ARRAY; }
+char* Value::asString() throw(int,InterpEx*) { throw E_NOT_STRING; }
+char Value::asChar() throw(int,InterpEx*) { throw E_NOT_CHAR; }
+double Value::asReal() throw(int,InterpEx*) { throw E_NOT_REAL; }
+int Value::asInteger() throw(int,InterpEx*) { throw E_NOT_INTEGER; }
+bool Value::asBoolean() throw(int,InterpEx*) { throw E_NOT_BOOLEAN; }
 int Value::argSize() { return -1; }
 void Value::valArg(void* mem) { }
 void Value::refArg(void* mem) { }
@@ -135,28 +135,28 @@ Value* IntegerValue::clone() {
     return new IntegerValue(*integer);
 }
 
-void IntegerValue::set(Value* val) throw(int) {
+void IntegerValue::set(Value* val) throw(int,InterpEx*) {
     if (val->type != TYPE_INTEGER) throw E_NOT_INTEGER;
     *integer = *((IntegerValue*)val)->integer;
 }
 
-void IntegerValue::negate() throw(int) {
+void IntegerValue::negate() throw(int,InterpEx*) {
     *integer = -(*integer);
 }
 
-void IntegerValue::incr() throw(int) {
+void IntegerValue::incr() throw(int,InterpEx*) {
     ++(*integer);
 }
 
-void IntegerValue::decr() throw(int) {
+void IntegerValue::decr() throw(int,InterpEx*) {
     --(*integer);
 }
 
-double IntegerValue::asReal() throw(int) {
+double IntegerValue::asReal() throw(int,InterpEx*) {
     return *integer;
 }
 
-int IntegerValue::asInteger() throw(int) {
+int IntegerValue::asInteger() throw(int,InterpEx*) {
     return *integer;
 }
 
@@ -258,7 +258,7 @@ Value* StringValue::clone() {
     return new StringValue(*str);
 }
 
-void StringValue::set(Value* val) throw(int) {
+void StringValue::set(Value* val) throw(int,InterpEx*) {
     if (val->type != TYPE_STRING) throw E_NOT_STRING;
     delete [] *mem;
     StringValue* sval = (StringValue*)val;
@@ -272,7 +272,7 @@ void StringValue::set(Value* val) throw(int) {
     strcpy(*str,*sval->str);
 }
 
-char* StringValue::asString() throw(int) {
+char* StringValue::asString() throw(int,InterpEx*) {
     return *str;
 }
 
@@ -325,24 +325,24 @@ Value* RealValue::clone() {
     return new RealValue(*real);
 }
 
-void RealValue::set(Value* val) throw(int) {
+void RealValue::set(Value* val) throw(int,InterpEx*) {
     if (val->type != TYPE_REAL) throw E_NOT_REAL;
     *real = *((RealValue*)val)->real;
 }
 
-void RealValue::negate() throw(int) {
+void RealValue::negate() throw(int,InterpEx*) {
     *real = -(*real);
 }
 
-void RealValue::incr() throw(int) {
+void RealValue::incr() throw(int,InterpEx*) {
     ++(*real);
 }
 
-void RealValue::decr() throw(int) {
+void RealValue::decr() throw(int,InterpEx*) {
     --(*real);
 }
 
-double RealValue::asReal() throw(int) {
+double RealValue::asReal() throw(int,InterpEx*) {
     return *real;
 }
 
@@ -402,28 +402,28 @@ Value* CharValue::clone() {
     return new CharValue(*chr);
 }
 
-void CharValue::set(Value* val) throw(int) {
+void CharValue::set(Value* val) throw(int,InterpEx*) {
     if (val->type != TYPE_CHAR) throw E_NOT_CHAR;
     *chr = *((CharValue*)val)->chr;
 }
 
-void CharValue::incr() throw(int) {
+void CharValue::incr() throw(int,InterpEx*) {
     ++(*chr);
 }
 
-void CharValue::decr() throw(int) {
+void CharValue::decr() throw(int,InterpEx*) {
     --(*chr);
 }
 
-char CharValue::asChar() throw(int) {
+char CharValue::asChar() throw(int,InterpEx*) {
     return *chr;
 }
 
-int CharValue::asInteger() throw(int) {
+int CharValue::asInteger() throw(int,InterpEx*) {
     return *chr;
 }
 
-char* CharValue::asString() throw(int) {
+char* CharValue::asString() throw(int,InterpEx*) {
     **str = *chr;
     return *str;
 }
@@ -478,16 +478,16 @@ Value* BooleanValue::clone() {
     return new BooleanValue(*boolean);
 }
 
-void BooleanValue::set(Value* val) throw(int) {
+void BooleanValue::set(Value* val) throw(int,InterpEx*) {
     if (val->type != TYPE_BOOLEAN) throw E_NOT_BOOLEAN;
     *boolean = *((BooleanValue*)val)->boolean;
 }
 
-bool BooleanValue::asBoolean() throw(int) {
+bool BooleanValue::asBoolean() throw(int,InterpEx*) {
     return *boolean != 0;
 }
 
-int BooleanValue::asInteger() throw(int) {
+int BooleanValue::asInteger() throw(int,InterpEx*) {
     return *boolean;
 }
 
@@ -662,7 +662,7 @@ Value* ArrayValue::clone() {
     }
 }
 
-void ArrayValue::set(Value* val) throw(int) {
+void ArrayValue::set(Value* val) throw(int,InterpEx*) {
     if (val->type != TYPE_ARRAY) throw E_NOT_ARRAY;
     ArrayValue* arr = (ArrayValue*)val;
     int numelems = **arr->asize;
@@ -703,11 +703,11 @@ void ArrayValue::set(Value* val) throw(int) {
     }
 }
 
-int ArrayValue::size() throw(int) {
+int ArrayValue::size() throw(int,InterpEx*) {
     return **asize;
 }
 
-void ArrayValue::resize(int len, std::map<int,Type*>& typemap) throw(int) {
+void ArrayValue::resize(int len, std::map<int,Type*>& typemap) throw(int,InterpEx*) {
     if (!*dynamic) throw E_STATIC_ARRAY;
     Value** oldarr = *array;
     char* newmem = new char[8+(*elemsz)*len];
@@ -747,13 +747,13 @@ void ArrayValue::resize(int len, std::map<int,Type*>& typemap) throw(int) {
     *pas_array = newpas_array;
 }
 
-void ArrayValue::setIndex(int index, Value* val) throw(int) {
+void ArrayValue::setIndex(int index, Value* val) throw(int,InterpEx*) {
     index -= *start;
     if (index >= **asize) throw E_INDEX_BOUNDS;
     (*array)[index]->set(val);
 }
 
-Value* ArrayValue::getIndex(int index) throw(int) {
+Value* ArrayValue::getIndex(int index) throw(int,InterpEx*) {
     index -= *start;
     if (index >= **asize) throw E_INDEX_BOUNDS;
     return (*array)[index];
@@ -832,7 +832,7 @@ Value* PointerValue::clone() {
     (*ref)->refArg((void*)pt->pas_ref);
 }
 
-void PointerValue::set(Value* val) throw(int) {
+void PointerValue::set(Value* val) throw(int,InterpEx*) {
     if (val->type != TYPE_POINTER) throw E_NOT_POINTER;
     *refType = *((PointerValue*)val)->refType;
     delete *ref;
@@ -840,12 +840,12 @@ void PointerValue::set(Value* val) throw(int) {
     (*ref)->refArg((void*)pas_ref);
 }
 
-Value* PointerValue::getRef() throw(int) {
+Value* PointerValue::getRef() throw(int,InterpEx*) {
     return *ref;
 }
 
 //FIXME Should check assignment types
-void PointerValue::setRef(Value* ref_impl) throw(int) {
+void PointerValue::setRef(Value* ref_impl) throw(int,InterpEx*) {
     delete *ref;
     *ref = ref_impl->duplicate();
     (*ref)->refArg((void*)pas_ref);
@@ -968,7 +968,7 @@ Value* RecordValue::clone() {
     }
 }
 
-void RecordValue::set(Value* val) throw(int) {
+void RecordValue::set(Value* val) throw(int,InterpEx*) {
     if (val->type != TYPE_RECORD) throw E_NOT_RECORD;
     RecordValue* rec = (RecordValue*)val;
     std::map<int,Value*>::iterator iter = rec->fields->begin();
@@ -979,12 +979,12 @@ void RecordValue::set(Value* val) throw(int) {
     }
 }
 
-Value* RecordValue::getField(int name) throw(int) {
+Value* RecordValue::getField(int name) throw(int,InterpEx*) {
     if (fields->find(name) == fields->end()) throw E_NO_FIELD;
     return (*fields)[name];
 }
 
-void RecordValue::setField(int name, Value* value) throw(int) {
+void RecordValue::setField(int name, Value* value) throw(int,InterpEx*) {
     if (fields->find(name) == fields->end()) throw E_NO_FIELD;
     (*fields)[name]->set(value);
 }

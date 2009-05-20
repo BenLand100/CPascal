@@ -14,6 +14,7 @@ class PointerValue;
 #include <string>
 #include "Element.h"
 #include "Type.h"
+#include "Exceptions.h"
 
 class Value : public Element {
 public:
@@ -26,25 +27,25 @@ public:
     Value();
     virtual ~Value();
 
-    virtual void set(Value* val) throw(int);
+    virtual void set(Value* val) throw(int,InterpEx*);
     virtual Value* clone();
     virtual Value* duplicate();
-    virtual Value* getRef() throw(int);
-    virtual void setRef(Value* ref) throw(int);
-    virtual void negate() throw(int);
-    virtual void incr() throw(int);
-    virtual void decr() throw(int);
-    virtual Value* getField(int name) throw(int);
-    virtual void setField(int name, Value* val) throw(int);
-    virtual int size() throw(int);
-    virtual void resize(int size, std::map<int,Type*>& typemap) throw(int);
-    virtual void setIndex(int index, Value* val) throw(int);
-    virtual Value* getIndex(int index) throw(int);
-    virtual char* asString() throw(int);
-    virtual char asChar() throw(int);
-    virtual double asReal() throw(int);
-    virtual int asInteger() throw(int);
-    virtual bool asBoolean() throw(int);
+    virtual Value* getRef() throw(int,InterpEx*);
+    virtual void setRef(Value* ref) throw(int,InterpEx*);
+    virtual void negate() throw(int,InterpEx*);
+    virtual void incr() throw(int,InterpEx*);
+    virtual void decr() throw(int,InterpEx*);
+    virtual Value* getField(int name) throw(int,InterpEx*);
+    virtual void setField(int name, Value* val) throw(int,InterpEx*);
+    virtual int size() throw(int,InterpEx*);
+    virtual void resize(int size, std::map<int,Type*>& typemap) throw(int,InterpEx*);
+    virtual void setIndex(int index, Value* val) throw(int,InterpEx*);
+    virtual Value* getIndex(int index) throw(int,InterpEx*);
+    virtual char* asString() throw(int,InterpEx*);
+    virtual char asChar() throw(int,InterpEx*);
+    virtual double asReal() throw(int,InterpEx*);
+    virtual int asInteger() throw(int,InterpEx*);
+    virtual bool asBoolean() throw(int,InterpEx*);
 
     virtual int argSize();
     virtual void refArg(void* mem);
@@ -68,12 +69,12 @@ public:
     
     Value* duplicate();
     Value* clone();
-    void set(Value* val) throw(int);
-    void negate() throw(int);
-    void incr() throw(int);
-    void decr() throw(int);
-    double asReal() throw(int);
-    int asInteger() throw(int);
+    void set(Value* val) throw(int,InterpEx*);
+    void negate() throw(int,InterpEx*);
+    void incr() throw(int,InterpEx*);
+    void decr() throw(int,InterpEx*);
+    double asReal() throw(int,InterpEx*);
+    int asInteger() throw(int,InterpEx*);
 
     int argSize();
     void refArg(void* mem);
@@ -95,8 +96,8 @@ public:
 
     Value* duplicate();
     Value* clone();
-    void set(Value* val) throw(int);
-    char* asString() throw(int);
+    void set(Value* val) throw(int,InterpEx*);
+    char* asString() throw(int,InterpEx*);
 
     int argSize();
     void refArg(void* mem);
@@ -120,11 +121,11 @@ public:
 
     Value* duplicate();
     Value* clone();
-    void set(Value* val) throw(int);
-    void negate() throw(int);
-    void incr() throw(int);
-    void decr() throw(int);
-    double asReal() throw(int);
+    void set(Value* val) throw(int,InterpEx*);
+    void negate() throw(int,InterpEx*);
+    void incr() throw(int,InterpEx*);
+    void decr() throw(int,InterpEx*);
+    double asReal() throw(int,InterpEx*);
 
     int argSize();
     void refArg(void* mem);
@@ -143,12 +144,12 @@ public:
 
     Value* duplicate();
     Value* clone();
-    void set(Value* val) throw(int);
-    void incr() throw(int);
-    void decr() throw(int);
-    char asChar() throw(int);
-    int asInteger() throw(int);
-    char* asString() throw(int);
+    void set(Value* val) throw(int,InterpEx*);
+    void incr() throw(int,InterpEx*);
+    void decr() throw(int,InterpEx*);
+    char asChar() throw(int,InterpEx*);
+    int asInteger() throw(int,InterpEx*);
+    char* asString() throw(int,InterpEx*);
 
     int argSize();
     void refArg(void* mem);
@@ -170,9 +171,9 @@ public:
 
     Value* duplicate();
     Value* clone();
-    void set(Value* val) throw(int);
-    bool asBoolean() throw(int);
-    int asInteger() throw(int);
+    void set(Value* val) throw(int,InterpEx*);
+    bool asBoolean() throw(int,InterpEx*);
+    int asInteger() throw(int,InterpEx*);
 
     int argSize();
     void refArg(void* mem);
@@ -193,11 +194,11 @@ public:
 
     Value* duplicate();
     Value* clone();
-    void set(Value* val) throw(int);
-    int size() throw(int);
-    void resize(int size, std::map<int,Type*>& typemap) throw(int);
-    Value* getIndex(int index) throw(int);
-    void setIndex(int index, Value* val) throw(int);
+    void set(Value* val) throw(int,InterpEx*);
+    int size() throw(int,InterpEx*);
+    void resize(int size, std::map<int,Type*>& typemap) throw(int,InterpEx*);
+    Value* getIndex(int index) throw(int,InterpEx*);
+    void setIndex(int index, Value* val) throw(int,InterpEx*);
 
     int argSize();
     void refArg(void* mem);
@@ -227,9 +228,9 @@ public:
 
     Value* duplicate();
     Value* clone();
-    void set(Value* val) throw(int);
-    Value* getRef() throw(int);
-    void setRef(Value* ref) throw(int);
+    void set(Value* val) throw(int,InterpEx*);
+    Value* getRef() throw(int,InterpEx*);
+    void setRef(Value* ref) throw(int,InterpEx*);
 
 
     int argSize();
@@ -252,9 +253,9 @@ public:
 
     Value* duplicate();
     Value* clone();
-    void set(Value* val) throw(int);
-    Value* getField(int name) throw(int);
-    void setField(int name, Value* value) throw(int);
+    void set(Value* val) throw(int,InterpEx*);
+    Value* getField(int name) throw(int,InterpEx*);
+    void setField(int name, Value* value) throw(int,InterpEx*);
 
     int argSize();
     void refArg(void* mem);

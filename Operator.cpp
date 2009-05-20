@@ -1,7 +1,4 @@
-
 #include <stack>
-
-
 #include <iostream>
 #include "Value.h"
 #include "Type.h"
@@ -14,7 +11,7 @@ class IDiv : public Operator {
 public:
     IDiv() : Operator(OP_IDIV) { };
     ~IDiv() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* b = stack.top();
         stack.pop();
         Value* a = stack.top();
@@ -39,7 +36,7 @@ class FDiv : public Operator {
 public:
     FDiv() : Operator(OP_FDIV) { };
     ~FDiv() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* b = stack.top();
         stack.pop();
         Value* a = stack.top();
@@ -58,7 +55,7 @@ class Mod : public Operator {
 public:
     Mod() : Operator(OP_MOD) { };
     ~Mod() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* b = stack.top();
         stack.pop();
         Value* a = stack.top();
@@ -81,7 +78,7 @@ class Mul : public Operator {
 public:
     Mul() : Operator(OP_MUL) { };
     ~Mul() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* b = stack.top();
         stack.pop();
         Value* a = stack.top();
@@ -102,7 +99,7 @@ class Add : public Operator {
 public:
     Add() : Operator(OP_ADD) { };
     ~Add() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* b = stack.top();
         stack.pop();
         Value* a = stack.top();
@@ -127,7 +124,7 @@ class Sub : public Operator {
 public:
     Sub() : Operator(OP_SUB) { };
     ~Sub() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* b = stack.top();
         stack.pop();
         Value* a = stack.top();
@@ -148,7 +145,7 @@ class Not : public Operator {
 public:
     Not() : Operator(OP_NOT) { };
     ~Not() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* a = stack.top();
         stack.pop();
         stack.push(new BooleanValue(!a->asBoolean()));
@@ -160,7 +157,7 @@ class Or : public Operator {
 public:
     Or() : Operator(OP_OR) { };
     ~Or() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* b = stack.top();
         stack.pop();
         Value* a = stack.top();
@@ -175,7 +172,7 @@ class And : public Operator {
 public:
     And() : Operator(OP_AND) { };
     ~And() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* b = stack.top();
         stack.pop();
         Value* a = stack.top();
@@ -190,7 +187,7 @@ class Equ : public Operator {
 public:
     Equ() : Operator(OP_EQU) { };
     ~Equ() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* b = stack.top();
         stack.pop();
         Value* a = stack.top();
@@ -209,7 +206,7 @@ class Neq : public Operator {
 public:
     Neq() : Operator(OP_NEQ) { };
     ~Neq() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* b = stack.top();
         stack.pop();
         Value* a = stack.top();
@@ -228,7 +225,7 @@ class Less : public Operator {
 public:
     Less() : Operator(OP_LESS) { };
     ~Less() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* b = stack.top();
         stack.pop();
         Value* a = stack.top();
@@ -247,7 +244,7 @@ class LessEq : public Operator {
 public:
     LessEq() : Operator(OP_LESSEQ) { };
     ~LessEq() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* b = stack.top();
         stack.pop();
         Value* a = stack.top();
@@ -266,7 +263,7 @@ class Great : public Operator {
 public:
     Great() : Operator(OP_GREAT) { };
     ~Great() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* b = stack.top();
         stack.pop();
         Value* a = stack.top();
@@ -285,7 +282,7 @@ class GreatEq : public Operator {
 public:
     GreatEq() : Operator(OP_GREATEQ) { };
     ~GreatEq() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* b = stack.top();
         stack.pop();
         Value* a = stack.top();
@@ -304,7 +301,7 @@ class Asgn : public Operator {
 public:
     Asgn() : Operator(OP_ASGN) { };
     ~Asgn() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* val = stack.top();
         stack.pop();
         Value* var = stack.top();
@@ -319,7 +316,7 @@ class Addr : public Operator {
 public:
     Addr() : Operator(OP_ADDR) { };
     ~Addr() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* val = stack.top();
         stack.pop();
         Pointer* pt = Type::getPointerType((Type*)val->typeObj);
@@ -334,7 +331,7 @@ class DerefGet : public Operator {
 public:
     DerefGet() : Operator(OP_DEREFGET) { };
     ~DerefGet() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* ref = stack.top();
         stack.pop();
         stack.push(ref->getRef()->duplicate());
@@ -346,7 +343,7 @@ class DerefSet : public Operator {
 public:
     DerefSet() : Operator(OP_DEREFSET) { };
     ~DerefSet() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* val = stack.top();
         stack.pop();
         Value* pval = stack.top();
@@ -361,7 +358,7 @@ class Neg : public Operator {
 public:
     Neg() : Operator(OP_NEG) { };
     ~Neg() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int) {
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* a = stack.top()->clone();
         delete stack.top();
         stack.pop();
@@ -432,7 +429,7 @@ Symbol::~Symbol() {
     }
     delete [] args;
 }
-void Symbol::preform(std::stack<Value*>& stack, Frame* frame)  throw(int) {
+void Symbol::preform(std::stack<Value*>& stack, Frame* frame)  throw(int,InterpEx*) {
     Value** vals = new Value*[numArgs];
     for (int i = 0; i < numArgs; i++) {
         vals[i] = args[i]->eval(frame);
@@ -445,7 +442,7 @@ void Symbol::preform(std::stack<Value*>& stack, Frame* frame)  throw(int) {
 
 Size::Size(Expression* array_impl) : Operator(OP_SIZE), array(array_impl) { }
 Size::~Size() { delete array; }
-void Size::preform(std::stack<Value*>& stack, Frame* frame)  throw(int) {
+void Size::preform(std::stack<Value*>& stack, Frame* frame)  throw(int,InterpEx*) {
     Value* arr = array->eval(frame);
     stack.push(new IntegerValue(arr->size()));
     delete arr;
@@ -464,7 +461,7 @@ ArrayDef::~ArrayDef() {
     }
     delete [] elems;
 }
-void ArrayDef::preform(std::stack<Value*>& stack, Frame* frame) throw(int) {
+void ArrayDef::preform(std::stack<Value*>& stack, Frame* frame) throw(int,InterpEx*) {
     Value** vals = new Value*[numElems];
     for (int i = 0; i < numElems; i++)
         vals[i] = elems[i]->eval(frame);
@@ -480,7 +477,7 @@ void ArrayDef::preform(std::stack<Value*>& stack, Frame* frame) throw(int) {
 
 Resize::Resize(Expression* array_impl, Expression* dim_impl) : Operator(OP_RESIZE), array(array_impl), dim(dim_impl) { }
 Resize::~Resize() { delete array; delete dim; }
-void Resize::preform(std::stack<Value*>& stack, Frame* frame) throw(int) {
+void Resize::preform(std::stack<Value*>& stack, Frame* frame) throw(int,InterpEx*) {
     Value* arr = array->eval(frame);
     Value* size = dim->eval(frame);
     arr->resize(size->asInteger(), frame->typemap);
@@ -501,7 +498,7 @@ ArrayGet::~ArrayGet() {
     }
     delete [] indexes;
 }
-void ArrayGet::preform(std::stack<Value*>& stack, Frame* frame) throw(int) {
+void ArrayGet::preform(std::stack<Value*>& stack, Frame* frame) throw(int,InterpEx*) {
     Value* arr = stack.top();
     Value* res = arr;
     stack.pop();
@@ -528,7 +525,7 @@ ArraySet::~ArraySet() {
     }
     delete [] indexes;
 }
-void ArraySet::preform(std::stack<Value*>& stack, Frame* frame) throw(int) {
+void ArraySet::preform(std::stack<Value*>& stack, Frame* frame) throw(int,InterpEx*) {
     Value* value = stack.top();
     stack.pop();
     Value* arr = stack.top();
@@ -548,7 +545,7 @@ void ArraySet::preform(std::stack<Value*>& stack, Frame* frame) throw(int) {
 
 FieldGet::FieldGet(int name_impl) : Operator(OP_FIELDGET), name(name_impl) { }
 FieldGet::~FieldGet() { }
-void FieldGet::preform(std::stack<Value*>& stack, Frame* frame) throw(int) {
+void FieldGet::preform(std::stack<Value*>& stack, Frame* frame) throw(int,InterpEx*) {
     Value* record = stack.top();
     stack.pop();
     Value* res = record->getField(name);
@@ -558,7 +555,7 @@ void FieldGet::preform(std::stack<Value*>& stack, Frame* frame) throw(int) {
 
 FieldSet::FieldSet(int name_impl) : Operator(OP_FIELDSET), name(name_impl) { }
 FieldSet::~FieldSet() { }
-void FieldSet::preform(std::stack<Value*>& stack, Frame* frame) throw(int) {
+void FieldSet::preform(std::stack<Value*>& stack, Frame* frame) throw(int,InterpEx*) {
     Value* val = stack.top();
     stack.pop();
     Value* record = stack.top();

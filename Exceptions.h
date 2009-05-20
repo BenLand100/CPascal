@@ -31,6 +31,7 @@ public:
     int getCause();
     std::list<int> getTrace();
     const char* what() const throw();
+    void printStackTrace();
 private:
     std::list<int> trace;
     int cause;

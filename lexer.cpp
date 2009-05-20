@@ -80,15 +80,19 @@ inline void tolower(char* ppg) {
 
 char* lex(char* ppg, std::map<std::string,int> &names) {
     int nextord = reserved(names);
-    char* res = new char[strlen(ppg)*2]; //this should suffice, haha.
+    char* res = new char[strlen(ppg)*6]; //this should suffice, haha.
     char* toks = res;
+    char* last = toks;
+    char* start = ppg;
+    char* pos = ppg;
     whitespace(ppg);
     tolower(ppg);
     debug(std::cout << "lexing...\n";)
     char c;
     while (c = *ppg) {
-        debug(char* last = toks;)
+        char* last = toks;
         debug(std::cout << c << ' ';)
+        pos = ppg;
         switch (c) {
             //***BEGIN NAME/FAUX_OPERATOR***
             case 'a':
@@ -303,9 +307,10 @@ char* lex(char* ppg, std::map<std::string,int> &names) {
                 *(toks++) = OP_SUB;
                 break;
             case '/':
-                if (ppg[1] == '/')
+                if (ppg[1] == '/') {
                     while (*(++ppg) != '\n'); //; is important
-                break;
+                    break;
+                }
                 *(toks++) = POPERATOR;
                 *(toks++) = OP_FDIV;
                 break;
@@ -344,13 +349,18 @@ char* lex(char* ppg, std::map<std::string,int> &names) {
         }
         ++ppg;
         whitespace(ppg);
+        if (toks != last) {
+            *(int*)toks = (pos - start);
+            toks += 4;
+        }
         debug(
-            std::cout << (int)*last << '\n';
+            std::cout << (int)*last << ' ' << *(int*)(toks - 4) << ' ';
             if (*last == PSTRING) {
                 std::cout << "s=" << (last+1) << '\n';
-            }
-            if (*last == PCHAR) {
+            } else if (*last == PCHAR) {
                 std::cout << "c=" << *(last+1) << '\n';
+            } else {
+                std::cout << '\n';
             }
         )
     }

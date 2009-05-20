@@ -16,6 +16,7 @@ public:
     void run();
     void addMethod(void* addr,  int conv, char* def);
 private:
+    InterpEx* exception;
     Program* prog;
     std::map<std::string,int> names;
 };
@@ -39,7 +40,7 @@ public:
         };
     } Slot;
 
-    Value* resolve(int symbol, Value** args, int numArgs) throw(int);
+    Value* resolve(int symbol, Value** args, int numArgs) throw(int,InterpEx*);
 
     std::map<int,Type*> typemap;
 private:

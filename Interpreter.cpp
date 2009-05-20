@@ -54,7 +54,7 @@ char* realtostr(double i) {
     return res;
 }
 
-Interpreter::Interpreter(char* ppg) {
+Interpreter::Interpreter(char* ppg) : exception(0) {
     char* tokens = lex(ppg, names);
     prog = parse(tokens);
     freetoks(tokens);
@@ -70,13 +70,22 @@ Interpreter::~Interpreter() {
 }
 
 void Interpreter::run() {
+    if (exception) {
+        delete exception;
+        exception = 0;
+    }
     std::map<std::string, int>::iterator iter = names.begin();
     while (iter != names.end()) {
         debug(iter->first << ">>" << iter->second);
         iter++;
     }
     Frame* frame = new Frame(prog);
-    evalBlock(&prog->block, frame);
+    try {
+        evalBlock(&prog->block, frame);
+    } catch (InterpEx* ex) {
+        ex->printStackTrace();
+        exception = ex;
+    }
     delete frame;
 }
 
@@ -144,7 +153,7 @@ Frame::~Frame() {
     }
 }
 
-Value* Frame::resolve(int symbol, Value** args, int numArgs) throw (int) {
+Value* Frame::resolve(int symbol, Value** args, int numArgs) throw(int, InterpEx*) {
     debug("resolve_symbol=" << symbol);
     Slot* slot;
     if (slots.find(symbol) != slots.end()) {

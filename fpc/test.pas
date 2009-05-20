@@ -337,6 +337,31 @@ begin
   writeln(inttostr(i));
 end;
 
+function atan_prime(x: real): real;
+begin
+	result:= 1 / (1 + x*x);
+end;
+
+function atan_int(a,b,accuracy: real): real;
+var
+	mid, seg, left, right: real;
+begin
+	mid:= (a + b) / 2;
+	seg:= (b - a) / 2;
+	left:= seg * (atan_prime(a) + atan_prime(mid)) / 2;
+	right:= seg * (atan_prime(mid) + atan_prime(b)) / 2;
+	if (left + right <= accuracy) then
+		result:= left + right;
+	else
+		result:= atan_int(a,mid,accuracy) + atan_int(mid,b,accuracy);
+end;
+
+function estimate_pi(accuracy: real): real;
+begin
+    writeln('estimate_pi');
+	result:= 4*atan_int(0,1,accuracy*4);
+end;
+
 var
     i: integer;
 begin 
@@ -372,5 +397,7 @@ begin
     writeln(inttostr(i));
     add1p(@i);
     writeln(inttostr(i));
+	writeln(realtostr(estimate_pi(0.001)));
     writeln('great success!');
+    //SmartSetup('http://world142.runescape.com/', 'plugin.js?param=o0,a1,m0');
 end;        

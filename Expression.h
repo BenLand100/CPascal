@@ -29,18 +29,20 @@ typedef struct _Block {
 
 class Expression {
 public:
-    Expression(std::list<Element*> postfix);
+    Expression(std::list<Element*> postfix, int offset);
     virtual ~Expression();
 
-    virtual Value* eval(Frame* frame) throw(InterpEx, int);
+    const int offset;
+
+    virtual Value* eval(Frame* frame) throw(InterpEx*, int);
 protected:
-    Expression();
+    Expression(int offset);
 private:
     Element** elems;
     int length;
 };
 
-inline void evalBlock(Block* block, Frame* frame) throw(InterpEx) {
+inline void evalBlock(Block* block, Frame* frame) throw(InterpEx*) {
     int numElems = block->length;
     Expression** elems = block->elems;
     debug("evalBlock{" << elems << "," << numElems << "}");
@@ -48,12 +50,14 @@ inline void evalBlock(Block* block, Frame* frame) throw(InterpEx) {
         debug("eval " << elems[i]);
         try {
             delete elems[i]->eval(frame);
-        } catch (InterpEx &e) {
-            //FIXME e.addTrace(elems[i]->pos);
-            throw e;
-        } catch (int i) {
-            InterpEx ex(i);
-            //FIXME ex.addTrace()
+        } catch (InterpEx* ex) {
+            debug("tossed");
+            ex->addTrace(elems[i]->offset);
+            throw ex;
+        } catch (int exi) {
+            debug("caught");
+            InterpEx* ex = new InterpEx(exi);
+            ex->addTrace(elems[i]->offset);
             throw ex;
         }
     }
@@ -84,10 +88,10 @@ inline void fillBlock(Block* block, std::list<Expression*>* exprs) {
 
 class Until : public Expression {
 public:
-    Until(std::list<Expression*> block, Expression* condition);
+    Until(std::list<Expression*> block, Expression* condition, int offset);
     ~Until();
 
-    Value* eval(Frame* frame) throw(InterpEx, int);
+    Value* eval(Frame* frame) throw(InterpEx*, int);
 private:
     Expression* cond;
     Block block;
@@ -95,12 +99,12 @@ private:
 
 class Case : public Expression {
 public:
-    Case(Expression* condition);
+    Case(Expression* condition, int offset);
     ~Case();
 
     void setDefault(std::list<Expression*> branch);
     void addBranch(int value, std::list<Expression*> branch);
-    Value* eval(Frame* frame) throw(InterpEx, int);
+    Value* eval(Frame* frame) throw(InterpEx*, int);
 private:
     Expression* value;
     std::map<int,Block*> branches;
@@ -110,10 +114,10 @@ private:
 
 class For : public Expression {
 public:
-    For(int var, Expression* begin, bool inc, Expression* end, std::list<Expression*> block);
+    For(int var, Expression* begin, bool inc, Expression* end, std::list<Expression*> block, int offset);
     ~For();
 
-    Value* eval(Frame* frame) throw(InterpEx, int);
+    Value* eval(Frame* frame) throw(InterpEx*, int);
 private:
     int var;
     Expression* begin;
@@ -124,10 +128,10 @@ private:
 
 class While : public Expression {
 public:
-    While(Expression* condition, std::list<Expression*> block);
+    While(Expression* condition, std::list<Expression*> block, int offset);
     ~While();
 
-    Value* eval(Frame* frame) throw(InterpEx, int);
+    Value* eval(Frame* frame) throw(InterpEx*, int);
 private:
     Expression* cond;
     Block block;
@@ -135,12 +139,12 @@ private:
 
 class If : public Expression {
 public:
-    If(Expression* condition, std::list<Expression*> block);
+    If(Expression* condition, std::list<Expression*> block, int offset);
     ~If();
 
     void addBranch(Expression* cond, std::list<Expression*> block);
     void setDefault(std::list<Expression*> block);
-    Value* eval(Frame* frame) throw(InterpEx, int);
+    Value* eval(Frame* frame) throw(InterpEx*, int);
 private:
     typedef struct {
         Expression* cond;
@@ -152,10 +156,10 @@ private:
 
 class Try : public Expression {
 public:
-    Try(std::list<Expression*> danger, std::list<Expression*> saftey, std::list<Expression*> always);
+    Try(std::list<Expression*> danger, std::list<Expression*> saftey, std::list<Expression*> always, int offset);
     ~Try();
 
-    Value* eval(Frame* frame) throw(InterpEx, int);
+    Value* eval(Frame* frame) throw(InterpEx*, int);
 private:
     Block danger;
     Block saftey;
