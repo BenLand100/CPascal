@@ -1,3 +1,8 @@
+/**
+ * I've had this on my harddrive forever, no idea where it came from, but I did
+ * not write it, just modified it to be in a single file.
+ */
+
 //#define MEMORY_TRACE
 
 #ifdef MEMORY_TRACE

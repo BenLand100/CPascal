@@ -165,7 +165,13 @@ bool Array::instanceOf(Type* type) {
 }
 
 int Array::sizeOf(std::map<int,Type*>& typemap) {
-    return dynamic ? 4 : ((to - from + 1) * element->sizeOf(typemap));
+    if (dynamic) {
+        return 4;
+    } else {
+        int elemsz = element->sizeOf(typemap);
+        int len = to - from + 1;
+        return elemsz*len;
+    }
 }
 
 Record::Record(std::string descr_impl, std::list<Variable*> fields_impl) : Type(descr_impl,TYPE_RECORD), fields(fields_impl), size(0) { }

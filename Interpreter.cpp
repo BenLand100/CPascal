@@ -68,6 +68,7 @@ char* booltostr(bool i) {
 char* realtostr(double i) __attribute__((stdcall));
 char* realtostr(double i) {
     std::stringstream strm;
+    strm.precision(16);
     strm << i;
     std::string str = strm.str();
     char* res = new char[str.length()+1];
@@ -160,6 +161,11 @@ void Frame::init(Container* container) {
 }
 
 Frame::~Frame() {
+    int numMethods = container->methods.size();
+    for (int i = 0; i < numMethods; i++) {
+        Slot* s = slots[container->methods[i]->name];
+        delete s;
+    }
     int numVariables = container->variables.size();
     for (int i = 0; i < numVariables; i++) {
         Slot* s = slots[container->variables[i]->name];
@@ -174,7 +180,7 @@ Frame::~Frame() {
         delete s;
         iter++;
     }
-    }
+}
 
 Value* Frame::resolve(int symbol, Value** args, int numArgs) throw(int, InterpEx*) {
     debug("resolve_symbol=" << symbol);
@@ -281,14 +287,22 @@ Value* Frame::resolve(int symbol, Value** args, int numArgs) throw(int, InterpEx
                 debug("resolve_args");
                 for (int i = 0; i < numArgs; i++) {
                     Variable* var = meth->arguments[i];
-                    frame->slots[var->name] = new Slot(var->byRef ? args[i]->duplicate() : args[i]->clone());
+                    frame->slots[var->name] = new Slot(var->byRef ? args[i]: args[i]->clone());
                 }
                 if (meth->type) frame->slots[RES_RESULT] = new Slot(Value::fromType(meth->type, typemap));
                 debug("resolve_method");
                 evalBlock(&meth->block, frame);
                 debug("resolve_return");
+                for (int i = 0; i < numArgs; i++) {
+                    Variable* var = meth->arguments[i];
+                    Slot* slot = frame->slots[var->name];
+                    if (!var->byRef) delete slot->value;
+                    delete slot;
+                }
                 if (meth->type) {
-                    Value* val = frame->slots[RES_RESULT]->value->duplicate();
+                    Slot* res = frame->slots[RES_RESULT];
+                    Value* val = res->value;
+                    delete res;
                     delete frame;
                     return val;
                 } else {

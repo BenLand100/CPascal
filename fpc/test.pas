@@ -102,9 +102,9 @@ begin
     wait(1000);
     writeln(inttostr(time));
     t:= time;
-    for i:= 1 to 100000 do 
+    for i:= 1 to 1000 do 
         x:= 8;
-    result:= (time - t) / 100000;
+    result:= (time - t) / 1000;
 end;
 
 function testrepeatuntil;
@@ -367,6 +367,35 @@ begin
 	writeln('took ' + inttostr(t) + ' ms, or ' + realtostr(t/1000) + ' seconds.');
 end;
 
+type 
+    twoint = record 
+        a, b: integer;
+    end;
+
+procedure multirecordarray;
+var 
+    arr: array of array of array of twoint;
+    arrs: array[0..1] of array[0..1] of array[0..1] of twoint;
+begin
+    writeln('d1');
+    resize(arr,1);
+    writeln('d2');
+    resize(arr[0],1);
+    writeln('d3');
+    resize(arr[0][0],1);
+    writeln('sized');
+    arr[0][0][0].a:= 1;
+    arr[0][0][0].b:= 2;
+    writeln('set');
+    writeln(inttostr(arr[0][0][0].a));
+    writeln(inttostr(arr[0][0][0].b));
+    arrs[1][1][1].a:= 1;
+    arrs[1][1][1].b:= 2;
+    writeln('set');
+    writeln(inttostr(arrs[1][1][1].a));
+    writeln(inttostr(arrs[1][1][1].b));
+end;
+
 var
     i: integer;
 begin 
@@ -403,6 +432,7 @@ begin
     add1p(@i);
     writeln(inttostr(i));
 	writeln(realtostr(estimate_pi(0.0001)));
+	multirecordarray;
     writeln('great success!');
     //SmartSetup('http://world142.runescape.com/', 'plugin.js?param=o0,a1,m0');
 end;        

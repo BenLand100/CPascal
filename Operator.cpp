@@ -438,6 +438,7 @@ void Symbol::preform(std::stack<Value*>& stack, Frame* frame)  throw(int,InterpE
     for (int i = 0; i < numArgs; i++) {
         delete vals[i];
     }
+    delete [] vals;
 }
 
 Size::Size(Expression* array_impl) : Operator(OP_SIZE), array(array_impl) { }

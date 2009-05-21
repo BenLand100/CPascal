@@ -512,27 +512,37 @@ ArrayValue::ArrayValue(Array* arr, std::map<int,Type*> &typemap, void* mem_impl)
     *start = arr->from;
 
     elemsz = new int;
-    *elemsz = arr->sizeOf(typemap);
+    *elemsz = arr->element->sizeOf(typemap);
     int numelems = arr->to - arr->from + 1; //to == -1 and from == 0 for dynamic just for this
 
     if (arr->dynamic) {
         mem = (char**) mem_impl;
         *mem = new char[8+(*elemsz)*numelems];
+        objref = new int*;
+        *objref = (int*)*mem;
+        **objref = 1;
+        asize = new int*;
+        *asize = (int*)(*mem+4);
+        **asize = numelems;
     } else {
         mem = new char*;
         *mem = (char*)mem_impl;
+        objref = new int*;
+        *objref = new int;
+        **objref = 1;
+        asize = new int*;
+        *asize = new int;
+        **asize = numelems;
     }
-    objref = new int*;
-    *objref = (int*)*mem;
-    **objref = 1;
-    asize = new int*;
-    *asize = (int*)(*mem+4);
-    **asize = numelems;
 
     array = new Value**;
     *array = new Value*[**asize];
     pas_array = new char*;
-    *pas_array = (char*)(*mem+8);
+        if (*dynamic) {
+            *pas_array = (char*)(*mem+8);
+        } else {
+            *pas_array = *mem;
+        }
 
     for (int i = 0; i < numelems; i++) {
         (*array)[i] = Value::fromTypeMem(*elemType,typemap,(void*)(*pas_array+(*elemsz)*i));
@@ -554,20 +564,34 @@ ArrayValue::ArrayValue(Array* arr, std::map<int,Type*> &typemap) : Value(TYPE_AR
     elemsz = new int;
     *elemsz = arr->element->sizeOf(typemap);
     int numelems = arr->to - arr->from + 1; //to == -1 and from == 0 for dynamic just for this
-
-    mem = new char*;
-    *mem = new char[8+(*elemsz)*numelems];
-    objref = new int*;
-    *objref = (int*)*mem;
-    **objref = 1;
-    asize = new int*;
-    *asize = (int*)(*mem+4);
-    **asize = numelems;
+    if (*dynamic) {
+        mem = new char*;
+        *mem = new char[8+(*elemsz)*numelems];
+        objref = new int*;
+        *objref = (int*)*mem;
+        **objref = 1;
+        asize = new int*;
+        *asize = (int*)(*mem+4);
+        **asize = numelems;
+    } else {
+        mem = new char*;
+        *mem = new char[(*elemsz)*numelems];
+        objref = new int*;
+        *objref = new int;
+        **objref = 1;
+        asize = new int*;
+        *asize = new int;
+        **asize = numelems;
+    }
 
     array = new Value**;
     *array = new Value*[**asize];
     pas_array = new char*;
-    *pas_array = (char*)(*mem+8);
+        if (*dynamic) {
+            *pas_array = (char*)(*mem+8);
+        } else {
+            *pas_array = *mem;
+        }
 
     for (int i = 0; i < numelems; i++) {
         (*array)[i] = Value::fromTypeMem(*elemType,typemap,(void*)(*pas_array+(*elemsz)*i));
@@ -618,6 +642,8 @@ ArrayValue::~ArrayValue() {
         } else {
             if (*owns_mem) delete [] *mem;
             delete mem;
+            delete *objref;
+            delete *asize;
         }
         delete owns_mem;
         delete refcount;
@@ -645,15 +671,27 @@ Value* ArrayValue::clone() {
     *clone->elemsz = *elemsz;
     Array* arr = (Array*)typeObj;
     int numelems = arr->to - arr->from + 1; //to == -1 and from == 0 for dynamic just for this
-
-    *clone->mem = new char[8+(*elemsz)*numelems];
-    *clone->objref = (int*)*mem;
-    **clone->objref = 1;
-    *clone->asize = (int*)(*mem+4);
-    **clone->asize = numelems;
+    
+    if (arr->dynamic) {
+        *clone->mem = new char[8+(*elemsz)*numelems];
+        *clone->objref = (int*)*mem;
+        **clone->objref = 1;
+        *clone->asize = (int*)(*mem+4);
+        **clone->asize = numelems;
+    } else {
+        *clone->mem = new char[(*elemsz)*numelems];
+        *clone->objref = new int;
+        **clone->objref = 1;
+        *clone->asize = new int;
+        **clone->asize = numelems;
+    }
 
     *clone->array = new Value*[**asize];
-    *clone->pas_array = (char*)(*mem+8);
+        if (*dynamic) {
+            *clone->pas_array = (char*)(*mem+8);
+        } else {
+            *clone->pas_array = *mem;
+        }
 
     std::map<int,Type*> typemap;
     for (int i = 0; i < numelems; i++) {
@@ -665,7 +703,6 @@ Value* ArrayValue::clone() {
 void ArrayValue::set(Value* val) throw(int,InterpEx*) {
     if (val->type != TYPE_ARRAY) throw E_NOT_ARRAY;
     ArrayValue* arr = (ArrayValue*)val;
-    int numelems = **arr->asize;
     if (*dynamic) {
         for (int i = 0; i < **asize; i++) {
             delete (*array)[i];
@@ -680,14 +717,26 @@ void ArrayValue::set(Value* val) throw(int,InterpEx*) {
         *elemsz = *arr->elemsz;
         int numelems = **arr->asize;
 
-        *mem = new char[8+(*elemsz)*numelems];
-        *objref = (int*)*mem;
-        **objref = 1;
-        *asize = (int*)(*mem+4);
-        **asize = numelems;
+        if (*dynamic) {
+            *mem = new char[8+(*elemsz)*numelems];
+            *objref = (int*)*mem;
+            **objref = 1;
+            *asize = (int*)(*mem+4);
+            **asize = numelems;
+        } else {
+            *mem = new char[(*elemsz)*numelems];
+            *objref = new int;
+            **objref = 1;
+            *asize = new int;
+            **asize = numelems;
+        }
 
         *array = new Value*[**asize];
-        *pas_array = (char*)(*mem+8);
+        if (*dynamic) {
+            *pas_array = (char*)(*mem+8);
+        } else {
+            *pas_array = *mem;
+        }
 
         std::map<int,Type*> typemap;
         for (int i = 0; i < numelems; i++) {
@@ -818,6 +867,7 @@ PointerValue::~PointerValue() {
         delete *ref;
         delete ref;
         if (*owns_mem) delete pas_ref;
+        delete owns_mem;
     }
 }
 
