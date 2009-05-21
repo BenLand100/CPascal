@@ -96,15 +96,15 @@ end;
 
 function forlooptime: real;
 var
-    i, t: integer;
+    x, i, t: integer;
 begin
-    //writeln(inttostr(time));
-    //wait(1000);
-    //writeln(inttostr(time));
-    //t:= time;
-    //for i:= 1 to 10000 do 
-    //    i:= i;
-    //result:= (time - t) / 10000;
+    writeln(inttostr(time));
+    wait(1000);
+    writeln(inttostr(time));
+    t:= time;
+    for i:= 1 to 100000 do 
+        x:= 8;
+    result:= (time - t) / 100000;
 end;
 
 function testrepeatuntil;
@@ -357,9 +357,14 @@ begin
 end;
 
 function estimate_pi(accuracy: real): real;
+var 
+    t: integer;
 begin
     writeln('estimate_pi');
+    t:= time;
 	result:= 4*atan_int(0,1,accuracy*4);
+	t:= time - t;
+	writeln('took ' + inttostr(t) + ' ms, or ' + realtostr(t/1000) + ' seconds.');
 end;
 
 var
@@ -397,7 +402,7 @@ begin
     writeln(inttostr(i));
     add1p(@i);
     writeln(inttostr(i));
-	writeln(realtostr(estimate_pi(0.001)));
+	writeln(realtostr(estimate_pi(0.0001)));
     writeln('great success!');
     //SmartSetup('http://world142.runescape.com/', 'plugin.js?param=o0,a1,m0');
 end;        

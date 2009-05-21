@@ -5,7 +5,6 @@
 
 Expression::Expression(int offset_impl) : length(0), elems(0), offset(offset_impl) { }
 Expression::Expression(std::list<Element*> postfix,int offset_impl) : length(postfix.size()), elems(new Element*[postfix.size()]), offset(offset_impl)  {
-    debug("Expression()");
     std::list<Element*>::iterator iter = postfix.begin();
     for (int i = 0; i < length; i++)
         elems[i] = *(iter++);

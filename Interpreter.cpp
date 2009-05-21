@@ -6,8 +6,29 @@
 #include <cstring>
 #include <sstream>
 #include <iostream>
+#include <ctime>
+#include <sys/timeb.h>
+
 //#define debug(x) std::cout << x << '\n'
 #define debug(x)
+
+int ms_time() __attribute__((stdcall));
+int ms_time() {
+    timeb t;
+    ftime(&t);
+    return (t.time * 1000 + t.millitm) & 0x7FFFFFFF;
+}
+
+void ms_wait(int ms) __attribute__((stdcall));
+void ms_wait(int ms) {
+    struct timespec a;
+    a.tv_sec = ms/1000;
+    a.tv_nsec = (ms%1000)*1000000L;
+    struct timespec b;
+    while (nanosleep(&a,&b)) {
+        if (!nanosleep(&b,&a)) break;
+    }
+}
 
 void writeln(char* str) __attribute__((stdcall));
 void writeln(char* str) {
@@ -58,6 +79,8 @@ Interpreter::Interpreter(char* ppg) : exception(0) {
     char* tokens = lex(ppg, names);
     prog = parse(tokens);
     freetoks(tokens);
+    addMethod((void*)&ms_time,CONV_C_STDCALL,(char*)"function time: integer;");
+    addMethod((void*)&ms_wait,CONV_C_STDCALL,(char*)"procedure wait(ms: integer);");
     addMethod((void*)&writeln,CONV_C_STDCALL,(char*)"procedure writeln(str: string);");
     addMethod((void*)&inttostr,CONV_C_STDCALL,(char*)"function inttostr(i: integer): string;");
     addMethod((void*)&chartostr,CONV_C_STDCALL,(char*)"function chartostr(c: char): string;");
@@ -151,7 +174,7 @@ Frame::~Frame() {
         delete s;
         iter++;
     }
-}
+    }
 
 Value* Frame::resolve(int symbol, Value** args, int numArgs) throw(int, InterpEx*) {
     debug("resolve_symbol=" << symbol);
@@ -282,6 +305,10 @@ Value* Frame::resolve(int symbol, Value** args, int numArgs) throw(int, InterpEx
         }
         break;
     }
+}
+
+void Frame::registerTemp(Value* temp) {
+    temps.push_back(temp);
 }
 
 void* interp_init(char* ppg) {

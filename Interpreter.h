@@ -41,10 +41,12 @@ public:
     } Slot;
 
     Value* resolve(int symbol, Value** args, int numArgs) throw(int,InterpEx*);
+    void registerTemp(Value* temp);
 
     std::map<int,Type*> typemap;
 private:
     std::map<int,Slot*> slots;
+    std::list<Value*> temps; //FIXME - use this to make memory management faster
     Frame* parent;
     Container* container;
 
