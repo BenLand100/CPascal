@@ -21,31 +21,19 @@ private:
     std::map<std::string,int> names;
 };
 
-#define SLOT_METHOD 0
-#define SLOT_VALUE  1
-
 class Frame {
+    friend class MethodValue;
 public:
     Frame(Frame* frame, Container* container);
     Frame(Container* container);
     ~Frame();
 
-    typedef struct _Slot {
-        _Slot(Method* m) : type(SLOT_METHOD), method(m) { };
-        _Slot(Value* v) : type(SLOT_VALUE), value(v) { };
-        int type;
-        union {
-            Method* method;
-            Value* value;
-        };
-    } Slot;
-
-    Value* resolve(int symbol, Value** args, int numArgs) throw(int,InterpEx*);
+    Value* resolve(int symbol) throw(int,InterpEx*);
     void registerTemp(Value* temp);
 
     std::map<int,Type*> typemap;
 private:
-    std::map<int,Slot*> slots;
+    std::map<int,Value*> slots;
     std::list<Value*> temps; //FIXME - use this to make memory management faster
     Frame* parent;
     Container* container;

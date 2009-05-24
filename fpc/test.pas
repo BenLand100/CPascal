@@ -28,32 +28,32 @@ begin
     result:= a+b;
 end; 
 
-function newChar: char;
+function newChar(): char;
 begin
     result:= 'a';
 end;
 
-function newString: string;
+function newString(): string;
 begin
     result:= 'first ' + 'second ' + 'third';
 end;
 
-function newReal: real;
+function newReal(): real;
 begin
     result:= pi;
 end;
 
-function newInteger: integer;
+function newInteger(): integer;
 begin
     result:= 42;
 end;
 
-function newBoolean: boolean;
+function newBoolean(): boolean;
 begin
     result:= true;
 end;
 
-procedure testorderoperations;
+procedure testorderoperations();
 var
  a,b,c:integer;
 begin
@@ -61,13 +61,13 @@ begin
     b:= (1+1)*2;
 end;
 
-procedure testtruths;
+procedure testtruths();
 begin
     if (1 < 2) and (2 > 1)  then
         writeln('success');
 end;
 
-procedure testwhile;
+procedure testwhile();
 var
     i:integer;
 begin
@@ -79,7 +79,7 @@ begin
     end;
 end;
 
-procedure testfor;
+procedure testfor();
 var
     i: integer;
     c: char;
@@ -94,20 +94,20 @@ begin
         writeln(chartostr(c));
 end;
 
-function forlooptime: real;
+function forlooptime(): real;
 var
     x, i, t: integer;
 begin
-    writeln(inttostr(time));
+    writeln(inttostr(time()));
     wait(1000);
-    writeln(inttostr(time));
-    t:= time;
+    writeln(inttostr(time()));
+    t:= time();
     for i:= 1 to 1000 do 
         x:= 8;
-    result:= (time - t) / 1000;
+    result:= (time() - t) / 1000;
 end;
 
-function testrepeatuntil;
+function testrepeatuntil();
 var
     i: integer;
 begin
@@ -118,7 +118,7 @@ begin
     writeln('i: ' + inttostr(i));
 end;
 
-procedure testifelse;
+procedure testifelse();
 begin
     if true then
         writeLn('success');    
@@ -155,7 +155,7 @@ begin
     
 end;
 
-procedure testcase;
+procedure testcase();
 var
    i: integer;
    c: char;
@@ -183,7 +183,7 @@ begin
 end;
 
 
-procedure doarraystuff;
+procedure doarraystuff();
 var
     ai: array of integer;
     static: array[1..5] of integer;
@@ -219,7 +219,7 @@ type
     number = integer;
     numarr = array of integer;
     
-procedure testtypes;
+procedure testtypes();
 var
     x: number;
     a: numarr;
@@ -234,7 +234,7 @@ end;
         number: integer;
     end;
 
-procedure phonebook;
+procedure phonebook();
 var
     contact: entry;
     contacts: array of entry;
@@ -250,7 +250,7 @@ begin
     writeln(contacts[1].name + '=' + inttostr(contacts[1].number));
 end;
     
-procedure testtry;
+procedure testtry();
 var
   a,b: integer;
 begin
@@ -299,15 +299,15 @@ end;
 
 procedure add1var(var i:integer);
 begin
-i:= i + 1;
+    i:= i + 1;
 end;
 
 procedure add1(i:integer);
 begin
-i:= i + 1;
+    i:= i + 1;
 end;
 
-procedure testref;
+procedure testref();
 var
     i: integer;
 begin
@@ -320,7 +320,7 @@ begin
   writeln(inttostr(i));
 end;
     
-procedure testpointer;
+procedure testpointer();
 var
   i: integer;
   p,t: ^integer;
@@ -361,9 +361,9 @@ var
     t: integer;
 begin
     writeln('estimate_pi');
-    t:= time;
+    t:= time();
 	result:= 4*atan_int(0,1,accuracy*4);
-	t:= time - t;
+	t:= time() - t;
 	writeln('took ' + inttostr(t) + ' ms, or ' + realtostr(t/1000) + ' seconds.');
 end;
 
@@ -372,7 +372,7 @@ type
         a, b: integer;
     end;
 
-procedure multirecordarray;
+procedure multirecordarray();
 var 
     arr: array of array of array of twoint;
     arrs: array[0..1] of array[0..1] of array[0..1] of twoint;
@@ -399,31 +399,31 @@ end;
 var
     i: integer;
 begin 
-    writeLn(RealToStr(e)); 
+    writeLn(RealToStr(e())); 
     writeLn(IntToStr(multiply(4,2))); 
     writeLn(IntToStr(dividei(4,2))); 
     writeLn(RealToStr(dividef(4,2))); 
     writeLn(IntToStr(subtract(4,2))); 
     writeLn(IntToStr(add(4,2))); 
-    writeln(CharToStr(newChar));
-    writeln(newString);
-    writeln(RealToStr(newReal));
-    writeln(IntToStr(newInteger));
-    writeln(BoolToStr(newBoolean));
-    testifelse;
-    testorderoperations;
-    testtruths;
-    testwhile;
-    testfor;
-    testcase;
-    testrepeatuntil;
-    writeln('For exec: ' + RealToStr(forlooptime));
-    doarraystuff;
-    testtypes;
-    phonebook;
-    testtry;
-    testref;
-    testpointer;
+    writeln(CharToStr(newChar()));
+    writeln(newString());
+    writeln(RealToStr(newReal()));
+    writeln(IntToStr(newInteger()));
+    writeln(BoolToStr(newBoolean()));
+    testifelse();
+    testorderoperations();
+    testtruths();
+    testwhile();
+    testfor();
+    testcase();
+    testrepeatuntil();
+    writeln('For exec: ' + RealToStr(forlooptime()));
+    doarraystuff();
+    testtypes();
+    phonebook();
+    testtry();
+    testref();
+    testpointer();
     writeln(inttostr(3*-1));
     writeln(inttostr(3+-(2*6)));
     i:= 5;
@@ -431,8 +431,8 @@ begin
     writeln(inttostr(i));
     add1p(@i);
     writeln(inttostr(i));
-	writeln(realtostr(estimate_pi(0.0001)));
-	multirecordarray;
+	writeln(realtostr(estimate_pi(0.001)));
+	multirecordarray();
     writeln('great success!');
     //SmartSetup('http://world142.runescape.com/', 'plugin.js?param=o0,a1,m0');
 end;        

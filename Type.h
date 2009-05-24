@@ -2,6 +2,7 @@ class Type;
 class Array;
 class Pointer;
 class Record;
+class Meth;
 
 #ifndef _TYPE_H
 #define	_TYPE_H
@@ -16,11 +17,14 @@ class Record;
 #define TYPE_RECORD     6
 #define TYPE_ARRAY      7
 #define TYPE_POINTER    8
+#define TYPE_METH       9
 
 #include <string>
 #include <map>
 #include <list>
 #include "Variable.h"
+
+class Method;
 
 class Type {
 public:
@@ -36,6 +40,7 @@ public:
     static Array* getBoundArrayType(Type* element, int from, int to);
     static Array* getDynamicArrayType(Type* element);
     static Pointer* getPointerType(Type* type);
+    static Meth* getMethodType(Method* meth);
     static Type* getType(int name);
 
     const int type;
@@ -47,6 +52,17 @@ protected:
     Type(std::string descr, int type);
 private:
     Type(int name); //only for reserved types
+};
+
+class Meth : public Type {
+    friend class Type;
+public:
+    const Method* meth;
+
+    bool instanceOf(Type* type);
+    int sizeOf(std::map<int,Type*> &typemap);
+protected:
+    Meth(std::string descr, Method* meth);
 };
 
 class RefType : public Type {

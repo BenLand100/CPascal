@@ -1,7 +1,8 @@
-#include "Value.h"
-#include <stack>
 #include "Expression.h"
+#include "Value.h"
 #include "Operator.h"
+
+#include <stack>
 
 Expression::Expression(int offset_impl) : length(0), elems(0), offset(offset_impl) { }
 Expression::Expression(std::list<Element*> postfix,int offset_impl) : length(postfix.size()), elems(new Element*[postfix.size()]), offset(offset_impl)  {
@@ -102,7 +103,7 @@ For::~For() {
     delete end;
 }
 Value* For::eval(Frame* frame) throw(InterpEx*, int) {
-    Value* varval = frame->resolve(var,NULL,0);
+    Value* varval = frame->resolve(var);
     Value* temp = begin->eval(frame);
     varval->set(temp);
     delete temp;

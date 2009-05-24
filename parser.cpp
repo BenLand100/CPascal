@@ -238,6 +238,7 @@ Method* parseMethod(char* &cur) {
         }
     }
     end_defparse:
+    meth->val_type = Type::getMethodType(meth);
     parseContainer(cur,meth);
     return meth;
 }
@@ -396,6 +397,18 @@ Expression* parseExpr(char* &cur) {
                             oper->push(mk_opprec(new FieldGet(name),prec));
                         }
                     } goto next_exprparse;
+                    case OP_ASGN: {
+                        Symbol* symbol = (Symbol*)expr.back();
+                        expr.pop_back();
+                        int name = symbol->name;
+                        delete symbol;
+                        char prec = precedence[OP_ASGN];
+                        while (!oper->empty() && prec <= oper->top().prec) {
+                            expr.push_back(oper->top().op);
+                            oper->pop();
+                        }
+                        oper->push(mk_opprec(new Asgn(name),prec));
+                    } goto next_exprparse;
                 }
                 if (lastType == POPERATOR && tok[0] == POPERATOR && tok[1] == OP_SUB) //special operator renaming
                     tok[1] = OP_NEG;
@@ -443,6 +456,7 @@ Expression* parseExpr(char* &cur) {
                     } goto next_exprparse;
                 }
                 if (reserved(name)) goto end_exprparse; //All reserved words break expression parsing
+                expr.push_back(new Symbol(name));
                 if (*tok) {
                     char* temp = next(tok);
                     if (temp[0] == PSPECIAL && temp[1] == SPC_LPAREN) {
@@ -456,12 +470,8 @@ Expression* parseExpr(char* &cur) {
                             }
                             args.push_back(parseExpr(tok));
                         }
-                        expr.push_back(new Symbol(name,args));
-                    } else {
-                        expr.push_back(new Symbol(name));
+                        expr.push_back(new Invoke(args));
                     }
-                } else {
-                    expr.push_back(new Symbol(name));
                 }
             } break;
             case PINTEGER:

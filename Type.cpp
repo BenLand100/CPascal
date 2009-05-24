@@ -1,5 +1,6 @@
 #include "Type.h"
 #include "lexer.h"
+#include "Container.h"
 #include <sstream>
 
 #include <iostream>
@@ -9,6 +10,23 @@
 std::map<std::string, Type*>* Type::alltypes() {
     static std::map<std::string, Type*> types;
     return &types;
+}
+
+Meth* Type::getMethodType(Method* meth) {
+    int numArgs = meth->arguments.size();
+    Type* ret = meth->type;
+    std::string res(ret ? ret->descr : "nil");
+    std::string descr(res);
+    descr.append("(");
+    for (int i = 0; i < numArgs; i++) {
+        descr.append(meth->arguments[i]->type->descr);
+        descr.append(";");
+    }
+    descr.append(")");
+    std::map<std::string, Type*>* types = alltypes();
+    if (types->find(descr) != types->end())
+        return (Meth*)(*types)[descr];
+    return new Meth(descr, meth);
 }
 
 Record* Type::getRecordType(std::map<int,Type*> fields) {
@@ -144,6 +162,17 @@ int Type::sizeOf(std::map<int,Type*> &typemap) {
         case TYPE_CHAR:
             return 1;
     }
+}
+
+Meth::Meth(std::string descr_impl, Method* meth_impl) : Type(descr_impl, TYPE_METH), meth(meth_impl) {
+}
+
+bool Meth::instanceOf(Type* type) {
+    return this->type == TYPE_METH ? this->descr == type->descr : false;
+}
+
+int Meth::sizeOf(std::map<int,Type*> &typemap) {
+    return 4;
 }
 
 Pointer::Pointer(std::string descr_impl, Type* pointsTo_impl) : Type(descr_impl, TYPE_POINTER), pointsTo(pointsTo_impl) { }

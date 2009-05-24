@@ -297,21 +297,6 @@ public:
     }
 };
 
-class Asgn : public Operator {
-public:
-    Asgn() : Operator(OP_ASGN) { };
-    ~Asgn() { };
-    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
-        Value* val = stack.top();
-        stack.pop();
-        Value* var = stack.top();
-        stack.pop();
-        var->set(val);
-        stack.push(val);
-        delete var;
-    }
-};
-
 class Addr : public Operator {
 public:
     Addr() : Operator(OP_ADDR) { };
@@ -399,8 +384,6 @@ Operator* Operator::get(int type) {
             return new Great();
         case OP_GREATEQ:
             return new GreatEq();
-        case OP_ASGN:
-            return new Asgn();
         case OP_DEREFGET:
             return new DerefGet();
         case OP_DEREFSET:
@@ -415,30 +398,51 @@ Operator* Operator::get(int type) {
 Operator::Operator(int op) : type(op), Element(ELEM_OPERATOR) { }
 Operator::~Operator() { }
 
-Symbol::Symbol(int name_impl, std::list<Expression*> args_impl) : Operator(OP_SYMBOL), name(name_impl), numArgs(args_impl.size()), args(new Expression*[args_impl.size()]) {
+Asgn::Asgn(int name_impl) : Operator(OP_ASGN), name(name_impl) { };
+Asgn::~Asgn() { };
+void Asgn::preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
+    Value* val = stack.top();
+    stack.pop();
+    Value* var = frame->resolve(name);
+    var->set(val);
+    stack.push(val);
+    delete var;
+}
+
+Invoke::Invoke(std::list<Expression*> args_impl) : Operator(OP_SYMBOL), numArgs(args_impl.size()), args(new Expression*[args_impl.size()]) {
     std::list<Expression*>::iterator iter = args_impl.begin();
     for (int i = 0; i < numArgs; i++) {
         args[i] = *iter;
         iter++;
     }
 }
-Symbol::Symbol(int name_impl) : Operator(OP_SYMBOL), name(name_impl), numArgs(0), args(0) { }
-Symbol::~Symbol() {
+
+Invoke::~Invoke() {
     for (int i = 0; i < numArgs; i++) {
         delete args[i];
     }
     delete [] args;
 }
-void Symbol::preform(std::stack<Value*>& stack, Frame* frame)  throw(int,InterpEx*) {
+void Invoke::preform(std::stack<Value*>& stack, Frame* frame)  throw(int,InterpEx*) {
+    Value* val = stack.top();
+    stack.pop();
+    if (val->type != TYPE_METH) throw E_NOT_METHOD;
     Value** vals = new Value*[numArgs];
     for (int i = 0; i < numArgs; i++) {
         vals[i] = args[i]->eval(frame);
     }
-    stack.push(frame->resolve(name,vals,numArgs));
+    stack.push(val->invoke(vals, numArgs, frame));
+    delete val;
     for (int i = 0; i < numArgs; i++) {
         delete vals[i];
     }
     delete [] vals;
+}
+
+Symbol::Symbol(int name_impl) : Operator(OP_SYMBOL), name(name_impl) { }
+Symbol::~Symbol() { }
+void Symbol::preform(std::stack<Value*>& stack, Frame* frame)  throw(int,InterpEx*) {
+    stack.push(frame->resolve(name));
 }
 
 Size::Size(Expression* array_impl) : Operator(OP_SIZE), array(array_impl) { }

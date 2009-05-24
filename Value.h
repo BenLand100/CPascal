@@ -8,13 +8,14 @@ class ArrayValue;
 class RecordValue;
 class PointerValue;
 
-#ifndef _VALUE_H
-#define	_VALUE_H
 
 #include <string>
 #include "Element.h"
 #include "Type.h"
 #include "Exceptions.h"
+#include "Interpreter.h"
+
+#ifndef _VALUE_H
 
 class Value : public Element {
 public:
@@ -46,6 +47,7 @@ public:
     virtual double asReal() throw(int,InterpEx*);
     virtual int asInteger() throw(int,InterpEx*);
     virtual bool asBoolean() throw(int,InterpEx*);
+    virtual Value* invoke(Value** args, int numArgs, Frame* frame) throw (int,InterpEx*);
 
     virtual int argSize();
     virtual void refArg(void* mem);
@@ -59,6 +61,22 @@ protected:
     bool* owns_mem;
 private:
     Value(Value &val);
+};
+
+class MethodValue : public Value {
+public:
+    MethodValue(void* mem, Meth* type);
+    MethodValue(Method* meth);
+    ~MethodValue();
+
+    Value* duplicate();
+    Value* clone();
+    void set(Value* val) throw(int,InterpEx*);
+    Value* invoke(Value** args, int numArgs, Frame* frame) throw (int,InterpEx*);
+
+private:
+    Method** meth;
+    MethodValue(MethodValue &val);
 };
 
 class IntegerValue : public Value {
@@ -271,5 +289,6 @@ private:
     RecordValue(Record* rec);
 };
 
+#define	_VALUE_H
 #endif	/* _VALUE_H */
 

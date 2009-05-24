@@ -64,6 +64,8 @@ const char* InterpEx::what() const throw() {
             return "Symbol undefined";
         case E_STATIC_ARRAY:
             return "Array is not dynamic";
+        case E_NOT_METHOD:
+            return "Cannot invoke a non-method";
     }
 }
 

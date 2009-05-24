@@ -24,23 +24,44 @@ public:
 
     const int type;
     virtual void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) = 0;
+    //virtual void native(std::vector<unsigned char> &native) throw(int,InterpEx*) = 0;
 
 protected:
     Operator(int op);
     virtual ~Operator();
 };
 
-class Symbol : public Operator {
+class Asgn : public Operator {
 public:
-    Symbol(int name);
-    Symbol(int name, std::list<Expression*> args);
-    ~Symbol();
+    Asgn(int name);
+    ~Asgn();
 
     const int name;
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*);
+    //void native(std::vector<unsigned char> &native) throw(int,InterpEx*);
+};
+
+class Invoke : public Operator {
+public:
+    Invoke(std::list<Expression*> args);
+    ~Invoke();
+
     const int numArgs;
     Expression** args;
 
     void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*);
+    //void native(std::vector<unsigned char> &native) throw(int,InterpEx*);
+};
+
+class Symbol : public Operator {
+public:
+    Symbol(int name);
+    ~Symbol();
+
+    const int name;
+
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*);
+    //void native(std::vector<unsigned char> &native) throw(int,InterpEx*);
 };
 
 class Size : public Operator {
@@ -49,6 +70,7 @@ public:
     ~Size();
 
     void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*);
+    //void native(std::vector<unsigned char> &native) throw(int,InterpEx*);
 private:
     Expression* array;
 };
@@ -59,6 +81,7 @@ public:
     ~ArrayDef();
 
     void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*);
+    //void native(std::vector<unsigned char> &native) throw(int,InterpEx*);
 private:
     Expression** elems;
     int numElems;
@@ -70,6 +93,7 @@ public:
     ~Resize();
 
     void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*);
+    //void native(std::vector<unsigned char> &native) throw(int,InterpEx*);
 private:
     Expression* array;
     Expression* dim;
@@ -81,6 +105,7 @@ public:
     ~ArrayGet();
 
     void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*);
+    //void native(std::vector<unsigned char> &native) throw(int,InterpEx*);
 private:
     Expression** indexes;
     int numIndexes;
@@ -92,6 +117,7 @@ public:
     ~ArraySet();
 
     void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*);
+    //void native(std::vector<unsigned char> &native) throw(int,InterpEx*);
 private:
     Expression** indexes;
     int numIndexes;
@@ -103,6 +129,7 @@ public:
     ~FieldGet();
 
     void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*);
+    //void native(std::vector<unsigned char> &native) throw(int,InterpEx*);
 private:
     int name;
 };
@@ -113,6 +140,7 @@ public:
     ~FieldSet();
 
     void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*);
+    //void native(std::vector<unsigned char> &native) throw(int,InterpEx*);
 private:
     int name;
 };

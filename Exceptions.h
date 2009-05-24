@@ -18,6 +18,7 @@ class InterpEx;
 #define E_NO_FIELD      12
 #define E_UNRESOLVABLE  13
 #define E_STATIC_ARRAY  14
+#define E_NOT_METHOD    15
 
 #include <exception>
 #include <list>

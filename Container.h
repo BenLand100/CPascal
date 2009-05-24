@@ -9,8 +9,9 @@ class Method;
 #define CONV_C_STDCALL      1
 #define CONV_FPC_STDCALL    2
 
-#include "Expression.h"
 #include "Variable.h"
+#include "Value.h"
+#include "Expression.h"
 #include <vector>
 #include <map>
 
@@ -39,6 +40,7 @@ public:
     void* address;
     int mtype;
     Type* type; //DO NOT FREE TYPES (they don't leak, they are managed by the Type class);
+    Meth* val_type;
     Method(int name);
     ~Method();
 };
