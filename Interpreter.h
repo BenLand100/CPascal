@@ -1,9 +1,11 @@
 class Interpreter;
 class Frame;
 
+
 #ifndef _INTERPRETER_H
 #define	_INTERPRETER_H
 
+#include "lexer.h"
 #include "Container.h"
 #include "Value.h"
 #include "Expression.h"
@@ -23,6 +25,7 @@ private:
 
 class Frame {
     friend class MethodValue;
+    friend class PointerValue;
 public:
     Frame(Frame* frame, Container* container);
     Frame(Container* container);

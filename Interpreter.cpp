@@ -152,19 +152,22 @@ void Frame::init(Container* container) {
     }
     std::map<int, Expression*>::iterator iter = container->constants.begin();
     std::map<int, Expression*>::iterator end = container->constants.end();
+    std::stack<Value*> stack;
+    Frame* me = this;
     while (iter != end) {
-        Value* val = iter->second->eval(this);
+        Value* val = evalExpr(iter->second,me,stack);
         slots[iter->first] = val;
         debug("init_const=" << iter->first);
         iter++;
     }
+    cleanStack(stack);
 }
 
 Frame::~Frame() {
     int numMethods = container->methods.size();
     for (int i = 0; i < numMethods; i++) {
         Value* s = slots[container->methods[i]->name];
-        delete s;
+        //delete s;
     }
     int numVariables = container->variables.size();
     for (int i = 0; i < numVariables; i++) {
@@ -182,15 +185,11 @@ Frame::~Frame() {
 
 Value* Frame::resolve(int symbol) throw(int, InterpEx*) {
     debug("resolve_symbol=" << symbol);
-    Value* slot;
     if (slots.find(symbol) != slots.end()) {
-        slot = slots[symbol];
+        return slots[symbol]->duplicate();
     } else {
         throw E_UNRESOLVABLE;
     }
-    debug("resolve_slot=" << (void*) slot);
-    if (!slot) return 0;
-    return slot->duplicate();
 }
 
 void Frame::registerTemp(Value* temp) {

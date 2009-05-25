@@ -74,6 +74,55 @@ Type* parseType(char* &cur) {
         return Type::getPointerType(parseType(cur));
     int name = *(int*)(cur+1);
     switch (name) {
+        case RES_FUNCTION:
+        case RES_PROCEDURE: {
+            Method* meth = new Method(-1);
+            cur = next(cur);
+            std::list<int> untyped;
+            bool byref = false;
+            bool hasArgs = false;
+            bool moreArgs = true;
+            while (*cur) {
+                cur = next(cur);
+                if (cur[0] == PSPECIAL) {
+                    switch (cur[1]) {
+                        case SPC_RPAREN:
+                            moreArgs = false;
+                            break;
+                        case SPC_LPAREN:
+                            hasArgs = true;
+                            break;
+                        case SPC_COLON: {
+                            Type* type = parseType(cur);
+                            if (!hasArgs || !moreArgs) {
+                                meth->type = type;
+                                cur = next(cur);
+                                goto end_defparse;
+                            } else {
+                                while (!untyped.empty()) {
+                                    meth->arguments.push_back(new Variable(untyped.front(), type, byref));
+                                    untyped.pop_front();
+                                }
+                                byref = false;
+                            }
+                            break;
+                        }
+                        case SPC_SEMICOLON:
+                            goto end_defparse;
+                    }
+                } else {
+                    int name = *(int*)(cur+1);
+                    if (name == RES_VAR) {
+                        byref = true;
+                    } else {
+                        untyped.push_back(name);
+                    }
+                }
+            }
+            end_defparse:
+            meth->val_type = Type::getMethodType(meth);
+            return Type::getPointerType(Type::getMethodType(meth));
+        }
         case RES_ARRAY:
             cur = next(cur);
             if (cur[0] == PSPECIAL && cur[1] == SPC_LBRACE)  {

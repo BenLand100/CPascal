@@ -8,7 +8,6 @@ class ArrayValue;
 class RecordValue;
 class PointerValue;
 
-
 #include <string>
 #include "Element.h"
 #include "Type.h"
@@ -16,6 +15,7 @@ class PointerValue;
 #include "Interpreter.h"
 
 #ifndef _VALUE_H
+#define	_VALUE_H
 
 class Value : public Element {
 public:
@@ -64,6 +64,7 @@ private:
 };
 
 class MethodValue : public Value {
+    friend class PointerValue;
 public:
     MethodValue(void* mem, Meth* type);
     MethodValue(Method* meth);
@@ -74,8 +75,10 @@ public:
     void set(Value* val) throw(int,InterpEx*);
     Value* invoke(Value** args, int numArgs, Frame* frame) throw (int,InterpEx*);
 
-private:
+protected:
     Method** meth;
+
+private:
     MethodValue(MethodValue &val);
 };
 
@@ -249,7 +252,7 @@ public:
     void set(Value* val) throw(int,InterpEx*);
     Value* getRef() throw(int,InterpEx*);
     void setRef(Value* ref) throw(int,InterpEx*);
-
+    Value* invoke(Value** args, int numArgs, Frame* frame) throw (int,InterpEx*);
 
     int argSize();
     void refArg(void* mem);
@@ -289,6 +292,5 @@ private:
     RecordValue(Record* rec);
 };
 
-#define	_VALUE_H
 #endif	/* _VALUE_H */
 

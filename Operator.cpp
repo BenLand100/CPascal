@@ -405,7 +405,7 @@ void Asgn::preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*)
     stack.pop();
     Value* var = frame->resolve(name);
     var->set(val);
-    stack.push(val);
+    delete val;
     delete var;
 }
 
@@ -426,10 +426,10 @@ Invoke::~Invoke() {
 void Invoke::preform(std::stack<Value*>& stack, Frame* frame)  throw(int,InterpEx*) {
     Value* val = stack.top();
     stack.pop();
-    if (val->type != TYPE_METH) throw E_NOT_METHOD;
+    //if (val->type != TYPE_METH) throw E_NOT_METHOD;
     Value** vals = new Value*[numArgs];
     for (int i = 0; i < numArgs; i++) {
-        vals[i] = args[i]->eval(frame);
+        vals[i] = evalExpr(args[i],frame,stack); //Beware of corrupting the stack
     }
     stack.push(val->invoke(vals, numArgs, frame));
     delete val;
@@ -448,7 +448,7 @@ void Symbol::preform(std::stack<Value*>& stack, Frame* frame)  throw(int,InterpE
 Size::Size(Expression* array_impl) : Operator(OP_SIZE), array(array_impl) { }
 Size::~Size() { delete array; }
 void Size::preform(std::stack<Value*>& stack, Frame* frame)  throw(int,InterpEx*) {
-    Value* arr = array->eval(frame);
+    Value* arr = evalExpr(array,frame,stack);
     stack.push(new IntegerValue(arr->size()));
     delete arr;
 }
@@ -469,7 +469,7 @@ ArrayDef::~ArrayDef() {
 void ArrayDef::preform(std::stack<Value*>& stack, Frame* frame) throw(int,InterpEx*) {
     Value** vals = new Value*[numElems];
     for (int i = 0; i < numElems; i++)
-        vals[i] = elems[i]->eval(frame);
+        vals[i] = evalExpr(elems[i],frame,stack);
     Type* arrType = Type::getDynamicArrayType((Type*)vals[0]->typeObj);
     ArrayValue* val = new ArrayValue((Array*)arrType,frame->typemap);
     val->resize(numElems, frame->typemap);
@@ -483,8 +483,8 @@ void ArrayDef::preform(std::stack<Value*>& stack, Frame* frame) throw(int,Interp
 Resize::Resize(Expression* array_impl, Expression* dim_impl) : Operator(OP_RESIZE), array(array_impl), dim(dim_impl) { }
 Resize::~Resize() { delete array; delete dim; }
 void Resize::preform(std::stack<Value*>& stack, Frame* frame) throw(int,InterpEx*) {
-    Value* arr = array->eval(frame);
-    Value* size = dim->eval(frame);
+    Value* arr = evalExpr(array,frame,stack);
+    Value* size = evalExpr(dim,frame,stack);
     arr->resize(size->asInteger(), frame->typemap);
     delete size;
     stack.push(arr);
@@ -508,7 +508,7 @@ void ArrayGet::preform(std::stack<Value*>& stack, Frame* frame) throw(int,Interp
     Value* res = arr;
     stack.pop();
     for (int i = 0; i < numIndexes; i++) {
-        Value* index = indexes[i]->eval(frame);
+        Value* index = evalExpr(indexes[i],frame,stack);
         int i = index->asInteger();
         res = res->getIndex(i);
         delete index;
@@ -537,11 +537,11 @@ void ArraySet::preform(std::stack<Value*>& stack, Frame* frame) throw(int,Interp
     Value* res = arr;
     stack.pop();
     for (int i = 0; i < numIndexes - 1; i++) {
-        Value* index = indexes[i]->eval(frame);
+        Value* index = evalExpr(indexes[i],frame,stack);
         res = res->getIndex(index->asInteger());
         delete index;
     }
-    Value* index = indexes[numIndexes - 1]->eval(frame);
+    Value* index = evalExpr(indexes[numIndexes - 1],frame,stack);
     res->setIndex(index->asInteger(),value);
     delete index;
     delete arr;

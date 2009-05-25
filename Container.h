@@ -10,9 +10,8 @@ class Method;
 #define CONV_FPC_STDCALL    2
 
 #include "Variable.h"
-#include "Value.h"
-#include "Expression.h"
 #include <vector>
+#include "Expression.h"
 #include <map>
 
 class Container {

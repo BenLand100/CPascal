@@ -17,8 +17,8 @@ Expression::~Expression() {
         delete [] elems;
     }
 }
-Value* Expression::eval(Frame* frame) throw(InterpEx*, int) {
-    std::stack<Value*> stack;
+
+void Expression::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) {
     for (int i = 0; i < length; i++) {
         Element* elem = elems[i];
         switch(elem->eltype) {
@@ -32,13 +32,6 @@ Value* Expression::eval(Frame* frame) throw(InterpEx*, int) {
                 break;
         }
     }
-    Value* res = stack.top();
-    stack.pop();
-    while (!stack.empty()) {
-        delete stack.top();
-        stack.pop();
-    }
-    return res;
 }
 
 Until::Until(std::list<Expression*> block_impl, Expression* cond_impl, int offset_impl) : Expression(offset_impl), cond(cond_impl) {
@@ -48,14 +41,13 @@ Until::~Until() {
     cleanBlock(&block);
     delete cond;
 }
-Value* Until::eval(Frame* frame) throw(InterpEx*, int) {
+void Until::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) {
     Value* res = 0;
     do {
         if (res) delete res;
         evalBlock(&block,frame);
-        res = cond->eval(frame);
+        res = evalExpr(cond,frame,stack);
     } while (!res->asBoolean());
-    return new Value();
 }
 
 Case::Case(Expression* condition, int offset_impl) : Expression(offset_impl), value(condition) { }
@@ -82,8 +74,8 @@ void Case::addBranch(int value, std::list<Expression*> branch) {
     }
     branches[value] = block;
 }
-Value* Case::eval(Frame* frame) throw(InterpEx*, int) {
-    Value* val = value->eval(frame);
+void Case::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) {
+    Value* val = evalExpr(value,frame,stack);
     int i = val->asInteger();
     delete val;
     if (branches.find(i) != branches.end()) {
@@ -91,7 +83,6 @@ Value* Case::eval(Frame* frame) throw(InterpEx*, int) {
     } else if (def.elems) {
         evalBlock(&def,frame);
     }
-    return new Value();
 }
 
 For::For(int var_impl, Expression* begin_impl, bool inc_impl, Expression* end_impl, std::list<Expression*> block_impl, int offset_impl) : Expression(offset_impl), var(var_impl), begin(begin_impl), end(end_impl), inc(inc_impl) {
@@ -102,31 +93,30 @@ For::~For() {
     delete begin;
     delete end;
 }
-Value* For::eval(Frame* frame) throw(InterpEx*, int) {
+void For::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) {
     Value* varval = frame->resolve(var);
-    Value* temp = begin->eval(frame);
+    Value* temp = evalExpr(begin,frame,stack);
     varval->set(temp);
     delete temp;
     if (inc) { //simply reduces tests and increases code size
-        temp = end->eval(frame);
+        temp = evalExpr(end,frame,stack);
         while (varval->asInteger() <= temp->asInteger()) {
             delete temp;
             evalBlock(&block,frame);
-            temp = end->eval(frame);
+            temp = evalExpr(end,frame,stack);
             varval->incr();
         }
         delete temp;
     } else {
-        temp = end->eval(frame);
+        temp = evalExpr(end,frame,stack);
         while (varval->asInteger() <= temp->asInteger()) {
             delete temp;
             evalBlock(&block,frame);
-            temp = end->eval(frame);
+            temp = evalExpr(end,frame,stack);
             varval->decr();
         }
         delete temp;
     }
-    return new Value();
 }
 
 While::While(Expression* cond_impl, std::list<Expression*> block_impl, int offset_impl) : Expression(offset_impl), cond(cond_impl) {
@@ -136,16 +126,15 @@ While::~While() {
     cleanBlock(&block);
     delete cond;
 }
-Value* While::eval(Frame* frame) throw(InterpEx*, int) {
-    Value* res = cond->eval(frame);
+void While::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) {
+    Value* res = evalExpr(cond,frame,stack);
     debug("while_restype=" << res->type);
     while (res->asBoolean()) {
         delete res;
         evalBlock(&block,frame);
-        res = cond->eval(frame);
+        res = evalExpr(cond,frame,stack);
     }
     delete res;
-    return new Value();
 }
 
 If::If(Expression* cond_impl, std::list<Expression*> block_impl, int offset_impl) : Expression(offset_impl) {
@@ -172,19 +161,18 @@ void If::addBranch(Expression* cond_impl, std::list<Expression*> block_impl) {
 void If::setDefault(std::list<Expression*> block) {
     fillBlock(&def,&block);
 }
-Value* If::eval(Frame* frame) throw(InterpEx*, int) {
+void If::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) {
     int numBranches = branches.size();
     for (int i = 0; i < numBranches; i++) {
-        Value* test = branches[i]->cond->eval(frame);
+        Value* test = evalExpr(branches[i]->cond,frame,stack);
         if (test->asBoolean()) {
             delete test;
             evalBlock(branches[i]->block,frame);
-            return new Value();
+            return;
         }
         delete test;
     }
     evalBlock(&def,frame);
-    return new Value();
 }
 
 Try::Try(std::list<Expression*> danger_impl, std::list<Expression*> saftey_impl, std::list<Expression*> always_impl, int offset_impl) : Expression(offset_impl) {
@@ -197,7 +185,7 @@ Try::~Try() {
     cleanBlock(&saftey);
     cleanBlock(&always);
 }
-Value* Try::eval(Frame* frame) throw(InterpEx*, int) {
+void Try::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) {
     try {
         evalBlock(&danger,frame);
     } catch (int) {
@@ -207,6 +195,5 @@ Value* Try::eval(Frame* frame) throw(InterpEx*, int) {
         evalBlock(&saftey,frame);
     }
     evalBlock(&always,frame);
-    return new Value();
 }
 

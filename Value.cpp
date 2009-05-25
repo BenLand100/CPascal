@@ -2,6 +2,7 @@
 #include "Exceptions.h"
 #include "Container.h"
 #include "lexer.h"
+#include "Interpreter.h"
 
 #include <cstring>
 #include <iostream>
@@ -235,7 +236,7 @@ Value* MethodValue::invoke(Value** args, int numArgs, Frame* cur) throw (int, In
             } else {
                 args[i]->valArg((void*) stack);
                 stack += args[i]->argSize();
-            }
+}
         }
         stack -= 4;
         if (meth->type) {
@@ -312,16 +313,14 @@ Value* MethodValue::invoke(Value** args, int numArgs, Frame* cur) throw (int, In
         debug("resolve_args");
         for (int i = 0; i < numArgs; i++) {
             Variable* var = meth->arguments[i];
-            frame->slots[var->name] = var->byRef ? args[i] : args[i]->clone();
+            frame->slots[var->name] = var->byRef ? args[i]->duplicate() : args[i]->clone();
         }
         if (meth->type) frame->slots[RES_RESULT] = Value::fromType(meth->type, cur->typemap);
         debug("resolve_method");
         evalBlock(&meth->block, frame);
         debug("resolve_return");
         for (int i = 0; i < numArgs; i++) {
-            Variable* var = meth->arguments[i];
-            Value* slot = frame->slots[var->name];
-            if (!var->byRef) delete slot;
+            delete frame->slots[meth->arguments[i]->name];;
         }
         if (meth->type) {
             Value* res = frame->slots[RES_RESULT];
@@ -1207,6 +1206,11 @@ void PointerValue::set(Value* val) throw (int, InterpEx*) {
 
 Value* PointerValue::getRef() throw (int, InterpEx*) {
     return *ref;
+}
+
+Value* PointerValue::invoke(Value** args, int numArgs, Frame* cur) throw (int, InterpEx*) {
+    if ((*ref)->type != TYPE_METH) throw E_NOT_METHOD;
+    return (*ref)->invoke(args,numArgs,cur);
 }
 
 //FIXME Should check assignment types

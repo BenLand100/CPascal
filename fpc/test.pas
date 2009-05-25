@@ -102,9 +102,9 @@ begin
     wait(1000);
     writeln(inttostr(time()));
     t:= time();
-    for i:= 1 to 1000 do 
+    for i:= 1 to 10000 do 
         x:= 8;
-    result:= (time() - t) / 1000;
+    result:= (time() - t) / 10000;
 end;
 
 function testrepeatuntil();
@@ -297,6 +297,19 @@ begin
   
 end;
 
+procedure pointedto(x: integer);
+begin
+    writeln(inttostr(x));
+end;
+
+procedure testmethodp();
+var
+    meth: procedure(x:integer);
+begin
+    meth:= @pointedto;
+    meth(12);
+end;
+
 procedure add1var(var i:integer);
 begin
     i:= i + 1;
@@ -433,6 +446,7 @@ begin
     writeln(inttostr(i));
 	writeln(realtostr(estimate_pi(0.001)));
 	multirecordarray();
+    testmethodp();
     writeln('great success!');
     //SmartSetup('http://world142.runescape.com/', 'plugin.js?param=o0,a1,m0');
 end;        
