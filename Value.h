@@ -9,6 +9,7 @@ class RecordValue;
 class PointerValue;
 
 #include <string>
+#include <stack>
 #include "Element.h"
 #include "Type.h"
 #include "Exceptions.h"

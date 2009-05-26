@@ -36,6 +36,7 @@ public:
     const int offset;
 
     virtual void eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int);
+    //virtual void native(std::stack<Value*> &stack, std::vector<std::string> &native);
 protected:
     Expression(int offset);
 private:
@@ -57,26 +58,31 @@ inline void cleanStack(std::stack<Value*>& stack) {
     }
 }
 
-inline void evalBlock(Block* block, Frame* frame) throw(InterpEx*) {
-    std::stack<Value*> stack;
-    int numElems = block->length;
+inline void evalBlock(Block* block, Frame* frame, std::stack<Value*>& stack) {
     Expression** elems = block->elems;
+    Expression** end = elems + block->length;
     debug("evalBlock{" << elems << "," << numElems << "}");
-    for (int i = 0; i < numElems; i++) {
-        debug("eval " << elems[i]);
+    while (elems != end) {
+        debug("eval " << *elems);
         try {
-            elems[i]->eval(frame,stack);
+            (*elems)->eval(frame,stack);
+            elems++;
         } catch (InterpEx* ex) {
             debug("tossed");
-            ex->addTrace(elems[i]->offset);
+            ex->addTrace((*elems)->offset);
             throw ex;
         } catch (int exi) {
             debug("caught");
             InterpEx* ex = new InterpEx(exi);
-            ex->addTrace(elems[i]->offset);
+            ex->addTrace((*elems)->offset);
             throw ex;
         }
     }
+}
+
+inline void evalBlock(Block* block, Frame* frame) throw(InterpEx*) {
+    std::stack<Value*> stack;
+    evalBlock(block,frame,stack);
     cleanStack(stack);
 }
 
@@ -109,6 +115,7 @@ public:
     ~Until();
 
     void eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int);
+    //void native(std::stack<Value*> &stack,  std::vector<std::string> &native) throw(int,InterpEx*);
 private:
     Expression* cond;
     Block block;
@@ -122,6 +129,7 @@ public:
     void setDefault(std::list<Expression*> branch);
     void addBranch(int value, std::list<Expression*> branch);
     void eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int);
+    //void native(std::stack<Value*> &stack,  std::vector<std::string> &native) throw(int,InterpEx*);
 private:
     Expression* value;
     std::map<int,Block*> branches;
@@ -135,6 +143,7 @@ public:
     ~For();
 
     void eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int);
+    //void native(std::stack<Value*> &stack,  std::vector<std::string> &native) throw(int,InterpEx*);
 private:
     int var;
     Expression* begin;
@@ -149,6 +158,7 @@ public:
     ~While();
 
     void eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int);
+    //void native(std::stack<Value*> &stack,  std::vector<std::string> &native) throw(int,InterpEx*);
 private:
     Expression* cond;
     Block block;
@@ -162,6 +172,7 @@ public:
     void addBranch(Expression* cond, std::list<Expression*> block);
     void setDefault(std::list<Expression*> block);
     void eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int);
+    //void native(std::stack<Value*> &stack,  std::vector<std::string> &native) throw(int,InterpEx*);
 private:
     typedef struct {
         Expression* cond;
@@ -177,6 +188,7 @@ public:
     ~Try();
 
     void eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int);
+    //void native(std::stack<Value*> &stack,  std::vector<std::string> &native) throw(int,InterpEx*);
 private:
     Block danger;
     Block saftey;

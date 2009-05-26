@@ -350,19 +350,14 @@ begin
   writeln(inttostr(i));
 end;
 
-function atan_prime(x: real): real;
-begin
-	result:= 1 / (1 + x*x);
-end;
-
 function atan_int(a,b,accuracy: real): real;
 var
 	mid, seg, left, right: real;
 begin
 	mid:= (a + b) / 2;
 	seg:= (b - a) / 2;
-	left:= seg * (atan_prime(a) + atan_prime(mid)) / 2;
-	right:= seg * (atan_prime(mid) + atan_prime(b)) / 2;
+	left:= seg * (1 / (1 + a*a) + 1 / (1 + mid*mid)) / 2;
+	right:= seg * (1 / (1 + mid*mid) + 1 / (1 + b*b)) / 2;
 	if (left + right <= accuracy) then
 		result:= left + right;
 	else
