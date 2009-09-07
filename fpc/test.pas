@@ -366,13 +366,15 @@ end;
 
 function estimate_pi(accuracy: real): real;
 var 
-    t: integer;
+    t: real;
+    i: integer;
 begin
-    writeln('estimate_pi');
+    writeln('estimate_pi @ ' + realtostr(accuracy));
     t:= time();
-	result:= 4*atan_int(0,1,accuracy*4);
-	t:= time() - t;
-	writeln('took ' + inttostr(t) + ' ms, or ' + realtostr(t/1000) + ' seconds.');
+    for i:= 1 to 1 do
+	    result:= 4*atan_int(0,1,accuracy*4);
+	t:= (time() - t) / 1;
+	writeln('took ' + realtostr(t) + ' ms, or ' + realtostr(t/1000) + ' seconds.');
 end;
 
 type 
@@ -407,7 +409,7 @@ end;
 var
     i: integer;
 begin 
-    writeLn(RealToStr(e())); 
+    {writeLn(RealToStr(e())); 
     writeLn(IntToStr(multiply(4,2))); 
     writeLn(IntToStr(dividei(4,2))); 
     writeLn(RealToStr(dividef(4,2))); 
@@ -438,10 +440,15 @@ begin
     add1v(i);
     writeln(inttostr(i));
     add1p(@i);
-    writeln(inttostr(i));
+    writeln(inttostr(i));}
+	writeln(realtostr(estimate_pi(0.1)));
+	writeln(realtostr(estimate_pi(0.01)));
 	writeln(realtostr(estimate_pi(0.001)));
-	multirecordarray();
+	writeln(realtostr(estimate_pi(0.0001)));
+	writeln(realtostr(estimate_pi(0.00001)));
+	writeln(realtostr(estimate_pi(0.000001)));
+	{multirecordarray();
     testmethodp();
-    writeln('great success!');
+    writeln('great success!');}
     //SmartSetup('http://world142.runescape.com/', 'plugin.js?param=o0,a1,m0');
 end;        

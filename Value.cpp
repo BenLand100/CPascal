@@ -598,8 +598,7 @@ Value* RealValue::clone() {
 }
 
 void RealValue::set(Value* val) throw (int, InterpEx*) {
-    if (val->type != TYPE_REAL) throw E_NOT_REAL;
-    *real = *((RealValue*) val)->real;
+    *real = val->asReal();
 }
 
 void RealValue::negate() throw (int, InterpEx*) {
