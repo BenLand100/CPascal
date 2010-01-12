@@ -67,10 +67,10 @@ Value* Value::fromTypeMem(Type* type, std::map<int, Type*> &typemap, void* mem) 
     }
 }
 
-Value::Value() : Element(ELEM_VALUE), type(TYPE_NIL), typeObj(Type::getNil()) {
+Value::Value() : Element(ELEM_VALUE), typeObj(Type::getNil()), type(TYPE_NIL) {
 }
 
-Value::Value(int impl_type, Type* impl_typeObj) : Element(ELEM_VALUE), type(impl_type), typeObj(impl_typeObj) {
+Value::Value(int impl_type, Type* impl_typeObj) : Element(ELEM_VALUE), typeObj(impl_typeObj), type(impl_type) {
 }
 
 Value::~Value() {
@@ -314,6 +314,7 @@ Value* MethodValue::invoke(Value** args, int numArgs, Frame* cur) throw (int, In
         for (int i = 0; i < numArgs; i++) {
             Variable* var = meth->arguments[i];
             frame->slots[var->name] = var->byRef ? args[i]->duplicate() : args[i]->clone();
+            debug("argset=" << (var->name) << " " << args[i] << " " << frame->slots[var->name]);
         }
         if (meth->type) frame->slots[RES_RESULT] = Value::fromType(meth->type, cur->typemap);
         debug("resolve_method");
@@ -1004,6 +1005,7 @@ Value* ArrayValue::clone() {
         (*clone->array)[i] = Value::fromTypeMem(*elemType, typemap, (void*) (*clone->pas_array + (*elemsz) * i));
         (*clone->array)[i]->set((*array)[i]);
     }
+    return clone;
 }
 
 void ArrayValue::set(Value* val) throw (int, InterpEx*) {
@@ -1193,6 +1195,7 @@ Value* PointerValue::clone() {
     *(pt->refType) = *refType;
     *(pt->ref) = (*ref)->duplicate();
     (*ref)->refArg((void*) pt->pas_ref);
+    return pt;
 }
 
 void PointerValue::set(Value* val) throw (int, InterpEx*) {
@@ -1338,10 +1341,11 @@ Value* RecordValue::clone() {
     std::map<int, Type*> typemap;
     for (int i = 0; iter != end; i++, iter++) {
         Type* ftype = (*iter)->type;
-        (*rec->fields)[(*iter)->name] = Value::fromTypeMem(ftype, typemap, *rec->mem + pos);
-        (*rec->indexes)[i] = (*indexes)[i];
+        (*(rec->fields))[(*iter)->name] = Value::fromTypeMem(ftype, typemap, *(rec->mem) + pos);
+        (*(rec->indexes))[i] = (*indexes)[i];
         pos += (*indexes)[i];
     }
+    return rec;
 }
 
 void RecordValue::set(Value* val) throw (int, InterpEx*) {

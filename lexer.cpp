@@ -6,7 +6,8 @@
 #include <iostream>
 
 #include <iostream>
-#define debug(x) 
+//#define debug(x) x
+#define debug(x)
 
 int reserved(std::map<std::string,int> &names) {
     names["program"] = RES_PROGRAM;
@@ -82,14 +83,13 @@ char* lex(char* ppg, std::map<std::string,int> &names) {
     int nextord = reserved(names);
     char* res = new char[strlen(ppg)*6]; //this should suffice, haha.
     char* toks = res;
-    char* last = toks;
     char* start = ppg;
     char* pos = ppg;
     whitespace(ppg);
     tolower(ppg);
     debug(std::cout << "lexing...\n";)
     char c;
-    while (c = *ppg) {
+    while ((c = *ppg)) {
         char* last = toks;
         debug(std::cout << c << ' ';)
         pos = ppg;
@@ -202,6 +202,19 @@ char* lex(char* ppg, std::map<std::string,int> &names) {
                 } else {
                     *(toks++) = 0;
                 }
+            } break;
+            case '#': {
+                *(toks++) = PCHAR;
+                char* start = toks;
+                for (c = *(++ppg); numchar(c); c = *(++ppg)) {
+                    *(toks++) = c;
+                }
+                ppg--;
+                *(toks++) = 0;
+                toks = start;
+                char c = (char)(atol(toks) & 0xFF);
+                debug(std::cout << "Constant Char: " << atol(toks) << '\'' << c << "\'\n");
+                *(toks++) = c;
             } break;
             //***BEGIN INTEGER/REAL***
             case '0':

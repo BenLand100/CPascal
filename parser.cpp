@@ -267,6 +267,7 @@ Method* parseMethod(char* &cur) {
                         goto end_defparse;
                     } else {
                         while (!untyped.empty()) {
+                            debug("argument:" << untyped.front());
                             meth->arguments.push_back(new Variable(untyped.front(), type, byref));
                             untyped.pop_front();
                         }
@@ -573,7 +574,6 @@ Case* parseCase(char* &cur) {
     Expression* cond = parseExpr(cur);
     cur = next(cur); //skip of
     Case* pcase = new Case(cond,off);
-    parsecase:
     while (*cur) {
         cur = next(cur);
         if (cur[0] == PNAME) {

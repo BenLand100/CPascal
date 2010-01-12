@@ -123,11 +123,11 @@ void Interpreter::addMethod(void* addr, int conv, char* def) {
     freetoks(tokens);
 }
 
-Frame::Frame(Container* container_impl) : typemap(container_impl->types), container(container_impl), parent(0) {
+Frame::Frame(Container* container_impl) : typemap(container_impl->types), parent(0), container(container_impl) {
     init(container_impl);
 }
 
-Frame::Frame(Frame* frame, Container* container_impl) : slots(frame->slots), typemap(frame->typemap), container(container_impl), parent(frame) {
+Frame::Frame(Frame* frame, Container* container_impl) :  typemap(frame->typemap), slots(frame->slots), parent(frame), container(container_impl) {
     std::map<int, Type*>::iterator iter = container_impl->types.begin();
     std::map<int, Type*>::iterator end = container_impl->types.end();
     while (iter != end) {
@@ -150,6 +150,7 @@ void Frame::init(Container* container) {
         slots[var->name] = Value::fromType((Type*) var->type, typemap);
         debug("init_var=" << var->name);
     }
+    debug("random=" << slots[56]);
     std::map<int, Expression*>::iterator iter = container->constants.begin();
     std::map<int, Expression*>::iterator end = container->constants.end();
     std::stack<Value*> stack;
@@ -167,7 +168,7 @@ Frame::~Frame() {
     int numMethods = container->methods.size();
     for (int i = 0; i < numMethods; i++) {
         Value* s = slots[container->methods[i]->name];
-        //delete s;
+        delete s;
     }
     int numVariables = container->variables.size();
     for (int i = 0; i < numVariables; i++) {

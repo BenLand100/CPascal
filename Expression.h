@@ -61,7 +61,7 @@ inline void cleanStack(std::stack<Value*>& stack) {
 inline void evalBlock(Block* block, Frame* frame, std::stack<Value*>& stack) {
     Expression** elems = block->elems;
     Expression** end = elems + block->length;
-    debug("evalBlock{" << elems << "," << numElems << "}");
+    debug("evalBlock{" << elems << "}");
     while (elems != end) {
         debug("eval " << *elems);
         try {

@@ -47,8 +47,8 @@ OBJECTFILES= \
 CFLAGS=
 
 # CC Compiler Flags
-CCFLAGS=
-CXXFLAGS=
+CCFLAGS=-Wall -pedantic -ansi
+CXXFLAGS=-Wall -pedantic -ansi
 
 # Fortran Compiler Flags
 FFLAGS=
@@ -66,59 +66,73 @@ dist/Debug/${PLATFORM}/cpascal: ${OBJECTFILES}
 
 ${OBJECTDIR}/EFence.o: EFence.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -o ${OBJECTDIR}/EFence.o EFence.cpp
+	${RM} $@.d
+	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/EFence.o EFence.cpp
 
 ${OBJECTDIR}/Interpreter.o: Interpreter.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -o ${OBJECTDIR}/Interpreter.o Interpreter.cpp
+	${RM} $@.d
+	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/Interpreter.o Interpreter.cpp
 
 ${OBJECTDIR}/LeakTracer.o: LeakTracer.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -o ${OBJECTDIR}/LeakTracer.o LeakTracer.cpp
+	${RM} $@.d
+	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/LeakTracer.o LeakTracer.cpp
 
 ${OBJECTDIR}/Container.o: Container.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -o ${OBJECTDIR}/Container.o Container.cpp
+	${RM} $@.d
+	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/Container.o Container.cpp
 
 ${OBJECTDIR}/lexer.o: lexer.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -o ${OBJECTDIR}/lexer.o lexer.cpp
+	${RM} $@.d
+	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/lexer.o lexer.cpp
 
 ${OBJECTDIR}/main.o: main.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -o ${OBJECTDIR}/main.o main.cpp
+	${RM} $@.d
+	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/main.o main.cpp
 
 ${OBJECTDIR}/Type.o: Type.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -o ${OBJECTDIR}/Type.o Type.cpp
+	${RM} $@.d
+	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/Type.o Type.cpp
 
 ${OBJECTDIR}/Expression.o: Expression.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -o ${OBJECTDIR}/Expression.o Expression.cpp
+	${RM} $@.d
+	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/Expression.o Expression.cpp
 
 ${OBJECTDIR}/parser.o: parser.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -o ${OBJECTDIR}/parser.o parser.cpp
+	${RM} $@.d
+	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/parser.o parser.cpp
 
 ${OBJECTDIR}/Value.o: Value.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -o ${OBJECTDIR}/Value.o Value.cpp
+	${RM} $@.d
+	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/Value.o Value.cpp
 
 ${OBJECTDIR}/Operator.o: Operator.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -o ${OBJECTDIR}/Operator.o Operator.cpp
+	${RM} $@.d
+	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/Operator.o Operator.cpp
 
 ${OBJECTDIR}/Variable.o: Variable.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -o ${OBJECTDIR}/Variable.o Variable.cpp
+	${RM} $@.d
+	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/Variable.o Variable.cpp
 
 ${OBJECTDIR}/Element.o: Element.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -o ${OBJECTDIR}/Element.o Element.cpp
+	${RM} $@.d
+	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/Element.o Element.cpp
 
 ${OBJECTDIR}/Exceptions.o: Exceptions.cpp 
 	${MKDIR} -p ${OBJECTDIR}
-	$(COMPILE.cc) -g -o ${OBJECTDIR}/Exceptions.o Exceptions.cpp
+	${RM} $@.d
+	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/Exceptions.o Exceptions.cpp
 
 # Subprojects
 .build-subprojects:
@@ -130,3 +144,8 @@ ${OBJECTDIR}/Exceptions.o: Exceptions.cpp
 
 # Subprojects
 .clean-subprojects:
+
+# Enable dependency checking
+.dep.inc: .depcheck-impl
+
+include .dep.inc

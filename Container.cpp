@@ -17,7 +17,7 @@ Container::~Container() {
 Program::Program(int name) : Container(name) { }
 Program::~Program() { }
 
-Method::Method(int name) : Container(name), type(0), address(0), mtype(CONV_INTERNAL) { }
+Method::Method(int name) : Container(name), address(0), mtype(CONV_INTERNAL), type(0) { }
 Method::~Method() {
     for (int i = 0; i < arguments.size(); i++)
         delete arguments[i];

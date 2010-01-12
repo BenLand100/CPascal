@@ -161,6 +161,8 @@ int Type::sizeOf(std::map<int,Type*> &typemap) {
         case TYPE_BOOLEAN:
         case TYPE_CHAR:
             return 1;
+        default:
+            return -1;
     }
 }
 
@@ -185,9 +187,9 @@ int Pointer::sizeOf(std::map<int,Type*>& typemap) {
     return 4;
 }
 
-Array::Array(std::string descr_impl, Type* element_impl, int from_impl, int to_impl) : Type(descr_impl,TYPE_ARRAY), element(element_impl), dynamic(false), from(from_impl), to(to_impl) { }
+Array::Array(std::string descr_impl, Type* element_impl, int from_impl, int to_impl) : Type(descr_impl,TYPE_ARRAY), dynamic(false), element(element_impl), from(from_impl), to(to_impl) { }
 
-Array::Array(std::string descr_impl, Type* element_impl) : Type(descr_impl,TYPE_ARRAY), element(element_impl), dynamic(true), from(0), to(-1)  { }
+Array::Array(std::string descr_impl, Type* element_impl) : Type(descr_impl,TYPE_ARRAY), dynamic(true), element(element_impl), from(0), to(-1)  { }
 
 bool Array::instanceOf(Type* type) {
     return this->type == type->type && this->element == ((Array*)type)->element;

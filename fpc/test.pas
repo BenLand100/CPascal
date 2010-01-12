@@ -406,9 +406,15 @@ begin
     writeln(inttostr(arrs[1][1][1].b));
 end;
 
+procedure test_writeln(str: string);
+begin
+    writeln(str);
+end;
+
 var
     i: integer;
 begin 
+    test_writeln('rawr');
     {writeLn(RealToStr(e())); 
     writeLn(IntToStr(multiply(4,2))); 
     writeLn(IntToStr(dividei(4,2))); 

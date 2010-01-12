@@ -392,14 +392,16 @@ Operator* Operator::get(int type) {
             return new Addr();
         case OP_NEG:
             return new Neg();
+        default:
+            return 0;
     }
 }
 
-Operator::Operator(int op) : type(op), Element(ELEM_OPERATOR) { }
+Operator::Operator(int op) : Element(ELEM_OPERATOR), type(op) { }
 Operator::~Operator() { }
 
-Asgn::Asgn(int name_impl) : Operator(OP_ASGN), name(name_impl) { };
-Asgn::~Asgn() { };
+Asgn::Asgn(int name_impl) : Operator(OP_ASGN), name(name_impl) { }
+Asgn::~Asgn() { }
 void Asgn::preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
     Value* val = stack.top();
     stack.pop();
@@ -426,7 +428,7 @@ Invoke::~Invoke() {
 void Invoke::preform(std::stack<Value*>& stack, Frame* frame)  throw(int,InterpEx*) {
     Value* val = stack.top();
     stack.pop();
-    //if (val->type != TYPE_METH) throw E_NOT_METHOD;
+    if (val->type != TYPE_METH) throw E_NOT_METHOD;
     Value** vals = new Value*[numArgs];
     for (int i = 0; i < numArgs; i++) {
         vals[i] = evalExpr(args[i],frame,stack); //Beware of corrupting the stack
@@ -453,7 +455,7 @@ void Size::preform(std::stack<Value*>& stack, Frame* frame)  throw(int,InterpEx*
     delete arr;
 }
 
-ArrayDef::ArrayDef(std::list<Expression*> elems_impl) : Operator(OP_ARRAYDEF), numElems(elems_impl.size()), elems(new Expression*[elems_impl.size()]) {
+ArrayDef::ArrayDef(std::list<Expression*> elems_impl) : Operator(OP_ARRAYDEF), elems(new Expression*[elems_impl.size()]), numElems(elems_impl.size()) {
     std::list<Expression*>::iterator iter = elems_impl.begin();
     for (int i = 0; i < numElems; i++) {
         elems[i] = *iter;
@@ -490,7 +492,7 @@ void Resize::preform(std::stack<Value*>& stack, Frame* frame) throw(int,InterpEx
     stack.push(arr);
 }
 
-ArrayGet::ArrayGet(std::list<Expression*> indexes_impl) : Operator(OP_ARRAYGET), numIndexes(indexes_impl.size()), indexes(new Expression*[indexes_impl.size()]) {
+ArrayGet::ArrayGet(std::list<Expression*> indexes_impl) : Operator(OP_ARRAYGET), indexes(new Expression*[indexes_impl.size()]), numIndexes(indexes_impl.size()) {
     std::list<Expression*>::iterator iter = indexes_impl.begin();
     for (int i = 0; i < numIndexes; i++) {
         indexes[i] = *iter;
@@ -517,7 +519,7 @@ void ArrayGet::preform(std::stack<Value*>& stack, Frame* frame) throw(int,Interp
     delete arr;
 }
 
-ArraySet::ArraySet(std::list<Expression*> indexes_impl) : Operator(OP_ARRAYSET), numIndexes(indexes_impl.size()), indexes(new Expression*[indexes_impl.size()]) {
+ArraySet::ArraySet(std::list<Expression*> indexes_impl) : Operator(OP_ARRAYSET), indexes(new Expression*[indexes_impl.size()]), numIndexes(indexes_impl.size()) {
     std::list<Expression*>::iterator iter = indexes_impl.begin();
     for (int i = 0; i < numIndexes; i++) {
         indexes[i] = *iter;
