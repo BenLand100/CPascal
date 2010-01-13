@@ -1009,6 +1009,7 @@ Value* ArrayValue::clone() {
     int numelems = arr->to - arr->from + 1; //to == -1 and from == 0 for dynamic just for this
 
     if (arr->dynamic) {
+        numelems = **asize;
         *clone->mem = new char[8 + (*elemsz) * numelems];
         *clone->objref = (int*) * mem;
         **clone->objref = 1;

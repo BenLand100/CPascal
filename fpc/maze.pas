@@ -154,10 +154,14 @@ begin
   result:= tiles;
   writeln('Start = (' + inttostr(start.x) + ',' + inttostr(start.y) + ')');
   writeln('Finish = (' + inttostr(finish.x) + ',' + inttostr(finish.y) + ')');
+  writeln('a1:'+inttostr(length(tiles)));
+  writeln('a2:'+inttostr(length(tiles[0])));
+  writeln('b1:'+inttostr(length(result)));
+  writeln('b2:'+inttostr(length(result[0])));
 end;
 
 
-function notPassed(passed: TpointArray; x,y: integer): boolean;
+function notPassed(var passed: TpointArray; x,y: integer): boolean;
 var
   i: integer;
 begin
@@ -169,6 +173,12 @@ end;
 type TghettoStack = record
   passed,my_path: TpointArray;
   x,y: integer;
+end;
+
+function point(x,y:integer):TPoint;
+begin
+    result.x:= x;
+    result.y:= y;
 end;
 
 function flood(var input: array of array of boolean; sx,sy,dx,dy,w,h: integer): array of TpointArray;
@@ -206,8 +216,9 @@ begin
     begin
       writeln('found path! ' + inttostr(off));
       SetLength(result,off+1);
-      result[off]:= my_path;
-      inc(off);
+      //result[off]:= my_path;
+      off:= off + 1;
+      writeln('continuing search');
     end;
     if (y-1 >= 0) then if input[x][y-1] then if notPassed(my_path,x,y-1) then
     begin
@@ -299,7 +310,8 @@ var
    all_paths: array of TpointArray;
    i,max_pos,max_len: integer;
 begin
-  writeln(inttostr(length(maze[0])));
+  writeln('d1:'+inttostr(length(maze)));
+  writeln('d2:'+inttostr(length(maze[0])));
   writeln('preparing to solve maze');
   thin(input,start.x,start.y,finish.x,finish.y,length(input),length(input[0]));
   writeln('thinned the maze');
@@ -326,8 +338,9 @@ var
   jack: TPointArray;
   i,jills,t: integer;
 begin
-  maze:= ParseMaze(medium_maze,start,finish);
-  writeln(inttostr(length(maze[0])));
+  maze:= ParseMaze(small_maze,start,finish);
+  writeln('c1:'+inttostr(length(maze)));
+  writeln('c2:'+inttostr(length(maze[0])));
   t:= time();
   benland100_solver(jack,jills,maze,start,finish);
   t:= time() - t;
