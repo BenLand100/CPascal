@@ -139,6 +139,8 @@ public:
     Value* clone();
     void set(Value* val) throw(int,InterpEx*);
     char* asString() throw(int,InterpEx*);
+    Value* getIndex(int index) throw(int,InterpEx*);
+    void setIndex(int index, Value* val) throw(int,InterpEx*);
 
     int argSize();
     void refArg(void* mem);

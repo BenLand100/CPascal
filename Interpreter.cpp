@@ -26,6 +26,7 @@
 #include <sstream>
 #include <iostream>
 #include <ctime>
+#include <stdlib.h>
 #include <sys/timeb.h>
 
 //#define debug(x) std::cout << x << '\n'
@@ -52,6 +53,11 @@ void ms_wait(int ms) {
 void writeln(char* str) __attribute__((stdcall));
 void writeln(char* str) {
     printf("%s\n",str);
+}
+
+int strtoint(char* str) __attribute__((stdcall));
+int strtoint(char* str) {
+    return atoi(str);
 }
 
 char* inttostr(int i) __attribute__((stdcall));
@@ -102,6 +108,7 @@ Interpreter::Interpreter(char* ppg) : exception(0) {
     addMethod((void*)&ms_time,CONV_C_STDCALL,(char*)"function time: integer;");
     addMethod((void*)&ms_wait,CONV_C_STDCALL,(char*)"procedure wait(ms: integer);");
     addMethod((void*)&writeln,CONV_C_STDCALL,(char*)"procedure writeln(str: string);");
+    addMethod((void*)&strtoint,CONV_C_STDCALL,(char*)"function strtoint(str: string): integer;");
     addMethod((void*)&inttostr,CONV_C_STDCALL,(char*)"function inttostr(i: integer): string;");
     addMethod((void*)&chartostr,CONV_C_STDCALL,(char*)"function chartostr(c: char): string;");
     addMethod((void*)&booltostr,CONV_C_STDCALL,(char*)"function booltostr(b: boolean): string;");
@@ -187,7 +194,7 @@ Frame::~Frame() {
     int numMethods = container->methods.size();
     for (int i = 0; i < numMethods; i++) {
         Value* s = slots[container->methods[i]->name];
-        delete s;
+        //delete s;
     }
     int numVariables = container->variables.size();
     for (int i = 0; i < numVariables; i++) {

@@ -41,9 +41,10 @@
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
                    projectFiles="false">
+      <itemPath>COPYING</itemPath>
       <itemPath>fpc/cpascal.pas</itemPath>
       <itemPath>Makefile</itemPath>
-      <itemPath>fpc/test.pas</itemPath>
+      <itemPath>fpc/test2.pas</itemPath>
     </logicalFolder>
   </logicalFolder>
   <projectmakefile>Makefile</projectmakefile>

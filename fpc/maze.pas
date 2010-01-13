@@ -3,19 +3,19 @@ program maze;
 const small_maze =
 '25' + #10 +
 '13' + #10 +
-'00000000000000000000000002'+ #10 +
-'03011111011111100010001102'+ #10 +
-'01010101010000111111101002'+ #10 +
-'01111101010110101000101002'+ #10 +
-'01000111010100101110111112'+ #10 +
-'01010100010110100000100012'+ #10 +
-'01110111010011101100101012'+ #10 +
-'00101101010110001011101012'+ #10 +
-'01111001010100101010011012'+ #10 +
-'01001011110111111110010012'+ #10 +
-'01111010010000000111110012'+ #10 +
-'00100111111111111000000042'+ #10 +
-'00000000000000000000000005'+ #10 ;
+'0000000000000000000000000'+ #10 +
+'0301111101111110001000110'+ #10 +
+'0101010101000011111110100'+ #10 +
+'0111110101011010100010100'+ #10 +
+'0100011101010010111011111'+ #10 +
+'0101010001011010000010001'+ #10 +
+'0111011101001110110010101'+ #10 +
+'0010110101011000101110101'+ #10 +
+'0111100101010010101001101'+ #10 +
+'0100101111011111111001001'+ #10 +
+'0111101001000000011111001'+ #10 +
+'0010011111111111100000004'+ #10 +
+'0000000000000000000000000'+ #10 ;
 
 const medium_maze ='61' + #10 +
 '61' + #10 +
@@ -94,24 +94,24 @@ type TboolGrid = array of array of boolean;
 function readLine(raw: string; var off: integer): string;
 begin
   result:= '';
-  while raw[off] <> chr(10) do
+  while raw[off] <> #10 do
   begin
     result:= result + raw[off];
-    inc(off);
+    off:= off + 1;
   end;
-  inc(off);
+  off:= off + 1;
 end;
 
 
-procedure ParseMaze(raw: string; var start, finish: TPoint);//: TboolGrid;
+function ParseMaze(raw: string; var start, finish: TPoint): TboolGrid;
 var
-  //tiles: TboolGrid;
+  tiles: TboolGrid;
   c: char;
   i,w,h,x,y: integer;
 begin
   writeln('Initializing...');
   writeln(raw);
-  {i:= 1;
+  i:= 1;
   w:= strtoint(readLine(raw,i));
   h:= strtoint(readLine(raw,i));
   SetLength(tiles,w);
@@ -119,36 +119,41 @@ begin
     SetLength(tiles[x],h);
   x:= 0;
   y:= 0;
+  writeln('W:' + inttostr(w) + ' H:' + inttostr(h));
   writeln('Parsing...');
   while y < h do
   begin
     c:= raw[i];
-    inc(i);
+    i:= i + 1;
     case c of
       '0': begin
         tiles[x][y]:= false;
-        inc(x);
+        x:= x + 1;
       end;
       '1': begin
         tiles[x][y]:= true;
-        inc(x);
+        x:= x + 1;
       end;
       '3': begin
+        Writeln('found start!');
         start.x:= x;
         start.y:= y;
         tiles[x][y]:= true;
-        inc(x);
+        x:= x + 1;
       end;
       '4': begin
+        Writeln('found finish!');
         finish.x:= x;
         finish.y:= y;
         tiles[x][y]:= true;
-        inc(x);
+        x:= x + 1;
       end;
     end;
-    if x = w then begin x:= 0; inc(y); end;
+    if x = w then begin x:= 0; y:= y + 1; end;
   end;
-  result:= tiles;}
+  result:= tiles;
+  writeln('Start = (' + inttostr(start.x) + ',' + inttostr(start.y) + ')');
+  writeln('Finish = (' + inttostr(finish.x) + ',' + inttostr(finish.y) + ')');
 end;
 
 
@@ -193,7 +198,7 @@ begin
     x:= stack[top].x;
     y:= stack[top].y;
     SetLength(my_path,Length(passed)+1);
-    //writeln('following (' + inttostr(x) + ',' + inttostr(y) + ')  ' + inttostr(length(my_path)));
+    writeln('following (' + inttostr(x) + ',' + inttostr(y) + ')  ' + inttostr(length(my_path)));
     for i:= 0 to Length(passed) - 1 do
       my_path[i]:= passed[i];
     my_path[Length(passed)]:= point(x,y);
@@ -235,6 +240,7 @@ begin
   end;
 end;
 
+
 procedure prune(var input: array of array of boolean; x,y,w,h: integer);
 var
   nx,ny,c: integer;
@@ -269,11 +275,12 @@ begin
   until c <> 1;
   input[x][y]:= true;
 end;
-{
+
 procedure thin(var input: array of array of boolean; sx,sy,fx,fy,w,h: integer);
 var
   x,y,c: integer;
 begin
+  writeln('examining maze');
   for x:= 0 to w-1 do
     for y:= 0 to h-1 do
       if input[x][y] then
@@ -286,17 +293,22 @@ begin
         if c <= 1 then if ((x<>sx) or (y<>sy)) and ((x<>fx) or (y<>fy)) then prune(input,x,y,w,h);
       end;
 end;
-}
+
 procedure benland100_solver(var jacks_path: TPointArray; var jills_routes: Integer; input: array of array of Boolean; start, finish: TPoint);
 var
    all_paths: array of TpointArray;
    i,max_pos,max_len: integer;
 begin
+  writeln(inttostr(length(maze[0])));
+  writeln('preparing to solve maze');
   thin(input,start.x,start.y,finish.x,finish.y,length(input),length(input[0]));
+  writeln('thinned the maze');
   all_paths:= flood(input,start.x,start.y,finish.x,finish.y,length(input),length(input[0]));
+  writeln('found all possible paths');
   jills_routes:= Length(all_paths) - 1;
   max_pos:= 0;
   max_len:= length(all_paths[0]);
+  writeln('Finding longest...');
   for i:= 1 to jills_routes do
   begin
     if length(all_paths[i]) > max_len then
@@ -312,13 +324,14 @@ var
   maze: array of array of boolean;
   start,finish: TPoint;
   jack: TPointArray;
-  i,jills,time: integer;
+  i,jills,t: integer;
 begin
-  ParseMaze(medium_maze,start,finish);
-  {time:= GetSystemTime;
+  maze:= ParseMaze(medium_maze,start,finish);
+  writeln(inttostr(length(maze[0])));
+  t:= time();
   benland100_solver(jack,jills,maze,start,finish);
-  time:= GetSystemTime - time;
-  writeln('Took ' + floattostr(time / 1000.0) + ' seconds');
+  t:= time() - t;
+  writeln('Took ' + realtostr(t / 1000.0) + ' seconds');
   writeln('Longest Path: ' + inttostr(length(jack)));
   writeln('#Other Paths: ' + inttostr(jills));}
 end.

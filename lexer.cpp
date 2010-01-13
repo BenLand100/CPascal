@@ -59,8 +59,8 @@ int reserved(std::map<std::string,int> &names) {
     names["integer"] = RES_INTEGER;
     names["real"] = RES_REAL;
     names["boolean"] = RES_BOOLEAN;
-    names["size"] = RES_SIZE;
-    names["resize"] = RES_RESIZE;
+    names["length"] = RES_SIZE;
+    names["setlength"] = RES_RESIZE;
     names["nil"] = RES_NIL;
     names["result"] = RES_RESULT;
     return MAX_RES; //return next
@@ -158,7 +158,6 @@ char* lex(char* ppg, std::map<std::string,int> &names) {
                 if (ppg[1] == 'o' && ppg[2] == 't' && !namechar(ppg[3])) {
                     *(toks++) = POPERATOR;
                     *(toks++) = OP_NOT;
-                    toks += 4;
                     ppg += 2;
                     break;
                 }
@@ -167,7 +166,6 @@ char* lex(char* ppg, std::map<std::string,int> &names) {
                 if (ppg[1] == 'r' && !namechar(ppg[2])) {
                     *(toks++) = POPERATOR;
                     *(toks++) = OP_OR;
-                    toks += 3;
                     ppg += 2;
                     break;
                 }

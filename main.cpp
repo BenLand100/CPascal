@@ -50,7 +50,7 @@ void add1v(int& i) {
 
 int main(int argc, char** argv) {
     ifstream in;
-    in.open("./fpc/test2.pas", ifstream::ate | ifstream::binary);
+    in.open("./fpc/maze.pas", ifstream::ate | ifstream::binary);
     if (!in) return 1;
     int size = in.tellg();
     char* ppg = new char[size+1];

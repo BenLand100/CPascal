@@ -531,6 +531,11 @@ void ArrayGet::preform(std::stack<Value*>& stack, Frame* frame) throw(int,Interp
     for (int i = 0; i < numIndexes; i++) {
         Value* index = evalExpr(indexes[i],frame,stack);
         int i = index->asInteger();
+        if (numIndexes-1 == i && res->type == TYPE_STRING) {
+            stack.push(res->getIndex(i));
+            delete index;
+            delete arr;
+        }
         res = res->getIndex(i);
         delete index;
     }

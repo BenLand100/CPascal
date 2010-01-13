@@ -241,7 +241,7 @@ void MethodValue::set(Value* val) throw (int, InterpEx*) {
 
 Value* MethodValue::invoke(Value** args, int numArgs, Frame* cur) throw (int, InterpEx*) {
     Method* meth = *this->meth;
-    if (numArgs != meth->arguments.size()) return 0;
+    if (numArgs != meth->arguments.size()) throw E_WRONG_NUM_ARG;
     if (meth->address) {
         int argsz = 0;
         for (int i = 0; i < numArgs; i++)
@@ -255,7 +255,7 @@ Value* MethodValue::invoke(Value** args, int numArgs, Frame* cur) throw (int, In
             } else {
                 args[i]->valArg((void*) stack);
                 stack += args[i]->argSize();
-}
+            }
         }
         stack -= 4;
         if (meth->type) {
@@ -549,6 +549,16 @@ void StringValue::set(Value* val) throw (int, InterpEx*) {
 
 char* StringValue::asString() throw (int, InterpEx*) {
     return *str;
+}
+
+void StringValue::setIndex(int index, Value* val) throw (int, InterpEx*) {
+    if (index < 1 || index > **size) throw E_INDEX_BOUNDS;
+    (*str)[index-1] = val->asChar();
+}
+
+Value* StringValue::getIndex(int index) throw (int, InterpEx*) {
+    if (index < 1 || index > **size) throw E_INDEX_BOUNDS;
+    return new CharValue((*str)[index-1]);
 }
 
 int StringValue::argSize() {

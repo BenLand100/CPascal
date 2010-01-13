@@ -30,8 +30,8 @@
 #include <stack>
 
 #include <iostream>
-//#define debug(x) std::cout << x << '\n'
-#define debug(x)
+#define debug(x) std::cout << x << '\n'
+//#define debug(x)
 
 Expression* parseExpr(char* &cur);
 std::list<Variable*> parseVars(char* &cur);
@@ -291,6 +291,8 @@ Method* parseMethod(char* &cur) {
                             untyped.pop_front();
                         }
                         byref = false;
+                        cur = next(cur);
+                        if (cur[0] == PSPECIAL && cur[1] == SPC_RPAREN) moreArgs = false;
                     }
                     break;
                 }
@@ -768,6 +770,7 @@ void parseContainer(char* &cur, Container* container) {
     debug("parseContainer");
     char* tok;
     do {
+        if (!*cur) return; // empty body or eof
         tok = next(cur);
         if (!*tok) return; // empty body or eof
         switch (*(int*)(tok+1)) {

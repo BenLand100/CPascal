@@ -85,6 +85,8 @@ const char* InterpEx::what() const throw() {
             return "Array is not dynamic";
         case E_NOT_METHOD:
             return "Cannot invoke a non-method";
+        case E_WRONG_NUM_ARG:
+            return "Wrong number of arguments to method";
         default:
             return "Unknown error!";
     }
