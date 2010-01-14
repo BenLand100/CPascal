@@ -193,6 +193,7 @@ begin
   SetLength(stack[0].passed,0);
   stack[0].x:= sx;
   stack[0].y:= sy;
+  writeln('pushing start: (' + inttostr(sx) + ',' + inttostr(sy) + ')');
   off:= 0;
   top:= 1;
   while top > 0 do
@@ -210,13 +211,16 @@ begin
     SetLength(my_path,Length(passed)+1);
     writeln('following (' + inttostr(x) + ',' + inttostr(y) + ')  ' + inttostr(length(my_path)));
     for i:= 0 to Length(passed) - 1 do
+    begin
+      writeln(inttostr(i) + '/' + inttostr(length(passed)));
       my_path[i]:= passed[i];
+    end;
     my_path[Length(passed)]:= point(x,y);
     if (x = dx) and (y = dy) then
     begin
       writeln('found path! ' + inttostr(off));
       SetLength(result,off+1);
-      //result[off]:= my_path;
+      result[off]:= my_path;
       off:= off + 1;
       writeln('continuing search');
     end;
@@ -315,6 +319,7 @@ begin
   writeln('preparing to solve maze');
   thin(input,start.x,start.y,finish.x,finish.y,length(input),length(input[0]));
   writeln('thinned the maze');
+  writeln('start: (' + inttostr(start.x) + ',' + inttostr(start.y) + ') finish: (' + inttostr(finish.x) + ',' + inttostr(finish.y) + ')');
   all_paths:= flood(input,start.x,start.y,finish.x,finish.y,length(input),length(input[0]));
   writeln('found all possible paths');
   jills_routes:= Length(all_paths) - 1;
@@ -342,6 +347,7 @@ begin
   writeln('c1:'+inttostr(length(maze)));
   writeln('c2:'+inttostr(length(maze[0])));
   t:= time();
+  writeln('start: (' + inttostr(start.x) + ',' + inttostr(start.y) + ') finish: (' + inttostr(finish.x) + ',' + inttostr(finish.y) + ')');
   benland100_solver(jack,jills,maze,start,finish);
   t:= time() - t;
   writeln('Took ' + realtostr(t / 1000.0) + ' seconds');

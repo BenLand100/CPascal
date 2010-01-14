@@ -168,7 +168,7 @@ bool Type::instanceOf(Type* type) {
     return this->type == TYPE_REF ? this->descr == type->descr : this->type == type->type;
 }
 
-int Type::sizeOf(std::map<int,Type*> &typemap) {
+int Type::sizeOf() {
     switch (type) {
         case TYPE_NIL:
             return *((char*)0);
@@ -192,7 +192,7 @@ bool Meth::instanceOf(Type* type) {
     return this->type == TYPE_METH ? this->descr == type->descr : false;
 }
 
-int Meth::sizeOf(std::map<int,Type*> &typemap) {
+int Meth::sizeOf() {
     return 4;
 }
 
@@ -214,11 +214,11 @@ bool Array::instanceOf(Type* type) {
     return this->type == type->type && this->element == ((Array*)type)->element;
 }
 
-int Array::sizeOf(std::map<int,Type*>& typemap) {
+int Array::sizeOf() {
     if (dynamic) {
         return 4;
     } else {
-        int elemsz = element->sizeOf(typemap);
+        int elemsz = element->sizeOf();
         int len = to - from + 1;
         return elemsz*len;
     }
@@ -230,12 +230,12 @@ bool Record::instanceOf(Type* type) {
     return this->type == type->type && this->fields == ((Record*)type)->fields;
 }
 
-int Record::sizeOf(std::map<int,Type*>& typemap) {
+int Record::sizeOf() {
     if (size) return size;
     std::list<Variable*>::iterator iter = fields.begin();
     std::list<Variable*>::iterator end = fields.end();
     while (iter != end) {
-        size += (*iter)->type->sizeOf(typemap);
+        size += (*iter)->type->sizeOf();
         iter++;
     }
     return size;
@@ -247,6 +247,6 @@ bool RefType::instanceOf(Type* type) {
     return this->type == type->type && this->name == ((RefType*)type)->name;
 }
 
-int RefType::sizeOf(std::map<int,Type*>& typemap) {
-    return typemap[name]->sizeOf(typemap);
+int RefType::sizeOf() {
+    return 0;
 }

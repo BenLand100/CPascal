@@ -39,8 +39,8 @@ class PointerValue;
 
 class Value : public Element {
 public:
-    static Value* fromType(Type* type, std::map<int,Type*> &typemap);
-    static Value* fromTypeMem(Type* type, std::map<int,Type*> &typemap, void* mem);
+    static Value* fromType(Type* type) throw(int,InterpEx*);
+    static Value* fromTypeMem(Type* type, void* mem) throw(int,InterpEx*);
 
     const Type* typeObj;
     const int   type;
@@ -59,7 +59,7 @@ public:
     virtual Value* getField(int name) throw(int,InterpEx*);
     virtual void setField(int name, Value* val) throw(int,InterpEx*);
     virtual int size() throw(int,InterpEx*);
-    virtual void resize(int size, std::map<int,Type*>& typemap) throw(int,InterpEx*);
+    virtual void resize(int size) throw(int,InterpEx*);
     virtual void setIndex(int index, Value* val) throw(int,InterpEx*);
     virtual Value* getIndex(int index) throw(int,InterpEx*);
     virtual char* asString() throw(int,InterpEx*);
@@ -231,15 +231,15 @@ private:
 
 class ArrayValue : public Value {
 public:
-    ArrayValue(Array* arr, std::map<int,Type*> &typemap, void* mem);
-    ArrayValue(Array* arr, std::map<int,Type*> &typemap);
+    ArrayValue(Array* arr, void* mem);
+    ArrayValue(Array* arr);
     ~ArrayValue();
 
     Value* duplicate();
     Value* clone();
     void set(Value* val) throw(int,InterpEx*);
     int size() throw(int,InterpEx*);
-    void resize(int size, std::map<int,Type*>& typemap) throw(int,InterpEx*);
+    void resize(int size) throw(int,InterpEx*);
     Value* getIndex(int index) throw(int,InterpEx*);
     void setIndex(int index, Value* val) throw(int,InterpEx*);
 
@@ -258,14 +258,14 @@ private:
     int** asize;
     Value*** array;
     char** pas_array;
-    ArrayValue(Array* arr);
+    ArrayValue(Array* arr, bool internal);
     ArrayValue(ArrayValue &val);
 };
 
 class PointerValue : public Value {
 public:
-    PointerValue(Pointer* pt, std::map<int,Type*> &typemap, void* mem);
-    PointerValue(Pointer* pt, std::map<int,Type*> &typemap);
+    PointerValue(Pointer* pt, void* mem);
+    PointerValue(Pointer* pt);
     PointerValue(Value* ref);
     ~PointerValue();
 
@@ -285,13 +285,13 @@ private:
     void** pas_ref;
     Type** refType;
     PointerValue(PointerValue &val);
-    PointerValue(Pointer* pt);
+    PointerValue(Pointer* pt, bool internal);
 };
 
 class RecordValue : public Value {
 public:
-    RecordValue(Record* rec, std::map<int,Type*> &typemap, void* mem);
-    RecordValue(Record* rec, std::map<int,Type*> &typemap);
+    RecordValue(Record* rec, void* mem);
+    RecordValue(Record* rec);
     ~RecordValue();
 
     Value* duplicate();
@@ -311,7 +311,7 @@ private:
     char** mem;
     std::map<int,Value*>* fields;
     RecordValue(RecordValue &val);
-    RecordValue(Record* rec);
+    RecordValue(Record* rec, bool internal);
 };
 
 #endif	/* _VALUE_H */

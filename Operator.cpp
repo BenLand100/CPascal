@@ -324,7 +324,7 @@ public:
         Value* val = stack.top();
         stack.pop();
         Pointer* pt = Type::getPointerType((Type*)val->typeObj);
-        PointerValue* ref = new PointerValue(pt,frame->typemap);
+        PointerValue* ref = new PointerValue(pt);
         ref->setRef(val);
         stack.push(ref);
         delete val;
@@ -492,8 +492,8 @@ void ArrayDef::preform(std::stack<Value*>& stack, Frame* frame) throw(int,Interp
     for (int i = 0; i < numElems; i++)
         vals[i] = evalExpr(elems[i],frame,stack);
     Type* arrType = Type::getDynamicArrayType((Type*)vals[0]->typeObj);
-    ArrayValue* val = new ArrayValue((Array*)arrType,frame->typemap);
-    val->resize(numElems, frame->typemap);
+    ArrayValue* val = new ArrayValue((Array*)arrType);
+    val->resize(numElems);
     for (int i = 0; i < numElems; i++) {
         val->setIndex(i, vals[i]);
         delete vals[i];
@@ -506,7 +506,7 @@ Resize::~Resize() { delete array; delete dim; }
 void Resize::preform(std::stack<Value*>& stack, Frame* frame) throw(int,InterpEx*) {
     Value* arr = evalExpr(array,frame,stack);
     Value* size = evalExpr(dim,frame,stack);
-    arr->resize(size->asInteger(), frame->typemap);
+    arr->resize(size->asInteger());
     delete size;
     stack.push(arr);
 }
@@ -531,7 +531,7 @@ void ArrayGet::preform(std::stack<Value*>& stack, Frame* frame) throw(int,Interp
     for (int i = 0; i < numIndexes; i++) {
         Value* index = evalExpr(indexes[i],frame,stack);
         int i = index->asInteger();
-        if (numIndexes-1 == i && res->type == TYPE_STRING) {
+        if ((numIndexes-1 == i) && (res->type == TYPE_STRING)) {
             stack.push(res->getIndex(i));
             delete index;
             delete arr;

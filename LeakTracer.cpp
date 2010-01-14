@@ -138,7 +138,7 @@ public:
             fprintf(stderr, "# abort; DUMP of current state\n");
             fprintf(stderr, "LeakTracer aborting program\n");
             writeLeakReport();
-            abort();
+            //abort();
         }
     }
 

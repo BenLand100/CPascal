@@ -66,7 +66,7 @@ public:
     const std::string descr;
 
     virtual bool instanceOf(Type* type);
-    virtual int sizeOf(std::map<int,Type*> &typemap);
+    virtual int sizeOf();
 protected:
     Type(std::string descr, int type);
 private:
@@ -79,7 +79,7 @@ public:
     const Method* meth;
 
     bool instanceOf(Type* type);
-    int sizeOf(std::map<int,Type*> &typemap);
+    int sizeOf();
 protected:
     Meth(std::string descr, Method* meth);
 };
@@ -90,7 +90,7 @@ public:
     const int name;
 
     bool instanceOf(Type* type);
-    int sizeOf(std::map<int,Type*> &typemap);
+    int sizeOf();
 protected:
     RefType(std::string descr, int name);
 };
@@ -104,7 +104,7 @@ public:
     const int to;
 
     bool instanceOf(Type* type);
-    int sizeOf(std::map<int,Type*> &typemap);
+    int sizeOf();
 protected:
     Array(std::string descr, Type* element, int from, int to);
     Array(std::string descr, Type* element);
@@ -127,7 +127,7 @@ public:
     std::list<Variable*> fields;
 
     bool instanceOf(Type* type);
-    int sizeOf(std::map<int,Type*> &typemap);
+    int sizeOf();
 protected:
     int size;
     Record(std::string descr, std::list<Variable*> fields);

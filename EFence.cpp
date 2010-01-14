@@ -694,7 +694,7 @@ slotForInternalAddressPreviousTo(void * address)
 }
 
 extern C_LINKAGE void
-free(void * address)
+free(void * address) throw()
 {
 	Slot *	slot;
 	Slot *	previousSlot = 0;
@@ -782,7 +782,7 @@ free(void * address)
 }
 
 extern C_LINKAGE void *
-realloc(void * oldBuffer, size_t newSize)
+realloc(void * oldBuffer, size_t newSize) throw()
 {
 	void *	newBuffer = malloc(newSize);
 
@@ -824,7 +824,7 @@ realloc(void * oldBuffer, size_t newSize)
 }
 
 extern C_LINKAGE void *
-malloc(size_t size)
+malloc(size_t size) throw ()
 {
         void  *allocation;
 
@@ -841,7 +841,7 @@ malloc(size_t size)
 }
 
 extern C_LINKAGE void *
-calloc(size_t nelem, size_t elsize)
+calloc(size_t nelem, size_t elsize) throw()
 {
 	size_t	size = nelem * elsize;
         void * allocation;
@@ -860,7 +860,7 @@ calloc(size_t nelem, size_t elsize)
  * will break some software.
  */
 extern C_LINKAGE void *
-valloc (size_t size)
+valloc (size_t size) throw ()
 {
         void * allocation;
 

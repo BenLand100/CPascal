@@ -51,16 +51,13 @@ public:
     ~Frame();
 
     Value* resolve(int symbol) throw(int,InterpEx*);
-    void registerTemp(Value* temp);
 
-    std::map<int,Type*> typemap;
 private:
     std::map<int,Value*> slots;
-    std::list<Value*> temps; //FIXME - use this to make memory management faster
     Frame* parent;
     Container* container;
 
-    void init(Container* container);
+    void init(Container* container)  throw(int,InterpEx*);
 };
 
 extern "C" {

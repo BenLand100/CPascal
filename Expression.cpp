@@ -128,7 +128,7 @@ void For::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) {
         delete temp;
     } else {
         temp = evalExpr(end,frame,stack);
-        while (varval->asInteger() <= temp->asInteger()) {
+        while (varval->asInteger() >= temp->asInteger()) {
             delete temp;
             evalBlock(&block,frame,stack);
             temp = evalExpr(end,frame,stack);

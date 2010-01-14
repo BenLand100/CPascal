@@ -28,12 +28,9 @@
 //#define debug(x) std::cout << x << '\n'
 #define debug(x)
 
-Value* Value::fromType(Type* type, std::map<int, Type*> &typemap) {
-    std::map<int, Type*>::iterator end = typemap.end();
+Value* Value::fromType(Type* type) throw (int, InterpEx*) {
     debug("fromType " << type->type);
-    while (type->type == TYPE_REF && typemap.find(((RefType*) type)->name) != end)
-        type = typemap[((RefType*) type)->name];
-    if (type->type == TYPE_REF) return 0;
+    if (type->type == TYPE_REF) throw E_REF_TYPE;
     debug("fromType " << type->type);
     switch (type->type) {
         case TYPE_STRING:
@@ -47,22 +44,19 @@ Value* Value::fromType(Type* type, std::map<int, Type*> &typemap) {
         case TYPE_BOOLEAN:
             return new BooleanValue(false);
         case TYPE_RECORD:
-            return new RecordValue((Record*) type, typemap);
+            return new RecordValue((Record*) type);
         case TYPE_ARRAY:
-            return new ArrayValue((Array*) type, typemap);
+            return new ArrayValue((Array*) type);
         case TYPE_POINTER:
-            return new PointerValue((Pointer*) type, typemap);
+            return new PointerValue((Pointer*) type);
         default:
             return 0;
     }
 }
 
-Value* Value::fromTypeMem(Type* type, std::map<int, Type*> &typemap, void* mem) {
-    std::map<int, Type*>::iterator end = typemap.end();
+Value* Value::fromTypeMem(Type* type, void* mem)  throw (int, InterpEx*) {
     debug("fromType " << type->type);
-    while (type->type == TYPE_REF && typemap.find(((RefType*) type)->name) != end)
-        type = typemap[((RefType*) type)->name];
-    if (type->type == TYPE_REF) return 0;
+    if (type->type == TYPE_REF) throw E_REF_TYPE;
     debug("fromType " << type->type);
     switch (type->type) {
         case TYPE_STRING:
@@ -76,11 +70,11 @@ Value* Value::fromTypeMem(Type* type, std::map<int, Type*> &typemap, void* mem) 
         case TYPE_BOOLEAN:
             return new BooleanValue(mem);
         case TYPE_RECORD:
-            return new RecordValue((Record*) type, typemap, mem);
+            return new RecordValue((Record*) type, mem);
         case TYPE_ARRAY:
-            return new ArrayValue((Array*) type, typemap, mem);
+            return new ArrayValue((Array*) type, mem);
         case TYPE_POINTER:
-            return new PointerValue((Pointer*) type, typemap, mem);
+            return new PointerValue((Pointer*) type, mem);
         default:
             return 0;
     }
@@ -139,7 +133,7 @@ int Value::size() throw (int, InterpEx*) {
     throw E_NOT_ARRAY;
 }
 
-void Value::resize(int size, std::map<int, Type*>& typemap) throw (int, InterpEx*) {
+void Value::resize(int size) throw (int, InterpEx*) {
     throw E_NOT_ARRAY;
 }
 
@@ -296,7 +290,7 @@ Value* MethodValue::invoke(Value** args, int numArgs, Frame* cur) throw (int, In
                             : "memory"
                             );
                 delete[] cargs;
-                Value* val = Value::fromType(meth->type, cur->typemap);
+                Value* val = Value::fromType(meth->type);
                 switch (meth->mtype) {
                     case CONV_C_STDCALL:
                         val->read_c(eax);
@@ -335,7 +329,7 @@ Value* MethodValue::invoke(Value** args, int numArgs, Frame* cur) throw (int, In
             frame->slots[var->name] = var->byRef ? args[i]->duplicate() : args[i]->clone();
             debug("argset=" << (var->name) << " " << args[i] << " " << frame->slots[var->name]);
         }
-        if (meth->type) frame->slots[RES_RESULT] = Value::fromType(meth->type, cur->typemap);
+        if (meth->type) frame->slots[RES_RESULT] = Value::fromType(meth->type);
         debug("resolve_method");
         evalBlock(&meth->block, frame);
         debug("resolve_return");
@@ -835,7 +829,7 @@ void BooleanValue::read_fpc(void* res) {
 
 //**** BEGIN ARRAYVALUE DEFINITION ***
 
-ArrayValue::ArrayValue(Array* arr, std::map<int, Type*> &typemap, void* mem_impl) : Value(TYPE_ARRAY, arr) {
+ArrayValue::ArrayValue(Array* arr, void* mem_impl) : Value(TYPE_ARRAY, arr) {
     refcount = new int;
     *refcount = 1;
     owns_mem = new bool;
@@ -848,7 +842,7 @@ ArrayValue::ArrayValue(Array* arr, std::map<int, Type*> &typemap, void* mem_impl
     *start = arr->from;
 
     elemsz = new int;
-    *elemsz = arr->element->sizeOf(typemap);
+    *elemsz = arr->element->sizeOf();
     int numelems = arr->to - arr->from + 1; //to == -1 and from == 0 for dynamic just for this
 
     if (arr->dynamic) {
@@ -881,11 +875,11 @@ ArrayValue::ArrayValue(Array* arr, std::map<int, Type*> &typemap, void* mem_impl
     }
 
     for (int i = 0; i < numelems; i++) {
-        (*array)[i] = Value::fromTypeMem(*elemType, typemap, (void*) (*pas_array + (*elemsz) * i));
+        (*array)[i] = Value::fromTypeMem(*elemType, (void*) (*pas_array + (*elemsz) * i));
     }
 }
 
-ArrayValue::ArrayValue(Array* arr, std::map<int, Type*> &typemap) : Value(TYPE_ARRAY, arr) {
+ArrayValue::ArrayValue(Array* arr) : Value(TYPE_ARRAY, arr) {
     refcount = new int;
     *refcount = 1;
     owns_mem = new bool;
@@ -898,7 +892,7 @@ ArrayValue::ArrayValue(Array* arr, std::map<int, Type*> &typemap) : Value(TYPE_A
     *start = arr->from;
 
     elemsz = new int;
-    *elemsz = arr->element->sizeOf(typemap);
+    *elemsz = arr->element->sizeOf();
     int numelems = arr->to - arr->from + 1; //to == -1 and from == 0 for dynamic just for this
     if (*dynamic) {
         mem = new char*;
@@ -930,11 +924,11 @@ ArrayValue::ArrayValue(Array* arr, std::map<int, Type*> &typemap) : Value(TYPE_A
     }
 
     for (int i = 0; i < numelems; i++) {
-        (*array)[i] = Value::fromTypeMem(*elemType, typemap, (void*) (*pas_array + (*elemsz) * i));
+        (*array)[i] = Value::fromTypeMem(*elemType,  (void*) (*pas_array + (*elemsz) * i));
     }
 }
 
-ArrayValue::ArrayValue(Array* arr) : Value(TYPE_ARRAY, arr) {
+ArrayValue::ArrayValue(Array* arr, bool internal) : Value(TYPE_ARRAY, arr) {
     refcount = new int;
     *refcount = 1;
     owns_mem = new bool;
@@ -968,14 +962,20 @@ ArrayValue::ArrayValue(ArrayValue& val) : Value(TYPE_ARRAY, (Type*) val.typeObj)
 
 ArrayValue::~ArrayValue() {
     if (!(--(*refcount))) {
-        for (int i = 0; i < **asize; i++) {
-            delete (*array)[i];
-        }
-        delete [] * array;
         if (*dynamic) {
-            delete [] * mem;
+            if (!(--(**objref))) {
+                for (int i = 0; i < **asize; i++) {
+                    delete (*array)[i];
+                }
+                delete [] * array;
+                delete [] * mem;
+            }
             if (*owns_mem) delete mem;
         } else {
+            for (int i = 0; i < **asize; i++) {
+                delete (*array)[i];
+            }
+            delete [] * array;
             if (*owns_mem) delete [] * mem;
             delete mem;
             delete *objref;
@@ -999,7 +999,7 @@ Value* ArrayValue::duplicate() {
 }
 
 Value* ArrayValue::clone() {
-    ArrayValue* clone = new ArrayValue((Array*) typeObj);
+    ArrayValue* clone = new ArrayValue((Array*) typeObj, true);
     *clone->elemType = *elemType;
     *clone->dynamic = *dynamic;
     *clone->start = *start;
@@ -1030,9 +1030,8 @@ Value* ArrayValue::clone() {
         *clone->pas_array = *mem;
     }
 
-    std::map<int, Type*> typemap;
     for (int i = 0; i < numelems; i++) {
-        (*clone->array)[i] = Value::fromTypeMem(*elemType, typemap, (void*) (*clone->pas_array + (*elemsz) * i));
+        (*clone->array)[i] = Value::fromTypeMem(*elemType, (void*) (*clone->pas_array + (*elemsz) * i));
         (*clone->array)[i]->set((*array)[i]);
     }
     return clone;
@@ -1040,66 +1039,31 @@ Value* ArrayValue::clone() {
 
 void ArrayValue::set(Value* val) throw (int, InterpEx*) {
     if (val->type != TYPE_ARRAY) throw E_NOT_ARRAY;
-    ArrayValue* arr = (ArrayValue*) val;
+    ArrayValue *arr = (ArrayValue*)val;
     if (*dynamic) {
+        if (**asize != **arr->asize) resize(**arr->asize);
         for (int i = 0; i < **asize; i++) {
-            delete (*array)[i];
-        }
-        delete [] * array;
-        delete [] * mem;
-
-        *elemType = *arr->elemType;
-        *dynamic = *arr->dynamic;
-        *start = *arr->start;
-
-        *elemsz = *arr->elemsz;
-        int numelems = **arr->asize;
-
-        if (*dynamic) {
-            *mem = new char[8 + (*elemsz) * numelems];
-            *objref = (int*) * mem;
-            **objref = 1;
-            *asize = (int*) (*mem + 4);
-            **asize = numelems;
-        } else {
-            *mem = new char[(*elemsz) * numelems];
-            *objref = new int;
-            **objref = 1;
-            *asize = new int;
-            **asize = numelems;
-        }
-
-        *array = new Value*[**asize];
-        if (*dynamic) {
-            *pas_array = (char*) (*mem + 8);
-        } else {
-            *pas_array = *mem;
-        }
-
-        std::map<int, Type*> typemap;
-        for (int i = 0; i < numelems; i++) {
-            (*array)[i] = Value::fromTypeMem(*elemType, typemap, (void*) (*pas_array + (*elemsz) * i));
             (*array)[i]->set((*arr->array)[i]);
         }
     } else {
-        if (**arr->asize != **asize) throw E_INDEX_BOUNDS;
-        int numelems = **arr->asize;
-        for (int i = 0; i < numelems; i++) {
+        if (**asize != **arr->asize) throw E_INDEX_BOUNDS;
+        for (int i = 0; i < **asize; i++) {
             (*array)[i]->set((*arr->array)[i]);
         }
     }
+
 }
 
 int ArrayValue::size() throw (int, InterpEx*) {
     return **asize;
 }
 
-void ArrayValue::resize(int len, std::map<int, Type*>& typemap) throw (int, InterpEx*) {
+void ArrayValue::resize(int len) throw (int, InterpEx*) {
     if (!*dynamic) throw E_STATIC_ARRAY;
     Value** oldarr = *array;
     char* newmem = new char[8 + (*elemsz) * len];
     int* newobjref = (int*) newmem;
-    *newobjref = **objref;
+    *newobjref = 1;
     int* newsize = (int*) (newmem + 4);
     *newsize = len;
     Value** newarr = new Value*[len];
@@ -1107,26 +1071,26 @@ void ArrayValue::resize(int len, std::map<int, Type*>& typemap) throw (int, Inte
     if (len <= **asize) {
         int cutoff = len;
         for (int i = 0; i < cutoff; i++) {
-            newarr[i] = Value::fromTypeMem(*elemType, typemap, (void*) (newpas_array + (*elemsz) * i));
+            newarr[i] = Value::fromTypeMem(*elemType, (void*) (newpas_array + (*elemsz) * i));
             newarr[i]->set(oldarr[i]);
-            delete oldarr[i];
-        }
-        for (int i = cutoff; i < * * this->asize; i++) {
-            delete oldarr[i];
         }
     } else {
-        int cutoff = * * this->asize;
+        int cutoff = **this->asize;
         for (int i = 0; i < cutoff; i++) {
-            newarr[i] = Value::fromTypeMem(*elemType, typemap, (void*) (newpas_array + (*elemsz) * i));
+            newarr[i] = Value::fromTypeMem(*elemType, (void*) (newpas_array + (*elemsz) * i));
             newarr[i]->set(oldarr[i]);
-            delete oldarr[i];
         }
         for (int i = cutoff; i < len; i++) {
-            newarr[i] = Value::fromTypeMem(*elemType, typemap, (void*) (newpas_array + (*elemsz) * i));
+            newarr[i] = Value::fromTypeMem(*elemType, (void*) (newpas_array + (*elemsz) * i));
         }
     }
-    delete [] * array;
-    delete [] * mem;
+    if (!(--(**objref))) {
+        for (int i = 0; i < **this->asize; i++) {
+            delete (*array)[i];
+        }
+        delete [] * array;
+        delete [] * mem;
+    }
     *array = newarr;
     *mem = newmem;
     *objref = newobjref;
@@ -1136,13 +1100,15 @@ void ArrayValue::resize(int len, std::map<int, Type*>& typemap) throw (int, Inte
 
 void ArrayValue::setIndex(int index, Value* val) throw (int, InterpEx*) {
     index -= *start;
-    if (index >= **asize) throw E_INDEX_BOUNDS;
+    if (index >= **asize)
+        throw E_INDEX_BOUNDS;
     (*array)[index]->set(val);
 }
 
 Value* ArrayValue::getIndex(int index) throw (int, InterpEx*) {
     index -= *start;
-    if (index >= **asize) throw E_INDEX_BOUNDS;
+    if (index >= **asize)
+        throw E_INDEX_BOUNDS;
     return (*array)[index];
 }
 
@@ -1160,7 +1126,7 @@ void ArrayValue::refArg(void* mem) {
 
 //**** BEGIN POINTERVALUE DEFINITION ***
 
-PointerValue::PointerValue(Pointer* pt, std::map<int, Type*> &typemap, void* mem) {
+PointerValue::PointerValue(Pointer* pt, void* mem) {
     refcount = new int;
     *refcount = 1;
     owns_mem = new bool;
@@ -1173,7 +1139,7 @@ PointerValue::PointerValue(Pointer* pt, std::map<int, Type*> &typemap, void* mem
     (*ref)->refArg((void*) pas_ref);
 }
 
-PointerValue::PointerValue(Pointer* pt, std::map<int, Type*> &typemap) : Value(TYPE_POINTER, pt) {
+PointerValue::PointerValue(Pointer* pt) : Value(TYPE_POINTER, pt) {
     refcount = new int;
     *refcount = 1;
     owns_mem = new bool;
@@ -1186,7 +1152,7 @@ PointerValue::PointerValue(Pointer* pt, std::map<int, Type*> &typemap) : Value(T
     (*ref)->refArg((void*) pas_ref);
 }
 
-PointerValue::PointerValue(Pointer* pt) : Value(TYPE_POINTER, pt) {
+PointerValue::PointerValue(Pointer* pt, bool internal) : Value(TYPE_POINTER, pt) {
     refcount = new int;
     *refcount = 1;
     owns_mem = new bool;
@@ -1221,7 +1187,7 @@ Value* PointerValue::duplicate() {
 }
 
 Value* PointerValue::clone() {
-    PointerValue* pt = new PointerValue((Pointer*) typeObj);
+    PointerValue* pt = new PointerValue((Pointer*) typeObj, true);
     *(pt->refType) = *refType;
     *(pt->ref) = (*ref)->duplicate();
     (*ref)->refArg((void*) pt->pas_ref);
@@ -1267,13 +1233,13 @@ void PointerValue::refArg(void* mem) {
 
 //**** BEGIN RECORDVALUE DEFINITION ***
 
-RecordValue::RecordValue(Record* rec, std::map<int, Type*> &typemap, void* mem_impl) : Value(TYPE_RECORD, rec) {
+RecordValue::RecordValue(Record* rec, void* mem_impl) : Value(TYPE_RECORD, rec) {
     refcount = new int;
     *refcount = 1;
     owns_mem = new bool;
     *owns_mem = false;
     memsize = new int;
-    *memsize = rec->sizeOf(typemap);
+    *memsize = rec->sizeOf();
     indexes = new int*;
     *indexes = new int[rec->fields.size()];
     mem = new char*;
@@ -1284,19 +1250,19 @@ RecordValue::RecordValue(Record* rec, std::map<int, Type*> &typemap, void* mem_i
     int pos = 0;
     for (int i = 0; iter != end; i++, iter++) {
         Type* ftype = (Type*) (*iter)->type;
-        (*fields)[(*iter)->name] = Value::fromTypeMem(ftype, typemap, *mem + pos);
-        (*indexes)[i] = ftype->sizeOf(typemap);
+        (*fields)[(*iter)->name] = Value::fromTypeMem(ftype, *mem + pos);
+        (*indexes)[i] = ftype->sizeOf();
         pos += (*indexes)[i];
     }
 }
 
-RecordValue::RecordValue(Record* rec, std::map<int, Type*> &typemap) : Value(TYPE_RECORD, rec) {
+RecordValue::RecordValue(Record* rec) : Value(TYPE_RECORD, rec) {
     refcount = new int;
     *refcount = 1;
     owns_mem = new bool;
     *owns_mem = true;
     memsize = new int;
-    *memsize = rec->sizeOf(typemap);
+    *memsize = rec->sizeOf();
     indexes = new int*;
     *indexes = new int[rec->fields.size()];
     mem = new char*;
@@ -1307,13 +1273,13 @@ RecordValue::RecordValue(Record* rec, std::map<int, Type*> &typemap) : Value(TYP
     int pos = 0;
     for (int i = 0; iter != end; i++, iter++) {
         Type* ftype = (Type*) (*iter)->type;
-        (*fields)[(*iter)->name] = Value::fromTypeMem(ftype, typemap, *mem + pos);
-        (*indexes)[i] = ftype->sizeOf(typemap);
+        (*fields)[(*iter)->name] = Value::fromTypeMem(ftype, *mem + pos);
+        (*indexes)[i] = ftype->sizeOf();
         pos += (*indexes)[i];
     }
 }
 
-RecordValue::RecordValue(Record* rec) : Value(TYPE_RECORD, rec) {
+RecordValue::RecordValue(Record* rec, bool internal) : Value(TYPE_RECORD, rec) {
     refcount = new int;
     *refcount = 1;
     owns_mem = new bool;
@@ -1360,7 +1326,7 @@ Value* RecordValue::duplicate() {
 }
 
 Value* RecordValue::clone() {
-    RecordValue* rec = new RecordValue((Record*) typeObj);
+    RecordValue* rec = new RecordValue((Record*) typeObj, true);
 
     *rec->memsize = *memsize;
     *rec->indexes = new int[((Record*) typeObj)->fields.size()];
@@ -1368,10 +1334,10 @@ Value* RecordValue::clone() {
     std::list<Variable*>::iterator iter = ((Record*) typeObj)->fields.begin();
     std::list<Variable*>::iterator end = ((Record*) typeObj)->fields.end();
     int pos = 0;
-    std::map<int, Type*> typemap;
     for (int i = 0; iter != end; i++, iter++) {
         Type* ftype = (*iter)->type;
-        (*(rec->fields))[(*iter)->name] = Value::fromTypeMem(ftype, typemap, *(rec->mem) + pos);
+        (*(rec->fields))[(*iter)->name] = Value::fromTypeMem(ftype, *(rec->mem) + pos);
+        (*(rec->fields))[(*iter)->name]->set((*(fields))[(*iter)->name]);
         (*(rec->indexes))[i] = (*indexes)[i];
         pos += (*indexes)[i];
     }

@@ -30,11 +30,11 @@
 #include <stack>
 
 #include <iostream>
-#define debug(x) std::cout << x << '\n'
-//#define debug(x)
+//#define debug(x) std::cout << x << '\n'
+#define debug(x)
 
 Expression* parseExpr(char* &cur);
-std::list<Variable*> parseVars(char* &cur);
+std::list<Variable*> parseVars(char* &cur, std::map<int,Type*> &reftypes);
 std::list<Expression*> parseBlock(char* &cur);
 void parseContainer(char* &cur, Container* container);
 
@@ -86,11 +86,11 @@ inline bool reserved(int name) {
     return MAX_PROTECTED > name;
 }
 
-Type* parseType(char* &cur) {
+Type* parseType(char* &cur, std::map<int,Type*> &reftypes) {
     debug("parseType");
     cur = next(cur);
     if (cur[0] == POPERATOR && cur[1] == OP_DEREFGET)
-        return Type::getPointerType(parseType(cur));
+        return Type::getPointerType(parseType(cur, reftypes));
     int name = *(int*)(cur+1);
     switch (name) {
         case RES_FUNCTION:
@@ -112,7 +112,7 @@ Type* parseType(char* &cur) {
                             hasArgs = true;
                             break;
                         case SPC_COLON: {
-                            Type* type = parseType(cur);
+                            Type* type = parseType(cur, reftypes);
                             if (!hasArgs || !moreArgs) {
                                 meth->type = type;
                                 cur = next(cur);
@@ -168,13 +168,13 @@ Type* parseType(char* &cur) {
                         throw -1;
                 }
                 cur = next(next(tkto)); //skip the ] of
-                Type* type = parseType(cur);
+                Type* type = parseType(cur,reftypes);
                 return Type::getBoundArrayType(type, from, to);
             } else { //Already ate the of
-                return Type::getDynamicArrayType(parseType(cur));
+                return Type::getDynamicArrayType(parseType(cur,reftypes));
             }
         case RES_RECORD: { //FIXME this is wrong, lol
-            std::list<Variable*> vars = parseVars(cur);
+            std::list<Variable*> vars = parseVars(cur,reftypes);
             cur = next(cur);
             std::map<int,Type*> fields;
             std::list<Variable*>::iterator iter = vars.begin();
@@ -188,11 +188,20 @@ Type* parseType(char* &cur) {
             return Type::getRecordType(fields);
         }
         default:
-            return Type::getType(name);
+            Type* res = Type::getType(name);
+            if (res->type == TYPE_REF) {
+                if (reftypes.find(name) != reftypes.end()) {
+                    return reftypes[name];
+                } else {
+                    return res; //ERROR: Type not bound!
+                }
+            } else {
+                return res;
+            }
     }
 }
 
-std::map<int,Type*> parseTypes(char* &cur) {
+std::map<int,Type*> parseTypes(char* &cur, std::map<int,Type*> &reftypes) {
     debug("parseTypes");
     std::map<int,Type*> types;
     do {
@@ -202,7 +211,7 @@ std::map<int,Type*> parseTypes(char* &cur) {
             return types;
         }
         cur = next(tok); //skip =
-        Type* type = parseType(cur);
+        Type* type = parseType(cur, reftypes);
         cur = next(cur); //skip ;
         types[name] = type;
     } while (*cur);
@@ -228,7 +237,7 @@ std::map<int,Expression*> parseConsts(char* &cur) {
     return consts;
 }
 
-std::list<Variable*> parseVars(char* &cur) {
+std::list<Variable*> parseVars(char* &cur, std::map<int,Type*> &reftypes) {
     debug("parseVars");
     std::list<Variable*> vars;
     std::stack<int> untyped;
@@ -237,7 +246,7 @@ std::list<Variable*> parseVars(char* &cur) {
         if (tok[0] == PSPECIAL) {
             switch (tok[1]) { //silent skip ,
                 case SPC_COLON: {
-                    Type* type = parseType(tok);
+                    Type* type = parseType(tok, reftypes);
                     while (!untyped.empty()) {
                         vars.push_back(new Variable(untyped.top(), type));
                         untyped.pop();
@@ -260,10 +269,11 @@ std::list<Variable*> parseVars(char* &cur) {
     return vars;
 }
 
-Method* parseMethod(char* &cur) {
+Method* parseMethod(char* &cur, std::map<int,Type*> &reftypes) {
     debug("parseMethod");
     cur = next(cur);
     Method* meth = new Method(*(int*)(cur+1));
+    meth->types.insert(reftypes.begin(),reftypes.end());
     std::list<int> untyped;
     bool byref = false;
     bool hasArgs = false;
@@ -279,7 +289,7 @@ Method* parseMethod(char* &cur) {
                     hasArgs = true;
                     break;
                 case SPC_COLON: {
-                    Type* type = parseType(cur);
+                    Type* type = parseType(cur,reftypes);
                     if (!hasArgs || !moreArgs) {
                         meth->type = type;
                         cur = next(cur);
@@ -779,16 +789,16 @@ void parseContainer(char* &cur, Container* container) {
                 container->constants.insert(consts.begin(),consts.end());
             } break;
             case RES_TYPE: { //multi
-                std::map<int,Type*> types = parseTypes(tok);
+                std::map<int,Type*> types = parseTypes(tok,container->types);
                 container->types.insert(types.begin(),types.end());
             } break;
             case RES_VAR: { //multi
-                std::list<Variable*> vars = parseVars(tok);
+                std::list<Variable*> vars = parseVars(tok,container->types);
                 container->variables.insert(container->variables.end(),vars.begin(),vars.end());
             } break;
             case RES_PROCEDURE: //multi
             case RES_FUNCTION: { //multi
-                Method* meth = parseMethod(tok);
+                Method* meth = parseMethod(tok,container->types);
                 container->methods.push_back(meth);
             } break;
             case RES_BEGIN: { //single

@@ -27,6 +27,7 @@
 #include <iostream>
 #include <ctime>
 #include <stdlib.h>
+#include <cstdio>
 #include <sys/timeb.h>
 
 //#define debug(x) std::cout << x << '\n'
@@ -142,27 +143,22 @@ void Interpreter::run() {
 void Interpreter::addMethod(void* addr, int conv, char* def) {
     char* tokens = lex(def, names);
     char* cur = tokens;
-    Method* meth = parseMethod(cur);
+    Method* meth = parseMethod(cur,prog->types);
     meth->address = addr;
     meth->mtype = conv;
     prog->methods.push_back(meth);
     freetoks(tokens);
 }
 
-Frame::Frame(Container* container_impl) : typemap(container_impl->types), parent(0), container(container_impl) {
+Frame::Frame(Container* container_impl) :  parent(0), container(container_impl) {
     init(container_impl);
 }
 
-Frame::Frame(Frame* frame, Container* container_impl) :  typemap(frame->typemap), slots(frame->slots), parent(frame), container(container_impl) {
-    std::map<int, Type*>::iterator iter = container_impl->types.begin();
-    std::map<int, Type*>::iterator end = container_impl->types.end();
-    while (iter != end) {
-        typemap[iter->first] = iter->second;
-    }
+Frame::Frame(Frame* frame, Container* container_impl) : slots(frame->slots), parent(frame), container(container_impl) {
     init(container_impl);
 }
 
-void Frame::init(Container* container) {
+void Frame::init(Container* container) throw(int,InterpEx*) {
     debug("init_frame");
     int numMethods = container->methods.size();
     for (int i = 0; i < numMethods; i++) {
@@ -173,7 +169,7 @@ void Frame::init(Container* container) {
     int numVariables = container->variables.size();
     for (int i = 0; i < numVariables; i++) {
         Variable* var = container->variables[i];
-        slots[var->name] = Value::fromType((Type*) var->type, typemap);
+        slots[var->name] = Value::fromType((Type*) var->type);
         debug("init_var=" << var->name);
     }
     debug("random=" << slots[56]);
@@ -217,10 +213,6 @@ Value* Frame::resolve(int symbol) throw(int, InterpEx*) {
     } else {
         throw E_UNRESOLVABLE;
     }
-}
-
-void Frame::registerTemp(Value* temp) {
-    temps.push_back(temp);
 }
 
 void* interp_init(char* ppg) {

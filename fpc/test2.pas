@@ -208,7 +208,7 @@ var
     static: array[1..5] of integer; 
     aii: array of array of integer; 
 begin 
-    resize(ai,5); 
+    SetLength(ai,5); 
     writeln('sized'); 
     ai[0]:=0; 
     ai[1]:=1; 
@@ -216,7 +216,7 @@ begin
     ai[3]:=3; 
     ai[4]:=4; 
     writeln('assigned'); 
-    writeln(inttostr(size(ai))); 
+    writeln(inttostr(Length(ai))); 
     writeln(inttostr(ai[3])); 
     static[1]:=1; 
     static[2]:=2; 
@@ -227,7 +227,7 @@ begin
     writeln(inttostr(static[5])); 
     ai := array(1,2,3,4,5,6); 
     writeln(inttostr(ai[3])); 
-    writeln(inttostr(size(ai))); 
+    writeln(inttostr(Length(ai))); 
     aii:= array(array(1,2,3,4),array(5,6,7,8),array(9,10,11,12)); 
     writeln(inttostr(aii[1][3])); //should be a 8
     writeln('arrays work!'); 
@@ -245,7 +245,7 @@ var
 begin 
     x:= 1; 
     writeln(inttostr(x)); 
-    resize(a,10); 
+    SetLength(a,10); 
 end; 
  type  
     entry = record 
@@ -260,8 +260,8 @@ var
 begin 
     contact.name:= 'Joe'; 
     writeln(contact.name); 
-    resize(contacts,2);
-    writeln('resized'); 
+    SetLength(contacts,2);
+    writeln('SetLengthd'); 
     contacts[0].name:= 'Ben'; 
     contacts[0].number:= 44531; 
     contacts[1].name:= 'Joe'; 
@@ -405,11 +405,11 @@ var
     arrs: array[0..1] of array[0..1] of array[0..1] of twoint;
 begin
     writeln('d1');
-    resize(arr,1);
+    SetLength(arr,1);
     writeln('d2');
-    resize(arr[0],1);
+    SetLength(arr[0],1);
     writeln('d3');
-    resize(arr[0][0],1);
+    SetLength(arr[0][0],1);
     writeln('sized');
     arr[0][0][0].a:= 1;
     arr[0][0][0].b:= 2;

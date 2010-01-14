@@ -87,6 +87,8 @@ const char* InterpEx::what() const throw() {
             return "Cannot invoke a non-method";
         case E_WRONG_NUM_ARG:
             return "Wrong number of arguments to method";
+        case E_REF_TYPE:
+            return "Refrence type not defined";
         default:
             return "Unknown error!";
     }

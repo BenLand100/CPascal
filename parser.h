@@ -23,7 +23,7 @@
 #include "Container.h"
 
 Program* parse(char* tokens);
-Method* parseMethod(char* &cur);
+Method* parseMethod(char* &cur, std::map<int,Type*> &reftypes);
 
 #endif	/* _PARSER_H */
 
