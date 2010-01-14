@@ -535,6 +535,12 @@ Expression* parseExpr(char* &cur) {
                         tok = temp;
                         expr.push_back(new ArrayDef(elems));
                     } goto next_exprparse;
+                    case RES_EXIT:{
+                        expr.push_back(new Throw(E_EXIT));
+                    } goto next_exprparse;
+                    case RES_BREAK:{
+                        expr.push_back(new Throw(E_BREAK));
+                    } goto next_exprparse;
                 }
                 if (reserved(name)) goto end_exprparse; //All reserved words break expression parsing
                 expr.push_back(new Symbol(name));

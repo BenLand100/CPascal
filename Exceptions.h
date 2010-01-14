@@ -40,6 +40,8 @@ class InterpEx;
 #define E_NOT_METHOD    15
 #define E_WRONG_NUM_ARG 16
 #define E_REF_TYPE      17
+#define E_EXIT          18
+#define E_BREAK         19
 
 #include <exception>
 #include <list>

@@ -109,8 +109,8 @@ var
   c: char;
   i,w,h,x,y: integer;
 begin
-  writeln('Initializing...');
-  writeln(raw);
+  write(raw);
+  writeln('Parsing...');
   i:= 1;
   w:= strtoint(readLine(raw,i));
   h:= strtoint(readLine(raw,i));
@@ -120,7 +120,6 @@ begin
   x:= 0;
   y:= 0;
   writeln('W:' + inttostr(w) + ' H:' + inttostr(h));
-  writeln('Parsing...');
   while y < h do
   begin
     c:= raw[i];
@@ -154,10 +153,10 @@ begin
   result:= tiles;
   writeln('Start = (' + inttostr(start.x) + ',' + inttostr(start.y) + ')');
   writeln('Finish = (' + inttostr(finish.x) + ',' + inttostr(finish.y) + ')');
-  writeln('a1:'+inttostr(length(tiles)));
-  writeln('a2:'+inttostr(length(tiles[0])));
-  writeln('b1:'+inttostr(length(result)));
-  writeln('b2:'+inttostr(length(result[0])));
+  //writeln('a1:'+inttostr(length(tiles)));
+  //writeln('a2:'+inttostr(length(tiles[0])));
+  //writeln('b1:'+inttostr(length(result)));
+  //writeln('b2:'+inttostr(length(result[0])));
 end;
 
 
@@ -209,10 +208,9 @@ begin
     x:= stack[top].x;
     y:= stack[top].y;
     SetLength(my_path,Length(passed)+1);
-    writeln('following (' + inttostr(x) + ',' + inttostr(y) + ')  ' + inttostr(length(my_path)));
+    //writeln('following (' + inttostr(x) + ',' + inttostr(y) + ')  ' + inttostr(length(my_path)));
     for i:= 0 to Length(passed) - 1 do
     begin
-      writeln(inttostr(i) + '/' + inttostr(length(passed)));
       my_path[i]:= passed[i];
     end;
     my_path[Length(passed)]:= point(x,y);
@@ -222,7 +220,7 @@ begin
       SetLength(result,off+1);
       result[off]:= my_path;
       off:= off + 1;
-      writeln('continuing search');
+      //writeln('continuing search');
     end;
     if (y-1 >= 0) then if input[x][y-1] then if notPassed(my_path,x,y-1) then
     begin
@@ -295,7 +293,7 @@ procedure thin(var input: array of array of boolean; sx,sy,fx,fy,w,h: integer);
 var
   x,y,c: integer;
 begin
-  writeln('examining maze');
+  //writeln('examining maze');
   for x:= 0 to w-1 do
     for y:= 0 to h-1 do
       if input[x][y] then
@@ -314,12 +312,12 @@ var
    all_paths: array of TpointArray;
    i,max_pos,max_len: integer;
 begin
-  writeln('d1:'+inttostr(length(maze)));
-  writeln('d2:'+inttostr(length(maze[0])));
+  //writeln('d1:'+inttostr(length(maze)));
+  //writeln('d2:'+inttostr(length(maze[0])));
   writeln('preparing to solve maze');
   thin(input,start.x,start.y,finish.x,finish.y,length(input),length(input[0]));
   writeln('thinned the maze');
-  writeln('start: (' + inttostr(start.x) + ',' + inttostr(start.y) + ') finish: (' + inttostr(finish.x) + ',' + inttostr(finish.y) + ')');
+  //writeln('start: (' + inttostr(start.x) + ',' + inttostr(start.y) + ') finish: (' + inttostr(finish.x) + ',' + inttostr(finish.y) + ')');
   all_paths:= flood(input,start.x,start.y,finish.x,finish.y,length(input),length(input[0]));
   writeln('found all possible paths');
   jills_routes:= Length(all_paths) - 1;
@@ -344,13 +342,13 @@ var
   i,jills,t: integer;
 begin
   maze:= ParseMaze(small_maze,start,finish);
-  writeln('c1:'+inttostr(length(maze)));
-  writeln('c2:'+inttostr(length(maze[0])));
+  //writeln('c1:'+inttostr(length(maze)));
+  //writeln('c2:'+inttostr(length(maze[0])));
   t:= time();
-  writeln('start: (' + inttostr(start.x) + ',' + inttostr(start.y) + ') finish: (' + inttostr(finish.x) + ',' + inttostr(finish.y) + ')');
+  //writeln('start: (' + inttostr(start.x) + ',' + inttostr(start.y) + ') finish: (' + inttostr(finish.x) + ',' + inttostr(finish.y) + ')');
   benland100_solver(jack,jills,maze,start,finish);
   t:= time() - t;
   writeln('Took ' + realtostr(t / 1000.0) + ' seconds');
   writeln('Longest Path: ' + inttostr(length(jack)));
-  writeln('#Other Paths: ' + inttostr(jills));}
+  writeln('#Other Paths: ' + inttostr(jills));
 end.

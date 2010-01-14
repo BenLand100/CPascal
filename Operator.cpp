@@ -371,6 +371,12 @@ public:
     }
 };
 
+Throw::Throw(int number_impl) : Operator(OP_THROW), number(number_impl) { }
+Throw::~Throw() { }
+void Throw::preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
+    throw number;
+}
+
 Operator* Operator::get(int type) {
     switch (type) {
         case OP_IDIV:

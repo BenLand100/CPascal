@@ -89,11 +89,13 @@ inline void evalBlock(Block* block, Frame* frame, std::stack<Value*>& stack) {
         } catch (InterpEx* ex) {
             debug("tossed");
             ex->addTrace((*elems)->offset);
+            cleanStack(stack);
             throw ex;
         } catch (int exi) {
             debug("caught");
             InterpEx* ex = new InterpEx(exi);
             ex->addTrace((*elems)->offset);
+            cleanStack(stack);
             throw ex;
         }
     }

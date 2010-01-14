@@ -63,6 +63,8 @@ int reserved(std::map<std::string,int> &names) {
     names["setlength"] = RES_RESIZE;
     names["nil"] = RES_NIL;
     names["result"] = RES_RESULT;
+    names["break"] = RES_BREAK;
+    names["exit"] = RES_EXIT;
     return MAX_RES; //return next
 }
 

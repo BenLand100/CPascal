@@ -63,8 +63,10 @@
 #define RES_RESIZE      31
 #define RES_NIL         32
 #define RES_RESULT      33
+#define RES_BREAK       34
+#define RES_EXIT        35
 
-#define MAX_PROTECTED   24
+#define MAX_PROTECTED   23
 #define MAX_RES         50
 
 #define OP_IDIV         0
@@ -95,6 +97,7 @@
 #define OP_RESIZE       25 //faux-function
 #define OP_SYMBOL       26 //names
 #define OP_ARRAYDEF     27 //faux-function
+#define OP_THROW        28 //faux-function
 
 #define SPC_SEMICOLON   0
 #define SPC_COLON       1

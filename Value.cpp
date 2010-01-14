@@ -331,7 +331,29 @@ Value* MethodValue::invoke(Value** args, int numArgs, Frame* cur) throw (int, In
         }
         if (meth->type) frame->slots[RES_RESULT] = Value::fromType(meth->type);
         debug("resolve_method");
-        evalBlock(&meth->block, frame);
+        try {
+            evalBlock(&meth->block, frame);
+        } catch (InterpEx* ex) {
+            if (ex->getCause() == E_EXIT) {
+                delete ex;
+                goto exit;
+            }
+            debug("unwinding frame");
+            for (int i = 0; i < numArgs; i++) {
+                delete frame->slots[meth->arguments[i]->name];;
+            }
+            delete frame;
+            throw ex;
+        } catch (int exi) {
+            if (exi == E_EXIT) goto exit;
+            debug("unwinding frame");
+            for (int i = 0; i < numArgs; i++) {
+                delete frame->slots[meth->arguments[i]->name];;
+            }
+            delete frame;
+            throw exi;
+        }
+        exit:
         debug("resolve_return");
         for (int i = 0; i < numArgs; i++) {
             delete frame->slots[meth->arguments[i]->name];;

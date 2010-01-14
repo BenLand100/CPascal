@@ -50,6 +50,15 @@ protected:
     virtual ~Operator();
 };
 
+class Throw : public Operator {
+public:
+    Throw(int number);
+    ~Throw();
+
+    const int number;
+    void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*);
+};
+
 class Asgn : public Operator {
 public:
     Asgn(int name);

@@ -51,6 +51,11 @@ void ms_wait(int ms) {
     }
 }
 
+void writenofeed(char* str) __attribute__((stdcall));
+void writenofeed(char* str) {
+    printf("%s",str);
+}
+
 void writeln(char* str) __attribute__((stdcall));
 void writeln(char* str) {
     printf("%s\n",str);
@@ -108,6 +113,7 @@ Interpreter::Interpreter(char* ppg) : exception(0) {
     freetoks(tokens);
     addMethod((void*)&ms_time,CONV_C_STDCALL,(char*)"function time: integer;");
     addMethod((void*)&ms_wait,CONV_C_STDCALL,(char*)"procedure wait(ms: integer);");
+    addMethod((void*)&writenofeed,CONV_C_STDCALL,(char*)"procedure write(str: string);");
     addMethod((void*)&writeln,CONV_C_STDCALL,(char*)"procedure writeln(str: string);");
     addMethod((void*)&strtoint,CONV_C_STDCALL,(char*)"function strtoint(str: string): integer;");
     addMethod((void*)&inttostr,CONV_C_STDCALL,(char*)"function inttostr(i: integer): string;");

@@ -57,7 +57,7 @@
       </toolsSet>
       <compileType>
         <ccCompilerTool>
-          <commandLine>-Wall -pedantic -ansi</commandLine>
+          <commandLine>-Wall</commandLine>
         </ccCompilerTool>
         <linkerTool>
           <output>dist/Debug/${PLATFORM}/cpascal</output>
@@ -155,7 +155,7 @@
         <ccCompilerTool>
           <developmentMode>6</developmentMode>
           <stripSymbols>true</stripSymbols>
-          <commandLine>-Wall -pedantic -ansi</commandLine>
+          <commandLine>-Wall</commandLine>
         </ccCompilerTool>
         <fortranCompilerTool>
           <developmentMode>5</developmentMode>
