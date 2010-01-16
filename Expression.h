@@ -72,7 +72,7 @@ inline Value* evalExpr(Expression* expr, Frame* frame, std::stack<Value*>& stack
 
 inline void cleanStack(std::stack<Value*>& stack) {
     while (!stack.empty()) {
-        delete stack.top();
+        Value::decref(stack.top());
         stack.pop();
     }
 }

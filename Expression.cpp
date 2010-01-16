@@ -43,7 +43,7 @@ void Expression::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, 
         switch(elem->eltype) {
             case ELEM_VALUE:
                 debug("\t-Value{" << ((Value*)elem)->type << "}");
-                stack.push(((Value*)elem)->duplicate());
+                stack.push(Value::incref(((Value*)elem)));
                 break;
             case ELEM_OPERATOR:
                 debug("\t-Operator{" << ((Operator*)elem)->type << "}");
@@ -63,7 +63,7 @@ Until::~Until() {
 void Until::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) {
     Value* res = 0;
     do {
-        if (res) delete res;
+        if (res) Value::decref(res);
         evalBlock(&block,frame,stack);
         res = evalExpr(cond,frame,stack);
     } while (!res->asBoolean());
@@ -96,7 +96,7 @@ void Case::addBranch(int value, std::list<Expression*> branch) {
 void Case::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) {
     Value* val = evalExpr(value,frame,stack);
     int i = val->asInteger();
-    delete val;
+    Value::decref(val);
     if (branches.find(i) != branches.end()) {
         evalBlock(branches[i],frame,stack);
     } else if (def.elems) {
@@ -116,27 +116,27 @@ void For::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) {
     Value* varval = frame->resolve(var);
     Value* temp = evalExpr(begin,frame,stack);
     varval->set(temp);
-    delete temp;
+    Value::decref(temp);
     if (inc) { //simply reduces tests and increases code size
         temp = evalExpr(end,frame,stack);
         while (varval->asInteger() <= temp->asInteger()) {
-            delete temp;
+            Value::decref(temp);
             evalBlock(&block,frame,stack);
             temp = evalExpr(end,frame,stack);
             varval->incr();
         }
-        delete temp;
+        Value::decref(temp);
     } else {
         temp = evalExpr(end,frame,stack);
         while (varval->asInteger() >= temp->asInteger()) {
-            delete temp;
+            Value::decref(temp);
             evalBlock(&block,frame,stack);
             temp = evalExpr(end,frame,stack);
             varval->decr();
         }
-        delete temp;
+        Value::decref(temp);
     }
-    delete varval;
+    Value::decref(varval);
 }
 
 While::While(Expression* cond_impl, std::list<Expression*> block_impl, int offset_impl) : Expression(offset_impl), cond(cond_impl) {
@@ -150,11 +150,11 @@ void While::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) 
     Value* res = evalExpr(cond,frame,stack);
     debug("while_restype=" << res->type);
     while (res->asBoolean()) {
-        delete res;
+        Value::decref(res);
         evalBlock(&block,frame,stack);
         res = evalExpr(cond,frame,stack);
     }
-    delete res;
+    Value::decref(res);
 }
 
 If::If(Expression* cond_impl, std::list<Expression*> block_impl, int offset_impl) : Expression(offset_impl) {
@@ -186,11 +186,11 @@ void If::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) {
     for (int i = 0; i < numBranches; i++) {
         Value* test = evalExpr(branches[i]->cond,frame,stack);
         if (test->asBoolean()) {
-            delete test;
+            Value::decref(test);
             evalBlock(branches[i]->block,frame,stack);
             return;
         }
-        delete test;
+        Value::decref(test);
     }
     evalBlock(&def,frame,stack);
 }

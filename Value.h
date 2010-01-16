@@ -39,6 +39,8 @@ class PointerValue;
 
 class Value : public Element {
 public:
+    static Value* decref(Value* val) throw(int,InterpEx*);
+    static Value* incref(Value* val) throw(int,InterpEx*);
     static Value* fromType(Type* type) throw(int,InterpEx*);
     static Value* fromTypeMem(Type* type, void* mem) throw(int,InterpEx*);
 
@@ -46,11 +48,9 @@ public:
     const int   type;
 
     Value();
-    virtual ~Value();
 
     virtual void set(Value* val) throw(int,InterpEx*);
     virtual Value* clone();
-    virtual Value* duplicate();
     virtual Value* getRef() throw(int,InterpEx*);
     virtual void setRef(Value* ref) throw(int,InterpEx*);
     virtual void negate() throw(int,InterpEx*);
@@ -76,9 +76,11 @@ public:
     virtual void read_fpc(void* res);
 
 protected:
-    Value(int impl_type, Type* impl_typeObj);
-    int* refcount;
-    bool* owns_mem;
+    Value(int impl_type, Type* impl_typeObj, bool ownsmem);
+    virtual ~Value();
+    unsigned int refcount;
+    bool owns_mem;
+
 private:
     Value(Value &val);
 };
@@ -88,27 +90,21 @@ class MethodValue : public Value {
 public:
     MethodValue(void* mem, Meth* type);
     MethodValue(Method* meth);
-    ~MethodValue();
 
-    Value* duplicate();
     Value* clone();
     void set(Value* val) throw(int,InterpEx*);
     Value* invoke(Value** args, unsigned int numArgs, Frame* frame) throw (int,InterpEx*);
 
 protected:
+    ~MethodValue();
     Method** meth;
-
-private:
-    MethodValue(MethodValue &val);
 };
 
 class IntegerValue : public Value {
 public:
     IntegerValue(void* mem);
     IntegerValue(int i);
-    ~IntegerValue();
     
-    Value* duplicate();
     Value* clone();
     void set(Value* val) throw(int,InterpEx*);
     void negate() throw(int,InterpEx*);
@@ -123,9 +119,11 @@ public:
     void read_c(void* res);
     void read_fpc(void* res);
 
+protected:
+    ~IntegerValue();
+
 private:
     int* integer;
-    IntegerValue(IntegerValue &val);
 };
 
 class StringValue : public Value {
@@ -133,9 +131,7 @@ public:
     StringValue(void* mem);
     StringValue(char* str);
     StringValue(std::string str);
-    ~StringValue();
 
-    Value* duplicate();
     Value* clone();
     void set(Value* val) throw(int,InterpEx*);
     char* asString() throw(int,InterpEx*);
@@ -148,21 +144,21 @@ public:
     void read_c(void* res);
     void read_fpc(void* res);
 
+protected:
+    ~StringValue();
+
 private:
     char** mem;
     int** objref;
     int** size;
     char** str;
-    StringValue(StringValue &val);
 };
 
 class RealValue : public Value {
 public:
     RealValue(void* mem);
     RealValue(double real);
-    ~RealValue();
 
-    Value* duplicate();
     Value* clone();
     void set(Value* val) throw(int,InterpEx*);
     void negate() throw(int,InterpEx*);
@@ -174,18 +170,18 @@ public:
     void refArg(void* mem);
     void valArg(void* mem);
 
+protected:
+    ~RealValue();
+
 private:
     double* real;
-    RealValue(RealValue &val);
 };
 
 class CharValue : public Value {
 public:
     CharValue(void* mem);
     CharValue(char c);
-    ~CharValue();
 
-    Value* duplicate();
     Value* clone();
     void set(Value* val) throw(int,InterpEx*);
     void incr() throw(int,InterpEx*);
@@ -200,19 +196,19 @@ public:
     void read_c(void* res);
     void read_fpc(void* res);
 
+protected:
+    ~CharValue();
+
 private:
     char* chr;
     char** str; //temp
-    CharValue(CharValue &val);
 };
 
 class BooleanValue : public Value {
 public:
     BooleanValue(void* mem);
     BooleanValue(bool b);
-    ~BooleanValue();
 
-    Value* duplicate();
     Value* clone();
     void set(Value* val) throw(int,InterpEx*);
     bool asBoolean() throw(int,InterpEx*);
@@ -224,18 +220,18 @@ public:
     void read_c(void* res);
     void read_fpc(void* res);
 
+protected:
+    ~BooleanValue();
+
 private:
     char* boolean;
-    BooleanValue(BooleanValue &val);
 };
 
 class ArrayValue : public Value {
 public:
     ArrayValue(Array* arr, void* mem);
     ArrayValue(Array* arr);
-    ~ArrayValue();
 
-    Value* duplicate();
     Value* clone();
     void set(Value* val) throw(int,InterpEx*);
     int size() throw(int,InterpEx*);
@@ -246,6 +242,9 @@ public:
     int argSize();
     void refArg(void* mem);
     void valArg(void* mem);
+
+protected:
+    ~ArrayValue();
 
 private:
     Type** elemType;
@@ -259,7 +258,6 @@ private:
     Value*** array;
     char** pas_array;
     ArrayValue(Array* arr, bool internal);
-    ArrayValue(ArrayValue &val);
 };
 
 class PointerValue : public Value {
@@ -267,9 +265,7 @@ public:
     PointerValue(Pointer* pt, void* mem);
     PointerValue(Pointer* pt);
     PointerValue(Value* ref);
-    ~PointerValue();
 
-    Value* duplicate();
     Value* clone();
     void set(Value* val) throw(int,InterpEx*);
     Value* getRef() throw(int,InterpEx*);
@@ -280,11 +276,13 @@ public:
     void refArg(void* mem);
     void valArg(void* mem);
 
+protected:
+    ~PointerValue();
+
 private:
     Value** ref;
     void** pas_ref;
     Type** refType;
-    PointerValue(PointerValue &val);
     PointerValue(Pointer* pt, bool internal);
 };
 
@@ -292,9 +290,7 @@ class RecordValue : public Value {
 public:
     RecordValue(Record* rec, void* mem);
     RecordValue(Record* rec);
-    ~RecordValue();
 
-    Value* duplicate();
     Value* clone();
     void set(Value* val) throw(int,InterpEx*);
     Value* getField(int name) throw(int,InterpEx*);
@@ -304,13 +300,15 @@ public:
     void refArg(void* mem);
     void valArg(void* mem);
 
+protected:
+    ~RecordValue();
+
 private:
     int** objrefcount;
     int* memsize;
     int** indexes;
     char** mem;
     std::map<int,Value*>* fields;
-    RecordValue(RecordValue &val);
     RecordValue(Record* rec, bool internal);
 };
 

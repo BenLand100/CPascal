@@ -45,9 +45,10 @@ public:
             if (idiv == 0) throw E_DIV_ZERO;
             res = (a->type == TYPE_REAL ? ((int)a->asReal()) : a->asInteger()) / idiv;
         }
+
         stack.push(new IntegerValue(res));
-        delete a;
-        delete b;
+        Value::decref(a);
+        Value::decref(b);
     }
 };
 
@@ -63,8 +64,8 @@ public:
         if (b->asReal() == 0) throw E_DIV_ZERO;
         double res = a->asReal() / b->asReal();
         stack.push(new RealValue(res));
-        delete a;
-        delete b;
+        Value::decref(a);
+        Value::decref(b);
     }
 };
 
@@ -88,8 +89,8 @@ public:
             int res = a->asInteger() % b->asInteger();
             stack.push(new IntegerValue(res));
         }
-        delete a;
-        delete b;
+        Value::decref(a);
+        Value::decref(b);
     }
 };
 
@@ -109,8 +110,8 @@ public:
             int res = a->asInteger() * b->asInteger();
             stack.push(new IntegerValue(res));
         }
-        delete a;
-        delete b;
+        Value::decref(a);
+        Value::decref(b);
     }
 };
 
@@ -134,8 +135,8 @@ public:
             int res = a->asInteger() + b->asInteger();
             stack.push(new IntegerValue(res));
         }
-        delete a;
-        delete b;
+        Value::decref(a);
+        Value::decref(b);
     }
 };
 
@@ -155,8 +156,8 @@ public:
             int res = a->asInteger() - b->asInteger();
             stack.push(new IntegerValue(res));
         }
-        delete a;
-        delete b;
+        Value::decref(a);
+        Value::decref(b);
     }
 };
 
@@ -168,7 +169,7 @@ public:
         Value* a = stack.top();
         stack.pop();
         stack.push(new BooleanValue(!a->asBoolean()));
-        delete a;
+        Value::decref(a);
     }
 };
 
@@ -182,8 +183,8 @@ public:
         Value* a = stack.top();
         stack.pop();
         stack.push(new BooleanValue(a->asBoolean() || b->asBoolean()));
-        delete a;
-        delete b;
+        Value::decref(a);
+        Value::decref(b);
     }
 };
 
@@ -197,8 +198,8 @@ public:
         Value* a = stack.top();
         stack.pop();
         stack.push(new BooleanValue(a->asBoolean() && b->asBoolean()));
-        delete a;
-        delete b;
+        Value::decref(a);
+        Value::decref(b);
     }
 };
 
@@ -216,8 +217,8 @@ public:
         } else {
             stack.push(new BooleanValue(a->asInteger() == b->asInteger()));
         }
-        delete a;
-        delete b;
+        Value::decref(a);
+        Value::decref(b);
     }
 };
 
@@ -235,8 +236,8 @@ public:
         } else {
             stack.push(new BooleanValue(a->asInteger() != b->asInteger()));
         }
-        delete a;
-        delete b;
+        Value::decref(a);
+        Value::decref(b);
     }
 };
 
@@ -254,8 +255,8 @@ public:
         } else {
             stack.push(new BooleanValue(a->asInteger() < b->asInteger()));
         }
-        delete a;
-        delete b;
+        Value::decref(a);
+        Value::decref(b);
     }
 };
 
@@ -273,8 +274,8 @@ public:
         } else {
             stack.push(new BooleanValue(a->asInteger() <= b->asInteger()));
         }
-        delete a;
-        delete b;
+        Value::decref(a);
+        Value::decref(b);
     }
 };
 
@@ -292,8 +293,8 @@ public:
         } else {
             stack.push(new BooleanValue(a->asInteger() > b->asInteger()));
         }
-        delete a;
-        delete b;
+        Value::decref(a);
+        Value::decref(b);
     }
 };
 
@@ -311,8 +312,8 @@ public:
         } else {
             stack.push(new BooleanValue(a->asInteger() >= b->asInteger()));
         }
-        delete a;
-        delete b;
+        Value::decref(a);
+        Value::decref(b);
     }
 };
 
@@ -327,7 +328,7 @@ public:
         PointerValue* ref = new PointerValue(pt);
         ref->setRef(val);
         stack.push(ref);
-        delete val;
+        Value::decref(val);
     }
 };
 
@@ -338,8 +339,8 @@ public:
     void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* ref = stack.top();
         stack.pop();
-        stack.push(ref->getRef()->duplicate());
-        delete ref;
+        stack.push(Value::incref(ref->getRef()));
+        Value::decref(ref);
     }
 };
 
@@ -354,7 +355,7 @@ public:
         stack.pop();
         pval->getRef()->set(val);
         stack.push(val);
-        delete pval;
+        Value::decref(pval);
     }
 };
 
@@ -364,7 +365,7 @@ public:
     ~Neg() { };
     void preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
         Value* a = stack.top()->clone();
-        delete stack.top();
+        Value::decref(stack.top());
         stack.pop();
         a->negate();
         stack.push(a);
@@ -432,8 +433,8 @@ void Asgn::preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*)
     stack.pop();
     Value* var = frame->resolve(name);
     var->set(val);
-    delete val;
-    delete var;
+    Value::decref(val);
+    Value::decref(var);
 }
 
 Invoke::Invoke(std::list<Expression*> args_impl) : Operator(OP_SYMBOL), numArgs(args_impl.size()), args(new Expression*[args_impl.size()]) {
@@ -459,9 +460,9 @@ void Invoke::preform(std::stack<Value*>& stack, Frame* frame)  throw(int,InterpE
         vals[i] = evalExpr(args[i],frame,stack); //Beware of corrupting the stack
     }
     stack.push(val->invoke(vals, numArgs, frame));
-    delete val;
+    Value::decref(val);
     for (int i = 0; i < numArgs; i++) {
-        delete vals[i];
+        Value::decref(vals[i]);
     }
     delete [] vals;
 }
@@ -477,7 +478,7 @@ Size::~Size() { delete array; }
 void Size::preform(std::stack<Value*>& stack, Frame* frame)  throw(int,InterpEx*) {
     Value* arr = evalExpr(array,frame,stack);
     stack.push(new IntegerValue(arr->size()));
-    delete arr;
+    Value::decref(arr);
 }
 
 ArrayDef::ArrayDef(std::list<Expression*> elems_impl) : Operator(OP_ARRAYDEF), elems(new Expression*[elems_impl.size()]), numElems(elems_impl.size()) {
@@ -502,7 +503,7 @@ void ArrayDef::preform(std::stack<Value*>& stack, Frame* frame) throw(int,Interp
     val->resize(numElems);
     for (int i = 0; i < numElems; i++) {
         val->setIndex(i, vals[i]);
-        delete vals[i];
+        Value::decref(vals[i]);
     }
     stack.push(val);
 }
@@ -513,7 +514,7 @@ void Resize::preform(std::stack<Value*>& stack, Frame* frame) throw(int,InterpEx
     Value* arr = evalExpr(array,frame,stack);
     Value* size = evalExpr(dim,frame,stack);
     arr->resize(size->asInteger());
-    delete size;
+    Value::decref(size);
     stack.push(arr);
 }
 
@@ -539,8 +540,8 @@ void ArrayGet::preform(std::stack<Value*>& stack, Frame* frame) throw(int,Interp
         Value* index = evalExpr(indexes[i],frame,stack);
         int i = index->asInteger();
         res = arr->getIndex(i);
-        delete arr;
-        delete index;
+        Value::decref(arr);
+        Value::decref(index);
     }
     stack.push(res);
 }
@@ -567,12 +568,12 @@ void ArraySet::preform(std::stack<Value*>& stack, Frame* frame) throw(int,Interp
     for (int i = 0; i < numIndexes - 1; i++) {
         Value* index = evalExpr(indexes[i],frame,stack);
         res = res->getIndex(index->asInteger());
-        delete index;
+        Value::decref(index);
     }
     Value* index = evalExpr(indexes[numIndexes - 1],frame,stack);
     res->setIndex(index->asInteger(),value);
-    delete index;
-    delete arr;
+    Value::decref(index);
+    Value::decref(arr);
     stack.push(value);
 }
 
@@ -582,8 +583,8 @@ void FieldGet::preform(std::stack<Value*>& stack, Frame* frame) throw(int,Interp
     Value* record = stack.top();
     stack.pop();
     Value* res = record->getField(name);
-    delete record;
-    stack.push(res->duplicate());
+    Value::decref(record);
+    stack.push(Value::incref(res));
 }
 
 FieldSet::FieldSet(int name_impl) : Operator(OP_FIELDSET), name(name_impl) { }
@@ -594,6 +595,6 @@ void FieldSet::preform(std::stack<Value*>& stack, Frame* frame) throw(int,Interp
     Value* record = stack.top();
     stack.pop();
     record->setField(name,val);
-    delete record;
+    Value::decref(record);
     stack.push(val);
 }

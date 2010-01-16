@@ -193,20 +193,19 @@ void Frame::init(Container* container) throw(int,InterpEx*) {
 
 Frame::~Frame() {
     int numMethods = container->methods.size();
-    //for (int i = 0; i < numMethods; i++) {
-    //    Value* s = slots[container->methods[i]->name];
-    //    delete s;
-    //}
+    for (int i = 0; i < numMethods; i++) {
+        Value* s = slots[container->methods[i]->name];
+        Value::decref(s);
+    }
     int numVariables = container->variables.size();
     for (int i = 0; i < numVariables; i++) {
         Value* s = slots[container->variables[i]->name];
-        delete s;
+        Value::decref(s);
     }
     std::map<int, Expression*>::iterator iter = container->constants.begin();
     std::map<int, Expression*>::iterator end = container->constants.end();
     while (iter != end) {
-        Value* s = slots[iter->first];
-        delete s;
+        Value::decref(slots[iter->first]);
         iter++;
     }
 }
@@ -215,7 +214,7 @@ Value* Frame::resolve(int symbol) throw(int, InterpEx*) {
     debug("resolve_symbol=" << symbol);
     std::map<int,Value*>::iterator iter = slots.find(symbol);
     if (iter != slots.end()) {
-        return iter->second->duplicate();
+        return Value::incref(iter->second);
     } else {
         throw E_UNRESOLVABLE;
     }

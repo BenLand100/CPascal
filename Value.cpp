@@ -80,10 +80,24 @@ Value* Value::fromTypeMem(Type* type, void* mem)  throw (int, InterpEx*) {
     }
 }
 
-Value::Value() : Element(ELEM_VALUE), typeObj(Type::getNil()), type(TYPE_NIL) {
+Value* Value::incref(Value *val) throw(int,InterpEx*) {
+    ++val->refcount;
+    return val;
 }
 
-Value::Value(int impl_type, Type* impl_typeObj) : Element(ELEM_VALUE), typeObj(impl_typeObj), type(impl_type) {
+Value* Value::decref(Value *val) throw(int,InterpEx*) {;
+    if (!--val->refcount) {
+        delete val;
+        return 0;
+    } else {
+        return val;
+    }
+}
+
+Value::Value() : Element(ELEM_VALUE), typeObj(Type::getNil()), type(TYPE_NIL), refcount(1) {
+}
+
+Value::Value(int impl_type, Type* impl_typeObj, bool ownsmem) : Element(ELEM_VALUE), typeObj(impl_typeObj), type(impl_type), refcount(1), owns_mem(ownsmem) {
 }
 
 Value::~Value() {
@@ -94,10 +108,6 @@ void Value::set(Value* val) throw (int, InterpEx*) {
 }
 
 Value* Value::clone() {
-    return new Value();
-}
-
-Value* Value::duplicate() {
     return new Value();
 }
 
@@ -187,41 +197,18 @@ void Value::read_fpc(void* res) {
 
 //**** BEGIN METHODVALUE DEFINITION ***
 
-MethodValue::MethodValue(void* mem, Meth* type) : Value(TYPE_METH, type) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = false;
+MethodValue::MethodValue(void* mem, Meth* type) : Value(TYPE_METH, type, false){
     meth = (Method**) mem;
     *meth = 0;
 }
 
-MethodValue::MethodValue(Method* meth_impl) : Value(TYPE_METH, meth_impl->val_type) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = true;
+MethodValue::MethodValue(Method* meth_impl) : Value(TYPE_METH, meth_impl->val_type, true) {
     meth = new Method*;
     *meth = meth_impl;
 }
 
-MethodValue::MethodValue(MethodValue& val) : Value(TYPE_METH, (Type*)val.typeObj) {
-    refcount = val.refcount;
-    (*refcount)++;
-    owns_mem = val.owns_mem;
-    meth = val.meth;
-}
-
 MethodValue::~MethodValue() {
-    if (!(--*refcount)) {
-        delete refcount;
-        if (*owns_mem) delete meth;
-        delete owns_mem;
-    }
-}
-
-Value* MethodValue::duplicate() {
-    return new MethodValue(*this);
+    if (owns_mem) delete meth;
 }
 
 Value* MethodValue::clone() {
@@ -326,7 +313,7 @@ Value* MethodValue::invoke(Value** args, unsigned int numArgs, Frame* cur) throw
         debug("resolve_args");
         for (unsigned int i = 0; i < numArgs; i++) {
             Variable* var = meth->arguments[i];
-            frame->slots[var->name] = var->byRef ? args[i]->duplicate() : args[i]->clone();
+            frame->slots[var->name] = var->byRef ? Value::incref(args[i]) : args[i]->clone();
             debug("argset=" << (var->name) << " " << args[i] << " " << frame->slots[var->name]);
         }
         if (meth->type) frame->slots[RES_RESULT] = Value::fromType(meth->type);
@@ -340,7 +327,7 @@ Value* MethodValue::invoke(Value** args, unsigned int numArgs, Frame* cur) throw
             }
             debug("unwinding frame");
             for (unsigned int i = 0; i < numArgs; i++) {
-                delete frame->slots[meth->arguments[i]->name];;
+                Value::decref(frame->slots[meth->arguments[i]->name]);
             }
             delete frame;
             throw ex;
@@ -348,7 +335,7 @@ Value* MethodValue::invoke(Value** args, unsigned int numArgs, Frame* cur) throw
             if (exi == E_EXIT) goto exit;
             debug("unwinding frame");
             for (unsigned int i = 0; i < numArgs; i++) {
-                delete frame->slots[meth->arguments[i]->name];;
+                 Value::decref(frame->slots[meth->arguments[i]->name]);
             }
             delete frame;
             throw exi;
@@ -356,7 +343,7 @@ Value* MethodValue::invoke(Value** args, unsigned int numArgs, Frame* cur) throw
         exit:
         debug("resolve_return");
         for (unsigned int i = 0; i < numArgs; i++) {
-            delete frame->slots[meth->arguments[i]->name];;
+             Value::decref(frame->slots[meth->arguments[i]->name]);
         }
         if (meth->type) {
             Value* res = frame->slots[RES_RESULT];
@@ -371,41 +358,18 @@ Value* MethodValue::invoke(Value** args, unsigned int numArgs, Frame* cur) throw
 
 //**** BEGIN INTEGERVALUE DEFINITION ***
 
-IntegerValue::IntegerValue(void* mem) : Value(TYPE_INTEGER, Type::getInteger()) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = false;
+IntegerValue::IntegerValue(void* mem) : Value(TYPE_INTEGER, Type::getInteger(), false) {
     integer = (int*) mem;
     *integer = 0;
 }
 
-IntegerValue::IntegerValue(int i) : Value(TYPE_INTEGER, Type::getInteger()) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = true;
+IntegerValue::IntegerValue(int i) : Value(TYPE_INTEGER, Type::getInteger(), true) {
     integer = new int;
     *integer = i;
 }
 
-IntegerValue::IntegerValue(IntegerValue& val) : Value(TYPE_INTEGER, Type::getInteger()) {
-    refcount = val.refcount;
-    (*refcount)++;
-    owns_mem = val.owns_mem;
-    integer = val.integer;
-}
-
 IntegerValue::~IntegerValue() {
-    if (!(--*refcount)) {
-        delete refcount;
-        if (*owns_mem) delete integer;
-        delete owns_mem;
-    }
-}
-
-Value* IntegerValue::duplicate() {
-    return new IntegerValue(*this);
+    if (owns_mem) delete integer;
 }
 
 Value* IntegerValue::clone() {
@@ -459,12 +423,7 @@ void IntegerValue::read_fpc(void* res) {
 
 //**** BEGIN STRINGVALUE DEFINITION ***
 
-StringValue::StringValue(void* mem_impl) : Value(TYPE_STRING, Type::getString()) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = false;
-
+StringValue::StringValue(void* mem_impl) : Value(TYPE_STRING, Type::getString(), false) {
     int len = 0;
     mem = (char**) mem_impl;
     *mem = new char[8 + len + 1];
@@ -479,12 +438,7 @@ StringValue::StringValue(void* mem_impl) : Value(TYPE_STRING, Type::getString())
     **str = 0;
 }
 
-StringValue::StringValue(char* str_impl) : Value(TYPE_STRING, Type::getString()) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = true;
-
+StringValue::StringValue(char* str_impl) : Value(TYPE_STRING, Type::getString(), true) {
     int len = strlen(str_impl);
     mem = new char*;
     *mem = new char[8 + len + 1];
@@ -499,12 +453,7 @@ StringValue::StringValue(char* str_impl) : Value(TYPE_STRING, Type::getString())
     strcpy(*str, str_impl);
 }
 
-StringValue::StringValue(std::string cpp_str) : Value(TYPE_STRING, Type::getString()) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = true;
-
+StringValue::StringValue(std::string cpp_str) : Value(TYPE_STRING, Type::getString(), true) {
     int len = cpp_str.length();
     mem = new char*;
     *mem = new char[8 + len + 1];
@@ -519,30 +468,12 @@ StringValue::StringValue(std::string cpp_str) : Value(TYPE_STRING, Type::getStri
     strcpy(*str, cpp_str.c_str());
 }
 
-StringValue::StringValue(StringValue& val) : Value(TYPE_STRING, Type::getString()) {
-    refcount = val.refcount;
-    (*refcount)++;
-    owns_mem = val.owns_mem;
-    objref = val.objref;
-    size = val.size;
-    str = val.str;
-    mem = val.mem;
-}
-
 StringValue::~StringValue() {
-    if (!(--(*refcount))) {
-        delete [] * mem;
-        delete objref;
-        if (*owns_mem) delete mem;
-        delete owns_mem;
-        delete refcount;
-        delete size;
-        delete str;
-    }
-}
-
-Value* StringValue::duplicate() {
-    return new StringValue(*this);
+    delete [] * mem;
+    if (owns_mem) delete mem;
+    delete objref;
+    delete size;
+    delete str;
 }
 
 Value* StringValue::clone() {
@@ -602,41 +533,18 @@ void StringValue::read_fpc(void* res) {
 
 //**** BEGIN REALVALUE DEFINITION ***
 
-RealValue::RealValue(void* mem) : Value(TYPE_REAL, Type::getReal()) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = false;
+RealValue::RealValue(void* mem) : Value(TYPE_REAL, Type::getReal(), false) {
     real = (double*) mem;
     *real = 0.0;
 }
 
-RealValue::RealValue(double real_impl) : Value(TYPE_REAL, Type::getReal()) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = true;
+RealValue::RealValue(double real_impl) : Value(TYPE_REAL, Type::getReal(), true) {
     real = new double;
     *real = real_impl;
 }
 
-RealValue::RealValue(RealValue& val) : Value(TYPE_REAL, Type::getReal()) {
-    refcount = val.refcount;
-    (*refcount)++;
-    owns_mem = val.owns_mem;
-    real = val.real;
-}
-
 RealValue::~RealValue() {
-    if (!(--*refcount)) {
-        delete refcount;
-        if (*owns_mem) delete real;
-        delete owns_mem;
-    }
-}
-
-Value* RealValue::duplicate() {
-    return new RealValue(*this);
+    if (owns_mem) delete real;
 }
 
 Value* RealValue::clone() {
@@ -677,11 +585,7 @@ void RealValue::refArg(void* mem) {
 
 //**** BEGIN CHARVALUE DEFINITION ***
 
-CharValue::CharValue(void* mem) : Value(TYPE_CHAR, Type::getChar()) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = false;
+CharValue::CharValue(void* mem) : Value(TYPE_CHAR, Type::getChar(), false) {
     chr = (char*) mem;
     *chr = 0;
     str = new char*;
@@ -689,11 +593,7 @@ CharValue::CharValue(void* mem) : Value(TYPE_CHAR, Type::getChar()) {
     (*str)[1] = 0;
 }
 
-CharValue::CharValue(char chr_impl) : Value(TYPE_CHAR, Type::getChar()) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = true;
+CharValue::CharValue(char chr_impl) : Value(TYPE_CHAR, Type::getChar(), true) {
     chr = new char;
     *chr = chr_impl;
     str = new char*;
@@ -701,26 +601,10 @@ CharValue::CharValue(char chr_impl) : Value(TYPE_CHAR, Type::getChar()) {
     (*str)[1] = 0;
 }
 
-CharValue::CharValue(CharValue& val) : Value(TYPE_CHAR, Type::getChar()) {
-    refcount = val.refcount;
-    (*refcount)++;
-    owns_mem = val.owns_mem;
-    chr = val.chr;
-    str = val.str;
-}
-
 CharValue::~CharValue() {
-    if (!(--*refcount)) {
-        delete refcount;
-        if (*owns_mem) delete chr;
-        delete owns_mem;
-        delete [] * str;
-        delete str;
-    }
-}
-
-Value* CharValue::duplicate() {
-    return new CharValue(*this);
+    if (owns_mem) delete chr;
+    delete [] * str;
+    delete str;
 }
 
 Value* CharValue::clone() {
@@ -775,41 +659,18 @@ void CharValue::read_fpc(void* res) {
 
 //**** BEGIN BOOLEANVALUE DEFINITION ***
 
-BooleanValue::BooleanValue(void* mem) : Value(TYPE_BOOLEAN, Type::getBoolean()) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = false;
+BooleanValue::BooleanValue(void* mem) : Value(TYPE_BOOLEAN, Type::getBoolean(), false) {
     boolean = (char*) mem;
     *boolean = false;
 }
 
-BooleanValue::BooleanValue(bool boolean_impl) : Value(TYPE_BOOLEAN, Type::getBoolean()) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = true;
+BooleanValue::BooleanValue(bool boolean_impl) : Value(TYPE_BOOLEAN, Type::getBoolean(), true) {
     boolean = new char;
     *boolean = boolean_impl != false ? 1 : 0;
 }
 
-BooleanValue::BooleanValue(BooleanValue& val) : Value(TYPE_BOOLEAN, Type::getBoolean()) {
-    refcount = val.refcount;
-    (*refcount)++;
-    owns_mem = val.owns_mem;
-    boolean = val.boolean;
-}
-
 BooleanValue::~BooleanValue() {
-    if (!(--*refcount)) {
-        delete refcount;
-        if (*owns_mem) delete boolean;
-        delete owns_mem;
-    }
-}
-
-Value* BooleanValue::duplicate() {
-    return new BooleanValue(*this);
+    if (owns_mem) delete boolean;
 }
 
 Value* BooleanValue::clone() {
@@ -851,11 +712,7 @@ void BooleanValue::read_fpc(void* res) {
 
 //**** BEGIN ARRAYVALUE DEFINITION ***
 
-ArrayValue::ArrayValue(Array* arr, void* mem_impl) : Value(TYPE_ARRAY, arr) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = false;
+ArrayValue::ArrayValue(Array* arr, void* mem_impl) : Value(TYPE_ARRAY, arr, false) {
     elemType = new Type*;
     *elemType = (Type*) arr->element;
     dynamic = new bool;
@@ -901,11 +758,7 @@ ArrayValue::ArrayValue(Array* arr, void* mem_impl) : Value(TYPE_ARRAY, arr) {
     }
 }
 
-ArrayValue::ArrayValue(Array* arr) : Value(TYPE_ARRAY, arr) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = true;
+ArrayValue::ArrayValue(Array* arr) : Value(TYPE_ARRAY, arr, true) {
     elemType = new Type*;
     *elemType = (Type*) arr->element;
     dynamic = new bool;
@@ -950,11 +803,7 @@ ArrayValue::ArrayValue(Array* arr) : Value(TYPE_ARRAY, arr) {
     }
 }
 
-ArrayValue::ArrayValue(Array* arr, bool internal) : Value(TYPE_ARRAY, arr) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = true;
+ArrayValue::ArrayValue(Array* arr, bool internal) : Value(TYPE_ARRAY, arr, true) {
     elemType = new Type*;
     dynamic = new bool;
     start = new int;
@@ -967,57 +816,34 @@ ArrayValue::ArrayValue(Array* arr, bool internal) : Value(TYPE_ARRAY, arr) {
     pas_array = new char*;
 }
 
-ArrayValue::ArrayValue(ArrayValue& val) : Value(TYPE_ARRAY, (Type*) val.typeObj) {
-    refcount = val.refcount;
-    (*refcount)++;
-    owns_mem = val.owns_mem;
-    elemType = val.elemType;
-    dynamic = val.dynamic;
-    start = val.start;
-    mem = val.mem;
-    objref = val.objref;
-    asize = val.asize;
-    array = val.array;
-    pas_array = val.pas_array;
-    elemsz = val.elemsz;
-}
-
 ArrayValue::~ArrayValue() {
-    if (!(--(*refcount))) {
-        if (*dynamic) {
-            if (!(--(**objref))) {
-                for (int i = 0; i < **asize; i++) {
-                    delete (*array)[i];
-                }
-                delete [] * array;
-                delete [] * mem;
-            }
-            if (*owns_mem) delete mem;
-        } else {
+    if (*dynamic) {
+        if (!(--(**objref))) {
             for (int i = 0; i < **asize; i++) {
-                delete (*array)[i];
+                 Value::decref((*array)[i]);
             }
             delete [] * array;
-            if (*owns_mem) delete [] * mem;
-            delete mem;
-            delete *objref;
-            delete *asize;
+            delete [] * mem;
         }
-        delete owns_mem;
-        delete refcount;
-        delete elemType;
-        delete dynamic;
-        delete start;
-        delete objref;
-        delete asize;
-        delete array;
-        delete pas_array;
-        delete elemsz;
+        if (owns_mem) delete mem;
+    } else {
+        for (int i = 0; i < **asize; i++) {
+             Value::decref((*array)[i]);
+        }
+        delete [] * array;
+        if (owns_mem) delete [] * mem;
+        delete mem;
+        delete *objref;
+        delete *asize;
     }
-}
-
-Value* ArrayValue::duplicate() {
-    return new ArrayValue(*this);
+    delete elemType;
+    delete dynamic;
+    delete start;
+    delete objref;
+    delete asize;
+    delete array;
+    delete pas_array;
+    delete elemsz;
 }
 
 Value* ArrayValue::clone() {
@@ -1108,7 +934,7 @@ void ArrayValue::resize(int len) throw (int, InterpEx*) {
     }
     if (!(--(**objref))) {
         for (int i = 0; i < **this->asize; i++) {
-            delete (*array)[i];
+             Value::decref((*array)[i]);
         }
         delete [] * array;
         delete [] * mem;
@@ -1131,7 +957,7 @@ Value* ArrayValue::getIndex(int index) throw (int, InterpEx*) {
     index -= *start;
     if (index >= **asize)
         throw E_INDEX_BOUNDS;
-    return (*array)[index]->duplicate();
+    return Value::incref((*array)[index]);
 }
 
 int ArrayValue::argSize() {
@@ -1148,11 +974,7 @@ void ArrayValue::refArg(void* mem) {
 
 //**** BEGIN POINTERVALUE DEFINITION ***
 
-PointerValue::PointerValue(Pointer* pt, void* mem) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = false;
+PointerValue::PointerValue(Pointer* pt, void* mem) : Value(TYPE_POINTER, pt, false) {
     refType = new Type*;
     *refType = (Type*) pt->pointsTo;
     ref = new Value*;
@@ -1161,11 +983,7 @@ PointerValue::PointerValue(Pointer* pt, void* mem) {
     (*ref)->refArg((void*) pas_ref);
 }
 
-PointerValue::PointerValue(Pointer* pt) : Value(TYPE_POINTER, pt) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = true;
+PointerValue::PointerValue(Pointer* pt) : Value(TYPE_POINTER, pt, true) {
     refType = new Type*;
     *refType = (Type*) pt->pointsTo;
     ref = new Value*;
@@ -1174,44 +992,23 @@ PointerValue::PointerValue(Pointer* pt) : Value(TYPE_POINTER, pt) {
     (*ref)->refArg((void*) pas_ref);
 }
 
-PointerValue::PointerValue(Pointer* pt, bool internal) : Value(TYPE_POINTER, pt) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = true;
+PointerValue::PointerValue(Pointer* pt, bool internal) : Value(TYPE_POINTER, pt, true) {
     refType = new Type*;
     ref = new Value*;
     pas_ref = new void*;
 }
 
-PointerValue::PointerValue(PointerValue& val) : Value(TYPE_POINTER, (Type*) val.typeObj) {
-    refcount = val.refcount;
-    (*refcount)++;
-    owns_mem = val.owns_mem;
-    refType = val.refType;
-    ref = val.ref;
-    pas_ref = val.pas_ref;
-}
-
 PointerValue::~PointerValue() {
-    if (!(--*refcount)) {
-        delete refcount;
-        delete refType;
-        delete *ref;
-        delete ref;
-        if (*owns_mem) delete pas_ref;
-        delete owns_mem;
-    }
-}
-
-Value* PointerValue::duplicate() {
-    return new PointerValue(*this);
+    delete refType;
+     Value::decref(*ref);
+    delete ref;
+    if (owns_mem) delete pas_ref;
 }
 
 Value* PointerValue::clone() {
     PointerValue* pt = new PointerValue((Pointer*) typeObj, true);
     *(pt->refType) = *refType;
-    *(pt->ref) = (*ref)->duplicate();
+    *(pt->ref) = Value::incref(*ref);
     (*ref)->refArg((void*) pt->pas_ref);
     return pt;
 }
@@ -1219,8 +1016,8 @@ Value* PointerValue::clone() {
 void PointerValue::set(Value* val) throw (int, InterpEx*) {
     if (val->type != TYPE_POINTER) throw E_NOT_POINTER;
     *refType = *((PointerValue*) val)->refType;
-    delete *ref;
-    *ref = (*((PointerValue*) val)->ref)->duplicate();
+     Value::decref(*ref);
+    *ref = Value::incref(*((PointerValue*) val)->ref);
     (*ref)->refArg((void*) pas_ref);
 }
 
@@ -1236,8 +1033,8 @@ Value* PointerValue::invoke(Value** args, int numArgs, Frame* cur) throw (int, I
 //FIXME Should check assignment types
 
 void PointerValue::setRef(Value* ref_impl) throw (int, InterpEx*) {
-    delete *ref;
-    *ref = ref_impl->duplicate();
+     Value::decref(*ref);
+    *ref = Value::incref(ref_impl);
     (*ref)->refArg((void*) pas_ref);
 }
 
@@ -1255,11 +1052,7 @@ void PointerValue::refArg(void* mem) {
 
 //**** BEGIN RECORDVALUE DEFINITION ***
 
-RecordValue::RecordValue(Record* rec, void* mem_impl) : Value(TYPE_RECORD, rec) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = false;
+RecordValue::RecordValue(Record* rec, void* mem_impl) : Value(TYPE_RECORD, rec, false) {
     memsize = new int;
     *memsize = rec->sizeOf();
     indexes = new int*;
@@ -1278,11 +1071,7 @@ RecordValue::RecordValue(Record* rec, void* mem_impl) : Value(TYPE_RECORD, rec) 
     }
 }
 
-RecordValue::RecordValue(Record* rec) : Value(TYPE_RECORD, rec) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = true;
+RecordValue::RecordValue(Record* rec) : Value(TYPE_RECORD, rec, true) {
     memsize = new int;
     *memsize = rec->sizeOf();
     indexes = new int*;
@@ -1301,50 +1090,27 @@ RecordValue::RecordValue(Record* rec) : Value(TYPE_RECORD, rec) {
     }
 }
 
-RecordValue::RecordValue(Record* rec, bool internal) : Value(TYPE_RECORD, rec) {
-    refcount = new int;
-    *refcount = 1;
-    owns_mem = new bool;
-    *owns_mem = true;
+RecordValue::RecordValue(Record* rec, bool internal) : Value(TYPE_RECORD, rec, true) {
     memsize = new int;
     indexes = new int*;
     fields = new std::map<int, Value*>;
     mem = new char*;
 }
 
-RecordValue::RecordValue(RecordValue& val) : Value(TYPE_RECORD, (Type*) val.typeObj) {
-    refcount = val.refcount;
-    (*refcount)++;
-    owns_mem = val.owns_mem;
-    memsize = val.memsize;
-    indexes = val.indexes;
-    fields = val.fields;
-    mem = val.mem;
-}
-
 RecordValue::~RecordValue() {
-    if (!(--(*refcount))) {
-        std::map<int, Value*>::iterator iter = fields->begin();
-        std::map<int, Value*>::iterator end = fields->end();
-        //FIXME - serious leak, some error somewhere
-        while (iter != end) {
-            delete iter->second;
-            iter++;
-        }
-        if (*owns_mem) delete [] * mem;
-        delete [] * indexes;
-
-        delete owns_mem;
-        delete indexes;
-        delete memsize;
-        delete fields;
-        delete refcount;
-        delete mem;
+    std::map<int, Value*>::iterator iter = fields->begin();
+    std::map<int, Value*>::iterator end = fields->end();
+    while (iter != end) {
+        Value::decref(iter->second);
+        iter++;
     }
-}
+    if (owns_mem) delete [] * mem;
+    delete [] * indexes;
 
-Value* RecordValue::duplicate() {
-    return new RecordValue(*this);
+    delete indexes;
+    delete memsize;
+    delete fields;
+    delete mem;
 }
 
 Value* RecordValue::clone() {
