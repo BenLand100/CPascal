@@ -67,7 +67,7 @@ public:
     virtual double asReal() throw(int,InterpEx*);
     virtual int asInteger() throw(int,InterpEx*);
     virtual bool asBoolean() throw(int,InterpEx*);
-    virtual Value* invoke(Value** args, int numArgs, Frame* frame) throw (int,InterpEx*);
+    virtual Value* invoke(Value** args, unsigned int numArgs, Frame* frame) throw (int,InterpEx*);
 
     virtual int argSize();
     virtual void refArg(void* mem);
@@ -93,7 +93,7 @@ public:
     Value* duplicate();
     Value* clone();
     void set(Value* val) throw(int,InterpEx*);
-    Value* invoke(Value** args, int numArgs, Frame* frame) throw (int,InterpEx*);
+    Value* invoke(Value** args, unsigned int numArgs, Frame* frame) throw (int,InterpEx*);
 
 protected:
     Method** meth;

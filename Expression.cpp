@@ -136,6 +136,7 @@ void For::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) {
         }
         delete temp;
     }
+    delete varval;
 }
 
 While::While(Expression* cond_impl, std::list<Expression*> block_impl, int offset_impl) : Expression(offset_impl), cond(cond_impl) {

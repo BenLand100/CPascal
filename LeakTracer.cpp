@@ -295,11 +295,11 @@ void LeakTracer::writeLeakReport() {
         fprintf(stderr, "# LeakReport\n");
         fprintf(stderr, "# %10s | %9s  # Pointer Addr\n", "from new @", "size");
     }
-    /*for (int i = 0; i < leaksCount ; i++)
+    for (int i = 0; i < leaksCount ; i++)
         if (leaks[i].addr != NULL) {
             // This ought to be 64-bit safe?
             fprintf(stderr, "L %10p   %9ld  # %p\n", leaks[i].allocAddr, (long) leaks[i].size, leaks[i].addr);
-        }*/
+        }
     fprintf(stderr, "# total allocation requests: %6ld ; max. mem used"
             " %d kBytes\n", totalAllocations, maxAllocated / 1024);
     fprintf(stderr, "# leak %6d Bytes\t:-%c\n", currentAllocated, (currentAllocated == 0) ? ')' : '(');

@@ -535,18 +535,14 @@ void ArrayGet::preform(std::stack<Value*>& stack, Frame* frame) throw(int,Interp
     Value* res = arr;
     stack.pop();
     for (int i = 0; i < numIndexes; i++) {
+        arr = res;
         Value* index = evalExpr(indexes[i],frame,stack);
         int i = index->asInteger();
-        if ((numIndexes-1 == i) && (res->type == TYPE_STRING)) {
-            stack.push(res->getIndex(i));
-            delete index;
-            delete arr;
-        }
-        res = res->getIndex(i);
+        res = arr->getIndex(i);
+        delete arr;
         delete index;
     }
-    stack.push(res->duplicate());
-    delete arr;
+    stack.push(res);
 }
 
 ArraySet::ArraySet(std::list<Expression*> indexes_impl) : Operator(OP_ARRAYSET), indexes(new Expression*[indexes_impl.size()]), numIndexes(indexes_impl.size()) {

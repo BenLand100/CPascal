@@ -178,7 +178,6 @@ void Frame::init(Container* container) throw(int,InterpEx*) {
         slots[var->name] = Value::fromType((Type*) var->type);
         debug("init_var=" << var->name);
     }
-    debug("random=" << slots[56]);
     std::map<int, Expression*>::iterator iter = container->constants.begin();
     std::map<int, Expression*>::iterator end = container->constants.end();
     std::stack<Value*> stack;
@@ -194,10 +193,10 @@ void Frame::init(Container* container) throw(int,InterpEx*) {
 
 Frame::~Frame() {
     int numMethods = container->methods.size();
-    for (int i = 0; i < numMethods; i++) {
-        Value* s = slots[container->methods[i]->name];
-        //delete s;
-    }
+    //for (int i = 0; i < numMethods; i++) {
+    //    Value* s = slots[container->methods[i]->name];
+    //    delete s;
+    //}
     int numVariables = container->variables.size();
     for (int i = 0; i < numVariables; i++) {
         Value* s = slots[container->variables[i]->name];
@@ -214,8 +213,9 @@ Frame::~Frame() {
 
 Value* Frame::resolve(int symbol) throw(int, InterpEx*) {
     debug("resolve_symbol=" << symbol);
-    if (slots.find(symbol) != slots.end()) {
-        return slots[symbol]->duplicate();
+    std::map<int,Value*>::iterator iter = slots.find(symbol);
+    if (iter != slots.end()) {
+        return iter->second->duplicate();
     } else {
         throw E_UNRESOLVABLE;
     }

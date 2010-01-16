@@ -165,7 +165,7 @@ bool Value::asBoolean() throw (int, InterpEx*) {
     throw E_NOT_BOOLEAN;
 }
 
-Value* Value::invoke(Value** args, int numArgs, Frame* frame) throw (int, InterpEx*) {
+Value* Value::invoke(Value** args, unsigned int numArgs, Frame* frame) throw (int, InterpEx*) {
     throw E_NOT_METHOD;
 }
 
@@ -233,16 +233,16 @@ void MethodValue::set(Value* val) throw (int, InterpEx*) {
     *meth = *((MethodValue*) val)->meth;
 }
 
-Value* MethodValue::invoke(Value** args, int numArgs, Frame* cur) throw (int, InterpEx*) {
+Value* MethodValue::invoke(Value** args, unsigned int numArgs, Frame* cur) throw (int, InterpEx*) {
     Method* meth = *this->meth;
     if (numArgs != meth->arguments.size()) throw E_WRONG_NUM_ARG;
     if (meth->address) {
         int argsz = 0;
-        for (int i = 0; i < numArgs; i++)
+        for (unsigned int i = 0; i < numArgs; i++)
             argsz += meth->arguments[i]->byRef ? 4 : args[i]->argSize();
         char* cargs = new char[argsz];
         char* stack = cargs;
-        for (int i = 0; i < numArgs; i++) {
+        for (unsigned int i = 0; i < numArgs; i++) {
             if (meth->arguments[i]->byRef) {
                 args[i]->refArg((void*) stack);
                 stack += 4;
@@ -324,7 +324,7 @@ Value* MethodValue::invoke(Value** args, int numArgs, Frame* cur) throw (int, In
         //FIXME must check method types
         Frame* frame = new Frame(cur, meth);
         debug("resolve_args");
-        for (int i = 0; i < numArgs; i++) {
+        for (unsigned int i = 0; i < numArgs; i++) {
             Variable* var = meth->arguments[i];
             frame->slots[var->name] = var->byRef ? args[i]->duplicate() : args[i]->clone();
             debug("argset=" << (var->name) << " " << args[i] << " " << frame->slots[var->name]);
@@ -339,7 +339,7 @@ Value* MethodValue::invoke(Value** args, int numArgs, Frame* cur) throw (int, In
                 goto exit;
             }
             debug("unwinding frame");
-            for (int i = 0; i < numArgs; i++) {
+            for (unsigned int i = 0; i < numArgs; i++) {
                 delete frame->slots[meth->arguments[i]->name];;
             }
             delete frame;
@@ -347,7 +347,7 @@ Value* MethodValue::invoke(Value** args, int numArgs, Frame* cur) throw (int, In
         } catch (int exi) {
             if (exi == E_EXIT) goto exit;
             debug("unwinding frame");
-            for (int i = 0; i < numArgs; i++) {
+            for (unsigned int i = 0; i < numArgs; i++) {
                 delete frame->slots[meth->arguments[i]->name];;
             }
             delete frame;
@@ -355,7 +355,7 @@ Value* MethodValue::invoke(Value** args, int numArgs, Frame* cur) throw (int, In
         }
         exit:
         debug("resolve_return");
-        for (int i = 0; i < numArgs; i++) {
+        for (unsigned int i = 0; i < numArgs; i++) {
             delete frame->slots[meth->arguments[i]->name];;
         }
         if (meth->type) {
@@ -1131,7 +1131,7 @@ Value* ArrayValue::getIndex(int index) throw (int, InterpEx*) {
     index -= *start;
     if (index >= **asize)
         throw E_INDEX_BOUNDS;
-    return (*array)[index];
+    return (*array)[index]->duplicate();
 }
 
 int ArrayValue::argSize() {

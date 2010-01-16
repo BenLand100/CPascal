@@ -173,7 +173,7 @@ Type* parseType(char* &cur, std::map<int,Type*> &reftypes) {
             } else { //Already ate the of
                 return Type::getDynamicArrayType(parseType(cur,reftypes));
             }
-        case RES_RECORD: { //FIXME this is wrong, lol
+        case RES_RECORD: {
             std::list<Variable*> vars = parseVars(cur,reftypes);
             cur = next(cur);
             std::map<int,Type*> fields;
