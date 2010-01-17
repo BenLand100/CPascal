@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="51">
+<configurationDescriptor version="62">
   <logicalFolder name="root" displayName="root" projectFiles="true">
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
@@ -9,12 +9,12 @@
       <itemPath>Exceptions.h</itemPath>
       <itemPath>Expression.h</itemPath>
       <itemPath>Interpreter.h</itemPath>
-      <itemPath>lexer.h</itemPath>
       <itemPath>Operator.h</itemPath>
-      <itemPath>parser.h</itemPath>
       <itemPath>Type.h</itemPath>
       <itemPath>Value.h</itemPath>
       <itemPath>Variable.h</itemPath>
+      <itemPath>lexer.h</itemPath>
+      <itemPath>parser.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
                    displayName="Resource Files"
@@ -30,20 +30,20 @@
       <itemPath>Expression.cpp</itemPath>
       <itemPath>Interpreter.cpp</itemPath>
       <itemPath>LeakTracer.cpp</itemPath>
-      <itemPath>lexer.cpp</itemPath>
-      <itemPath>main.cpp</itemPath>
       <itemPath>Operator.cpp</itemPath>
-      <itemPath>parser.cpp</itemPath>
       <itemPath>Type.cpp</itemPath>
       <itemPath>Value.cpp</itemPath>
       <itemPath>Variable.cpp</itemPath>
+      <itemPath>lexer.cpp</itemPath>
+      <itemPath>main.cpp</itemPath>
+      <itemPath>parser.cpp</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
                    projectFiles="false">
       <itemPath>COPYING</itemPath>
-      <itemPath>fpc/cpascal.pas</itemPath>
       <itemPath>Makefile</itemPath>
+      <itemPath>fpc/cpascal.pas</itemPath>
       <itemPath>fpc/test2.pas</itemPath>
     </logicalFolder>
   </logicalFolder>
@@ -56,91 +56,16 @@
         <platform>2</platform>
       </toolsSet>
       <compileType>
-        <ccCompilerTool>
+        <ccTool>
           <commandLine>-Wall</commandLine>
-        </ccCompilerTool>
+        </ccTool>
         <linkerTool>
-          <output>dist/Debug/${PLATFORM}/cpascal</output>
+          <output>dist/Debug/${CND_PLATFORM}/cpascal</output>
           <linkerLibItems>
           </linkerLibItems>
           <commandLine>--eh-frame-hdr</commandLine>
         </linkerTool>
       </compileType>
-      <item path="Container.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Container.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="EFence.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Element.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Element.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="Exceptions.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Exceptions.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="Expression.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Expression.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="Interpreter.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Interpreter.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="LeakTracer.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Operator.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Operator.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="Type.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Type.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="Value.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Value.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="Variable.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Variable.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="lexer.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="lexer.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="main.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="parser.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="parser.h">
-        <itemTool>3</itemTool>
-      </item>
     </conf>
     <conf name="Release" type="1">
       <toolsSet>
@@ -149,14 +74,14 @@
         <platform>2</platform>
       </toolsSet>
       <compileType>
-        <cCompilerTool>
+        <cTool>
           <developmentMode>5</developmentMode>
-        </cCompilerTool>
-        <ccCompilerTool>
+        </cTool>
+        <ccTool>
           <developmentMode>6</developmentMode>
           <stripSymbols>true</stripSymbols>
           <commandLine>-Wall</commandLine>
-        </ccCompilerTool>
+        </ccTool>
         <fortranCompilerTool>
           <developmentMode>5</developmentMode>
         </fortranCompilerTool>
@@ -167,81 +92,6 @@
           <commandLine>--eh-frame-hdr</commandLine>
         </linkerTool>
       </compileType>
-      <item path="Container.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Container.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="EFence.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Element.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Element.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="Exceptions.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Exceptions.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="Expression.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Expression.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="Interpreter.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Interpreter.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="LeakTracer.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Operator.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Operator.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="Type.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Type.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="Value.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Value.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="Variable.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="Variable.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="lexer.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="lexer.h">
-        <itemTool>3</itemTool>
-      </item>
-      <item path="main.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="parser.cpp">
-        <itemTool>1</itemTool>
-      </item>
-      <item path="parser.h">
-        <itemTool>3</itemTool>
-      </item>
     </conf>
   </confs>
 </configurationDescriptor>

@@ -64,9 +64,15 @@ private:
 };
 
 inline Value* evalExpr(Expression* expr, Frame* frame, std::stack<Value*>& stack) {
+    int start = stack.size();
     expr->eval(frame,stack);
     Value* res = stack.top();
     stack.pop();
+    int num = stack.size() - start;
+    for (int i = 0; i < num; i++) {
+        Value::decref(stack.top());
+        stack.pop();
+    }
     return res;
 }
 
@@ -84,7 +90,13 @@ inline void evalBlock(Block* block, Frame* frame, std::stack<Value*>& stack) {
     while (elems != end) {
         debug("eval " << *elems);
         try {
+            int start = stack.size();
             (*elems)->eval(frame,stack);
+            int num = stack.size() - start;
+            for (int i = 0; i < num; i++) {
+                Value::decref(stack.top());
+                stack.pop();
+            }
             elems++;
         } catch (InterpEx* ex) {
             debug("tossed");

@@ -124,6 +124,10 @@ Interpreter::Interpreter(char* ppg) : exception(0) {
 
 Interpreter::~Interpreter() {
     delete prog;
+    if (exception) {
+        delete exception;
+        exception = 0;
+    }
 }
 
 void Interpreter::run() {
