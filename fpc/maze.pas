@@ -342,7 +342,7 @@ var
   i,jills,t: integer;
 begin
   writeln('Solving maze...');
-  maze:= ParseMaze(medium_maze,start,finish);
+  maze:= ParseMaze(small_maze,start,finish);
   //writeln('c1:'+inttostr(length(maze)));
   //writeln('c2:'+inttostr(length(maze[0])));
   t:= time();

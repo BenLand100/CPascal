@@ -568,6 +568,8 @@ void ArraySet::preform(std::stack<Value*>& stack, Frame* frame) throw(int,Interp
     for (int i = 0; i < numIndexes - 1; i++) {
         Value* index = evalExpr(indexes[i],frame,stack);
         res = res->getIndex(index->asInteger());
+        Value::decref(arr);
+        arr = res;
         Value::decref(index);
     }
     Value* index = evalExpr(indexes[numIndexes - 1],frame,stack);

@@ -3,7 +3,7 @@
  * not write it, just modified it to be in a single file.
  */
 
-//#define MEMORY_TRACE
+#define MEMORY_TRACE
 
 #ifdef MEMORY_TRACE
 
@@ -137,7 +137,7 @@ public:
         if (abortOn & reason) {
             fprintf(stderr, "# abort; DUMP of current state\n");
             fprintf(stderr, "LeakTracer aborting program\n");
-            writeLeakReport();
+            //writeLeakReport();
             //abort();
         }
     }

@@ -72,7 +72,7 @@ static const char	version[] = "\n  Electric Fence 2.1"
  * system at one time. We'll break that memory down into smaller pieces for
  * malloc buffers. One megabyte is probably a good value.
  */
-#define			MEMORY_CREATION_SIZE	1024 * 1024
+#define			MEMORY_CREATION_SIZE	1024
 
 /*
  * Enum Mode indicates the status of a malloc buffer.

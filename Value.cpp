@@ -803,7 +803,7 @@ ArrayValue::ArrayValue(Array* arr) : Value(TYPE_ARRAY, arr, true) {
     }
 }
 
-ArrayValue::ArrayValue(Array* arr, bool internal) : Value(TYPE_ARRAY, arr, true) {
+ArrayValue::ArrayValue(Array* arr, bool ownsmem) : Value(TYPE_ARRAY, arr, ownsmem) {
     elemType = new Type*;
     dynamic = new bool;
     start = new int;
@@ -818,12 +818,14 @@ ArrayValue::ArrayValue(Array* arr, bool internal) : Value(TYPE_ARRAY, arr, true)
 
 ArrayValue::~ArrayValue() {
     if (*dynamic) {
-        if (!(--(**objref))) {
-            for (int i = 0; i < **asize; i++) {
-                 Value::decref((*array)[i]);
+        if(!--**objref){
+            for (int i = 1; i < **asize; i++) {
+                Value::decref((*array)[i]);
             }
             delete [] * array;
             delete [] * mem;
+        } else {
+            std::cout << **objref << "lol\n";
         }
         if (owns_mem) delete mem;
     } else {
@@ -932,13 +934,11 @@ void ArrayValue::resize(int len) throw (int, InterpEx*) {
             newarr[i] = Value::fromTypeMem(*elemType, (void*) (newpas_array + (*elemsz) * i));
         }
     }
-    if (!(--(**objref))) {
-        for (int i = 0; i < **this->asize; i++) {
-             Value::decref((*array)[i]);
-        }
-        delete [] * array;
-        delete [] * mem;
+    for (int i = 0; i < **this->asize; i++) {
+         Value::decref((*array)[i]);
     }
+    delete [] * array;
+    delete [] * mem;
     *array = newarr;
     *mem = newmem;
     *objref = newobjref;
