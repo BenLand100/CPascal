@@ -57,7 +57,7 @@
       </toolsSet>
       <compileType>
         <ccTool>
-          <commandLine>-Wall</commandLine>
+          <commandLine>-Wall -O3</commandLine>
         </ccTool>
         <linkerTool>
           <output>dist/Debug/${CND_PLATFORM}/cpascal</output>

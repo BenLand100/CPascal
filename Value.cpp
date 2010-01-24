@@ -86,11 +86,11 @@ Value* Value::incref(Value *val) throw(int,InterpEx*) {
 }
 
 Value* Value::decref(Value *val) throw(int,InterpEx*) {
-    if (!--val->refcount) {
-        delete val;
-        val = 0;
-    }
-    return val;
+    if (val->refcount > 5)
+        std::cout << "test " << val->refcount << '\n';
+    if (--val->refcount) return val;
+    delete val;
+    return 0;
 }
 
 Value::Value() : Element(ELEM_VALUE), typeObj(Type::getNil()), type(TYPE_NIL), refcount(1) {
