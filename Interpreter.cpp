@@ -138,12 +138,7 @@ void Interpreter::run() {
         delete exception;
         exception = 0;
     }
-    std::cout << "Symbols: " << names.size() << '\n';
-    //std::map<std::string, int>::iterator iter = names.begin();
-    //while (iter != names.end()) {
-    //    debug(iter->first << ">>" << iter->second);
-    //    iter++;
-    //}
+    debug("Symbols: " << names.size() << '\n');
     Frame* frame = new Frame(names.size(), prog);
     try {
         evalBlock(&prog->block, frame);
@@ -228,9 +223,6 @@ Frame::~Frame() {
 
 Value* Frame::resolve(int symbol) throw(int, InterpEx*) {
     debug("resolve_symbol=" << symbol);
-    //std::map<int,Value*>::iterator iter = slots.find(symbol);
-    //if (iter != slots.end()) {
-        //return Value::incref(iter->second);
     Value* res = slots[symbol];
     if (res) return Value::incref(res);
     throw E_UNRESOLVABLE;

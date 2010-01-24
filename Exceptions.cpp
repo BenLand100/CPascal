@@ -22,6 +22,10 @@
 #include <cstring>
 #include <math.h>
 
+int InterpEx::getType(int cause) {
+    return (cause / 100) * 100;
+}
+
 InterpEx::InterpEx(int cause_impl) : cause(cause_impl) {
 
 }
@@ -32,6 +36,10 @@ InterpEx::~InterpEx() throw() {
 
 void InterpEx::addTrace(int pos) {
     trace.push_back(pos);
+}
+
+int InterpEx::getType() {
+    return getType(cause);
 }
 
 int InterpEx::getCause() {

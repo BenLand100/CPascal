@@ -62,12 +62,24 @@ Until::~Until() {
 }
 void Until::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) {
     Value* res = 0;
-    do {
-        if (res) Value::decref(res);
-        evalBlock(&block,frame,stack);
-        res = evalExpr(cond,frame,stack);
-    } while (!res->asBoolean());
-    Value::decref(res);
+    try {
+        do {
+            if (res) Value::decref(res);
+            evalBlock(&block,frame,stack);
+            res = evalExpr(cond,frame,stack);
+        } while (!res->asBoolean());
+        Value::decref(res);
+    } catch (int exi) {
+        if (exi == E_BREAK)
+            return;
+        throw exi;
+    } catch (InterpEx* ex) {
+        if (ex->getCause() == E_BREAK) {
+            delete ex;
+            return;
+        }
+        throw ex;
+    }
 }
 
 Case::Case(Expression* condition, int offset_impl) : Expression(offset_impl), value(condition) { }
@@ -98,10 +110,22 @@ void Case::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) {
     Value* val = evalExpr(value,frame,stack);
     int i = val->asInteger();
     Value::decref(val);
-    if (branches.find(i) != branches.end()) {
-        evalBlock(branches[i],frame,stack);
-    } else if (def.elems) {
-        evalBlock(&def,frame,stack);
+    try {
+        if (branches.find(i) != branches.end()) {
+            evalBlock(branches[i],frame,stack);
+        } else if (def.elems) {
+            evalBlock(&def,frame,stack);
+        }
+    } catch (int exi) {
+        if (exi == E_BREAK)
+            return;
+        throw exi;
+    } catch (InterpEx* ex) {
+        if (ex->getCause() == E_BREAK) {
+            delete ex;
+            return;
+        }
+        throw ex;
     }
 }
 
@@ -118,26 +142,40 @@ void For::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) {
     Value* temp = evalExpr(begin,frame,stack);
     varval->set(temp);
     Value::decref(temp);
-    if (inc) { //simply reduces tests and increases code size
-        temp = evalExpr(end,frame,stack);
-        while (varval->asInteger() <= temp->asInteger()) {
-            Value::decref(temp);
-            evalBlock(&block,frame,stack);
+    try {
+        if (inc) { //simply reduces tests and increases code size
             temp = evalExpr(end,frame,stack);
-            varval->incr();
-        }
-        Value::decref(temp);
-    } else {
-        temp = evalExpr(end,frame,stack);
-        while (varval->asInteger() >= temp->asInteger()) {
+            while (varval->asInteger() <= temp->asInteger()) {
+                Value::decref(temp);
+                evalBlock(&block,frame,stack);
+                temp = evalExpr(end,frame,stack);
+                varval->incr();
+            }
             Value::decref(temp);
-            evalBlock(&block,frame,stack);
+        } else {
             temp = evalExpr(end,frame,stack);
-            varval->decr();
+            while (varval->asInteger() >= temp->asInteger()) {
+                Value::decref(temp);
+                evalBlock(&block,frame,stack);
+                temp = evalExpr(end,frame,stack);
+                varval->decr();
+            }
+            Value::decref(temp);
         }
-        Value::decref(temp);
+        Value::decref(varval);
+    } catch (int exi) {
+        Value::decref(varval);
+        if (exi == E_BREAK)
+            return;
+        throw exi;
+    } catch (InterpEx* ex) {
+        Value::decref(varval);
+        if (ex->getCause() == E_BREAK) {
+            delete ex;
+            return;
+        }
+        throw ex;
     }
-    Value::decref(varval);
 }
 
 While::While(Expression* cond_impl, std::list<Expression*> block_impl, int offset_impl) : Expression(offset_impl), cond(cond_impl) {
@@ -150,12 +188,24 @@ While::~While() {
 void While::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) {
     Value* res = evalExpr(cond,frame,stack);
     debug("while_restype=" << res->type);
-    while (res->asBoolean()) {
+    try {
+        while (res->asBoolean()) {
+            Value::decref(res);
+            evalBlock(&block,frame,stack);
+            res = evalExpr(cond,frame,stack);
+        }
         Value::decref(res);
-        evalBlock(&block,frame,stack);
-        res = evalExpr(cond,frame,stack);
+    } catch (int exi) {
+        if (exi == E_BREAK)
+            return;
+        throw exi;
+    } catch (InterpEx* ex) {
+        if (ex->getCause() == E_BREAK) {
+            delete ex;
+            return;
+        }
+        throw ex;
     }
-    Value::decref(res);
 }
 
 If::If(Expression* cond_impl, std::list<Expression*> block_impl, int offset_impl) : Expression(offset_impl) {
@@ -209,9 +259,17 @@ Try::~Try() {
 void Try::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) {
     try {
         evalBlock(&danger,frame,stack);
-    } catch (int) {
+    } catch (int exi) {
+        if (InterpEx::getType(exi) == E_NOCATCH) {
+            evalBlock(&always,frame,stack);
+            throw exi;
+        }
         evalBlock(&saftey,frame,stack);
     } catch (InterpEx* ex) {
+        if (ex->getType() == E_NOCATCH) {
+            evalBlock(&always,frame,stack);
+            throw ex;
+        }
         delete ex;
         evalBlock(&saftey,frame,stack);
     }

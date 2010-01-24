@@ -22,36 +22,48 @@ class InterpEx;
 #ifndef _EXCEPTIONS_H
 #define	_EXCEPTIONS_H
 
-#define E_DIV_ZERO      0
-#define E_NOT_INTEGER   1
-#define E_NOT_REAL      2
-#define E_NOT_CHAR      3
-#define E_NOT_STRING    4
-#define E_NOT_BOOLEAN   5
-#define E_NOT_RECORD    6
-#define E_NOT_ARRAY     7
-#define E_NOT_POINTER   8
-#define E_NULL_VAL      9
-#define E_NON_NUMERIC   10
-#define E_INDEX_BOUNDS  11
-#define E_NO_FIELD      12
-#define E_UNRESOLVABLE  13
-#define E_STATIC_ARRAY  14
-#define E_NOT_METHOD    15
-#define E_WRONG_NUM_ARG 16
-#define E_REF_TYPE      17
-#define E_EXIT          18
-#define E_BREAK         19
+
+//Runtime Exceptions
+#define E_RUNTIME       0
+#define E_DIV_ZERO      E_RUNTIME + 0
+#define E_NOT_INTEGER   E_RUNTIME + 1
+#define E_NOT_REAL      E_RUNTIME + 2
+#define E_NOT_CHAR      E_RUNTIME + 3
+#define E_NOT_STRING    E_RUNTIME + 4
+#define E_NOT_BOOLEAN   E_RUNTIME + 5
+#define E_NOT_RECORD    E_RUNTIME + 6
+#define E_NOT_ARRAY     E_RUNTIME + 7
+#define E_NOT_POINTER   E_RUNTIME + 8
+#define E_NULL_VAL      E_RUNTIME + 9
+#define E_NON_NUMERIC   E_RUNTIME + 10
+#define E_INDEX_BOUNDS  E_RUNTIME + 11
+#define E_NO_FIELD      E_RUNTIME + 12
+#define E_UNRESOLVABLE  E_RUNTIME + 13
+#define E_STATIC_ARRAY  E_RUNTIME + 14
+#define E_NOT_METHOD    E_RUNTIME + 15
+#define E_WRONG_NUM_ARG E_RUNTIME + 16
+#define E_REF_TYPE      E_RUNTIME + 17
+
+//Non-catchable exceptions
+#define E_NOCATCH       100
+#define E_EXIT          E_NOCATCH + 0
+#define E_BREAK         E_NOCATCH + 1
+
+//Parser exceptions
+#define E_PARSER        200
 
 #include <exception>
 #include <list>
 
 class InterpEx : public std::exception {
 public:
+    static int getType(int cause);
+
     InterpEx(int cause);
     ~InterpEx() throw ();
 
     void addTrace(int pos);
+    int getType();
     int getCause();
     std::list<int> getTrace();
     const char* what() const throw();

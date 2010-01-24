@@ -86,9 +86,8 @@ Value* Value::incref(Value *val) throw(int,InterpEx*) {
 }
 
 Value* Value::decref(Value *val) throw(int,InterpEx*) {
-    if (val->refcount > 5)
-        std::cout << "test " << val->refcount << '\n';
-    if (--val->refcount) return val;
+    if (--val->refcount)
+        return val;
     delete val;
     return 0;
 }
