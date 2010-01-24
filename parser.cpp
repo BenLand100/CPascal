@@ -804,7 +804,7 @@ void parseContainer(char* &cur, Container* container) {
             } break;
             case RES_PROCEDURE: //multi
             case RES_FUNCTION: { //multi
-                Method* meth = parseMethod(tok,container->types);
+                 Method* meth = parseMethod(tok,container->types);
                 container->methods.push_back(meth);
             } break;
             case RES_BEGIN: { //single

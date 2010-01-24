@@ -67,6 +67,7 @@ void Until::eval(Frame* frame, std::stack<Value*>& stack) throw(InterpEx*, int) 
         evalBlock(&block,frame,stack);
         res = evalExpr(cond,frame,stack);
     } while (!res->asBoolean());
+    Value::decref(res);
 }
 
 Case::Case(Expression* condition, int offset_impl) : Expression(offset_impl), value(condition) { }

@@ -430,10 +430,8 @@ Asgn::Asgn(int name_impl) : Operator(OP_ASGN), name(name_impl) { }
 Asgn::~Asgn() { }
 void Asgn::preform(std::stack<Value*> &stack, Frame* frame) throw(int,InterpEx*) {
     Value* val = stack.top();
-    stack.pop();
     Value* var = frame->resolve(name);
     var->set(val);
-    Value::decref(val);
     Value::decref(var);
 }
 
@@ -533,15 +531,14 @@ ArrayGet::~ArrayGet() {
 }
 void ArrayGet::preform(std::stack<Value*>& stack, Frame* frame) throw(int,InterpEx*) {
     Value* arr = stack.top();
-    Value* res = arr;
+    Value* res;
     stack.pop();
     for (int i = 0; i < numIndexes; i++) {
-        arr = res;
         Value* index = evalExpr(indexes[i],frame,stack);
-        int i = index->asInteger();
-        res = arr->getIndex(i);
+        res = arr->getIndex(index->asInteger());
         Value::decref(arr);
         Value::decref(index);
+        arr = res;
     }
     stack.push(res);
 }
@@ -567,15 +564,15 @@ void ArraySet::preform(std::stack<Value*>& stack, Frame* frame) throw(int,Interp
     stack.pop();
     for (int i = 0; i < numIndexes - 1; i++) {
         Value* index = evalExpr(indexes[i],frame,stack);
-        res = res->getIndex(index->asInteger());
+        res = arr->getIndex(index->asInteger());
         Value::decref(arr);
-        arr = res;
         Value::decref(index);
+        arr = res;
     }
     Value* index = evalExpr(indexes[numIndexes - 1],frame,stack);
     res->setIndex(index->asInteger(),value);
     Value::decref(index);
-    Value::decref(arr);
+    Value::decref(res);
     stack.push(value);
 }
 

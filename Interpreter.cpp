@@ -111,6 +111,8 @@ Interpreter::Interpreter(char* ppg) : exception(0) {
     char* tokens = lex(ppg, names);
     prog = parse(tokens);
     freetoks(tokens);
+    this->ppg = new char[strlen(ppg)+1];
+    strcpy(this->ppg,ppg);
     addMethod((void*)&ms_time,CONV_C_STDCALL,(char*)"function time: integer;");
     addMethod((void*)&ms_wait,CONV_C_STDCALL,(char*)"procedure wait(ms: integer);");
     addMethod((void*)&writenofeed,CONV_C_STDCALL,(char*)"procedure write(str: string);");
@@ -123,6 +125,7 @@ Interpreter::Interpreter(char* ppg) : exception(0) {
 }
 
 Interpreter::~Interpreter() {
+    delete [] ppg;
     delete prog;
     if (exception) {
         delete exception;
@@ -144,7 +147,7 @@ void Interpreter::run() {
     try {
         evalBlock(&prog->block, frame);
     } catch (InterpEx* ex) {
-        ex->printStackTrace();
+        ex->printStackTrace(ppg);
         exception = ex;
     }
     delete frame;
@@ -164,7 +167,7 @@ Frame::Frame(Container* container_impl) :  parent(0), container(container_impl) 
     init(container_impl);
 }
 
-Frame::Frame(Frame* frame, Container* container_impl) : slots(frame->slots), parent(frame), container(container_impl) {
+Frame::Frame(Frame* frame, Container* container_impl) : /*slots(frame->slots),*/ parent(frame), container(container_impl) {
     init(container_impl);
 }
 

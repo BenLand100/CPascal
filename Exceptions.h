@@ -55,7 +55,7 @@ public:
     int getCause();
     std::list<int> getTrace();
     const char* what() const throw();
-    void printStackTrace();
+    void printStackTrace(char *ppg);
 private:
     std::list<int> trace;
     int cause;

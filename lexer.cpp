@@ -28,7 +28,7 @@
 //#define debug(x) x
 #define debug(x)
 
-int reserved(std::map<std::string,int> &names) {
+void reserved(std::map<std::string,int> &names) {
     names["program"] = RES_PROGRAM;
     names["begin"] = RES_BEGIN;
     names["end"] = RES_END;
@@ -65,7 +65,6 @@ int reserved(std::map<std::string,int> &names) {
     names["result"] = RES_RESULT;
     names["break"] = RES_BREAK;
     names["exit"] = RES_EXIT;
-    return MAX_RES; //return next
 }
 
 inline void whitespace(char* &ppg) {
@@ -101,7 +100,8 @@ inline void tolower(char* ppg) {
 }
 
 char* lex(char* ppg, std::map<std::string,int> &names) {
-    int nextord = reserved(names);
+    reserved(names);
+    int nextord = names.size();
     char* res = new char[strlen(ppg)*6]; //this should suffice, haha.
     char* toks = res;
     char* start = ppg;

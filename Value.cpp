@@ -85,13 +85,12 @@ Value* Value::incref(Value *val) throw(int,InterpEx*) {
     return val;
 }
 
-Value* Value::decref(Value *val) throw(int,InterpEx*) {;
+Value* Value::decref(Value *val) throw(int,InterpEx*) {
     if (!--val->refcount) {
         delete val;
-        return 0;
-    } else {
-        return val;
+        val = 0;
     }
+    return val;
 }
 
 Value::Value() : Element(ELEM_VALUE), typeObj(Type::getNil()), type(TYPE_NIL), refcount(1) {
@@ -818,15 +817,12 @@ ArrayValue::ArrayValue(Array* arr, bool ownsmem) : Value(TYPE_ARRAY, arr, ownsme
 
 ArrayValue::~ArrayValue() {
     if (*dynamic) {
-        if(!--**objref){
-            for (int i = 1; i < **asize; i++) {
-                Value::decref((*array)[i]);
-            }
-            delete [] * array;
-            delete [] * mem;
-        } else {
-            std::cout << **objref << "lol\n";
+        --**objref;
+        for (int i = 1; i < **asize; i++) {
+            Value::decref((*array)[i]);
         }
+        delete [] * array;
+        delete [] * mem;
         if (owns_mem) delete mem;
     } else {
         for (int i = 0; i < **asize; i++) {
@@ -910,40 +906,34 @@ int ArrayValue::size() throw (int, InterpEx*) {
 
 void ArrayValue::resize(int len) throw (int, InterpEx*) {
     if (!*dynamic) throw E_STATIC_ARRAY;
-    Value** oldarr = *array;
-    char* newmem = new char[8 + (*elemsz) * len];
-    int* newobjref = (int*) newmem;
-    *newobjref = 1;
-    int* newsize = (int*) (newmem + 4);
-    *newsize = len;
-    Value** newarr = new Value*[len];
-    char* newpas_array = (char*) (newmem + 8);
-    if (len <= **asize) {
-        int cutoff = len;
-        for (int i = 0; i < cutoff; i++) {
-            newarr[i] = Value::fromTypeMem(*elemType, (void*) (newpas_array + (*elemsz) * i));
-            newarr[i]->set(oldarr[i]);
-        }
-    } else {
-        int cutoff = **this->asize;
-        for (int i = 0; i < cutoff; i++) {
-            newarr[i] = Value::fromTypeMem(*elemType, (void*) (newpas_array + (*elemsz) * i));
-            newarr[i]->set(oldarr[i]);
-        }
-        for (int i = cutoff; i < len; i++) {
-            newarr[i] = Value::fromTypeMem(*elemType, (void*) (newpas_array + (*elemsz) * i));
-        }
+
+    char* mem = new char[8 + (*elemsz) * len];
+    int* objref = (int*) mem;
+    *objref = 1;
+    int* asize = (int*) (mem + 4);
+    *asize = len;
+    Value** array = new Value*[len];
+    char* pas_array = (char*) (mem + 8);
+
+    for (int i = 0; i < len; i++) {
+        array[i] = Value::fromTypeMem(*elemType, (void*) (pas_array + (*elemsz) * i));
+    }
+    int min = **this->asize < len ? **this->asize : len;
+    for (int i = 0; i < min; i++) {
+        array[i]->set((*this->array)[i]);
     }
     for (int i = 0; i < **this->asize; i++) {
-         Value::decref((*array)[i]);
+        Value::decref((*this->array)[i]);
     }
-    delete [] * array;
-    delete [] * mem;
-    *array = newarr;
-    *mem = newmem;
-    *objref = newobjref;
-    *asize = newsize;
-    *pas_array = newpas_array;
+    delete [] * this->array;
+    delete [] * this->mem;
+
+    *this->mem = mem;
+    *this->objref = objref;
+    *this->asize = asize;
+    *this->array = array;
+    *this->pas_array = pas_array;
+
 }
 
 void ArrayValue::setIndex(int index, Value* val) throw (int, InterpEx*) {

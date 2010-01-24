@@ -39,6 +39,7 @@ public:
 private:
     InterpEx* exception;
     Program* prog;
+    char* ppg;
     std::map<std::string,int> names;
 };
 

@@ -19,6 +19,8 @@
 
 #include "Exceptions.h"
 #include <cstdio>
+#include <cstring>
+#include <math.h>
 
 InterpEx::InterpEx(int cause_impl) : cause(cause_impl) {
 
@@ -40,13 +42,23 @@ std::list<int> InterpEx::getTrace() {
     return trace;
 }
 
-void InterpEx::printStackTrace() {
+inline int postoline(char *ppg, int pos) {
+    int end = strlen(ppg);
+    end = end < pos ? end : pos;
+    int lines = 2;
+    for (int i = 0; i <= end; i++)
+        if (ppg[i] == '\n')
+            lines++;
+    return lines;
+}
+
+void InterpEx::printStackTrace(char *ppg) {
     std::list<int>::iterator trace_iter = trace.begin();
     std::list<int>::iterator trace_end = trace.end();
-    printf("Exception at position %i: %s\n", *trace_iter, what());
+    printf("Exception at line %i: %s\n", postoline(ppg,*trace_iter), what());
     trace_iter++;
     while (trace_iter != trace_end) {
-        printf("\t-%i\n",*trace_iter);
+        printf("\ttrace: %i\n",postoline(ppg,*trace_iter));
         trace_iter++;
     }
 }

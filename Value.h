@@ -39,8 +39,8 @@ class PointerValue;
 
 class Value : public Element {
 public:
-    static Value* decref(Value* val) throw(int,InterpEx*);
-    static Value* incref(Value* val) throw(int,InterpEx*);
+    static Value* decref(Value *val) throw(int,InterpEx*);
+    static Value* incref(Value *val) throw(int,InterpEx*);
     static Value* fromType(Type* type) throw(int,InterpEx*);
     static Value* fromTypeMem(Type* type, void* mem) throw(int,InterpEx*);
 
