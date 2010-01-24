@@ -818,7 +818,7 @@ ArrayValue::ArrayValue(Array* arr, bool ownsmem) : Value(TYPE_ARRAY, arr, ownsme
 ArrayValue::~ArrayValue() {
     if (*dynamic) {
         --**objref;
-        for (int i = 1; i < **asize; i++) {
+        for (int i = 0; i < **asize; i++) {
             Value::decref((*array)[i]);
         }
         delete [] * array;
@@ -857,9 +857,9 @@ Value* ArrayValue::clone() {
     if (arr->dynamic) {
         numelems = **asize;
         *clone->mem = new char[8 + (*elemsz) * numelems];
-        *clone->objref = (int*) * mem;
+        *clone->objref = (int*) * clone->mem;
         **clone->objref = 1;
-        *clone->asize = (int*) (*mem + 4);
+        *clone->asize = (int*) (*clone->mem + 4);
         **clone->asize = numelems;
     } else {
         *clone->mem = new char[(*elemsz) * numelems];
@@ -871,9 +871,9 @@ Value* ArrayValue::clone() {
 
     *clone->array = new Value*[**asize];
     if (*dynamic) {
-        *clone->pas_array = (char*) (*mem + 8);
+        *clone->pas_array = (char*) (*clone->mem + 8);
     } else {
-        *clone->pas_array = *mem;
+        *clone->pas_array = *clone->mem;
     }
 
     for (int i = 0; i < numelems; i++) {

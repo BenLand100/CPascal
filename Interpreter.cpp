@@ -138,12 +138,13 @@ void Interpreter::run() {
         delete exception;
         exception = 0;
     }
-    std::map<std::string, int>::iterator iter = names.begin();
-    while (iter != names.end()) {
-        debug(iter->first << ">>" << iter->second);
-        iter++;
-    }
-    Frame* frame = new Frame(prog);
+    std::cout << "Symbols: " << names.size() << '\n';
+    //std::map<std::string, int>::iterator iter = names.begin();
+    //while (iter != names.end()) {
+    //    debug(iter->first << ">>" << iter->second);
+    //    iter++;
+    //}
+    Frame* frame = new Frame(names.size(), prog);
     try {
         evalBlock(&prog->block, frame);
     } catch (InterpEx* ex) {
@@ -163,11 +164,18 @@ void Interpreter::addMethod(void* addr, int conv, char* def) {
     freetoks(tokens);
 }
 
-Frame::Frame(Container* container_impl) :  parent(0), container(container_impl) {
+Frame::Frame(int numslots, Container* container_impl) :  parent(0), container(container_impl) {
+    this->numslots = numslots;
+    slots = new Value*[numslots];
+    memset(slots,0,numslots*sizeof(Value*));
     init(container_impl);
 }
 
-Frame::Frame(Frame* frame, Container* container_impl) : /*slots(frame->slots),*/ parent(frame), container(container_impl) {
+Frame::Frame(Frame* frame, Container* container_impl) :  parent(frame), container(container_impl) {
+    numslots = frame->numslots;
+    slots = new Value*[numslots];
+    memset(slots,0,numslots*sizeof(Value*));
+    memcpy(slots,frame->slots,numslots*sizeof(Value*));
     init(container_impl);
 }
 
@@ -215,16 +223,17 @@ Frame::~Frame() {
         Value::decref(slots[iter->first]);
         iter++;
     }
+    delete [] slots;
 }
 
 Value* Frame::resolve(int symbol) throw(int, InterpEx*) {
     debug("resolve_symbol=" << symbol);
-    std::map<int,Value*>::iterator iter = slots.find(symbol);
-    if (iter != slots.end()) {
-        return Value::incref(iter->second);
-    } else {
-        throw E_UNRESOLVABLE;
-    }
+    //std::map<int,Value*>::iterator iter = slots.find(symbol);
+    //if (iter != slots.end()) {
+        //return Value::incref(iter->second);
+    Value* res = slots[symbol];
+    if (res) return Value::incref(res);
+    throw E_UNRESOLVABLE;
 }
 
 void* interp_init(char* ppg) {

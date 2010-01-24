@@ -48,13 +48,14 @@ class Frame {
     friend class PointerValue;
 public:
     Frame(Frame* frame, Container* container);
-    Frame(Container* container);
+    Frame(int numslots, Container* container);
     ~Frame();
 
     Value* resolve(int symbol) throw(int,InterpEx*);
 
 private:
-    std::map<int,Value*> slots;
+    int numslots;
+    Value** slots;
     Frame* parent;
     Container* container;
 

@@ -24,7 +24,7 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 
 
 # Project Name
-PROJECTNAME=cpascal
+PROJECTNAME=CPascal
 
 # Active Configuration
 DEFAULTCONF=Debug

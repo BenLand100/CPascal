@@ -336,18 +336,17 @@ begin
 end;
 
 var
-  maze: array of array of boolean;
+  //maze: array of array of boolean;
   start,finish: TPoint;
   jack: TPointArray;
   i,jills,t: integer;
 begin
   writeln('Solving maze...');
-  maze:= ParseMaze(small_maze,start,finish);
   //writeln('c1:'+inttostr(length(maze)));
   //writeln('c2:'+inttostr(length(maze[0])));
   t:= time();
   //writeln('start: (' + inttostr(start.x) + ',' + inttostr(start.y) + ') finish: (' + inttostr(finish.x) + ',' + inttostr(finish.y) + ')');
-  benland100_solver(jack,jills,maze,start,finish);
+  benland100_solver(jack,jills,ParseMaze(small_maze,start,finish),start,finish);
   t:= time() - t;
   writeln('Took ' + realtostr(t / 1000.0) + ' seconds');
   writeln('Longest Path: ' + inttostr(length(jack)));
