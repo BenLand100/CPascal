@@ -113,6 +113,7 @@
 
 #include <map>
 #include <string>
+#include "Exceptions.h"
 
 /**
  * PBOOLEAN is followed by its BOOL_ definition
@@ -124,7 +125,7 @@
  * PINTEGER is followed by a long value
  * PNAME is followed by a unique integer (first few are reserved)
  */
-char* lex(char* ppg, std::map<std::string,int> &names);
+char* lex(char* ppg, std::map<std::string,int> &names) throw (InterpEx*);
 
 void freetoks(char* tokens);
 

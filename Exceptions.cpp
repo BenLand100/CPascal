@@ -109,6 +109,10 @@ const char* InterpEx::what() const throw() {
             return "Wrong number of arguments to method";
         case E_REF_TYPE:
             return "Refrence type not defined";
+        case E_INVALID_CHAR:
+            return "Invalid character in script";
+        case E_EOF:
+            return "Reached end of file";
         default:
             return "Unknown error!";
     }

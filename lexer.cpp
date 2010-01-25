@@ -18,6 +18,7 @@
  */
 
 #include "lexer.h"
+#include "Exceptions.h"
 #include <cstring>
 #include <cstdlib>
 #include <map>
@@ -99,7 +100,7 @@ inline void tolower(char* ppg) {
     }
 }
 
-char* lex(char* ppg, std::map<std::string,int> &names) {
+char* lex(char* ppg, std::map<std::string,int> &names) throw (InterpEx*) {
     reserved(names);
     int nextord = names.size();
     char* res = new char[strlen(ppg)*6]; //this should suffice, haha.
@@ -274,7 +275,27 @@ char* lex(char* ppg, std::map<std::string,int> &names) {
             } break;
             //***BEGIN COMMENT***
             case '{':
-                while (*(++ppg) != '}'); //; is important
+                if (ppg[1] == '$') {
+                    ++ppg;
+                    char *cmd = ++ppg;
+                    char *arg = 0;
+                    while (*(++ppg)) {
+                        switch (*ppg) {
+                            case ' ':
+                            case '\t':
+                                *ppg = 0;
+                                break;
+                            case '}':
+                                *(ppg++) = 0;
+                                goto precompcmd;
+                            default:
+                                if (!ppg[-1]) arg = ppg;
+                        }
+                    }
+                    goto lexer_eof;
+precompcmd:
+                    std::cout << "Running Precompiler Command: " << cmd << ' ' << (arg ? arg : "") << '\n';
+                } else while (*(++ppg) != '}'); //; is important
                 break;
             //***BEGIN SPECIAL***
             case ',':
@@ -378,6 +399,23 @@ char* lex(char* ppg, std::map<std::string,int> &names) {
                     *(toks++) = OP_GREAT;
                 }
                 break;
+            case ' ':
+            case '\t':
+            case '\n':
+            case '\r':
+                continue;
+            default:
+                InterpEx* ex;
+lexer_invalid_char:
+                ex = new InterpEx(E_INVALID_CHAR);
+                ex->addTrace(ppg - start);
+                freetoks(res);
+                throw ex;
+lexer_eof:
+                ex = new InterpEx(E_EOF);
+                ex->addTrace(ppg - start);
+                freetoks(res);
+                throw ex;
         }
         ++ppg;
         whitespace(ppg);

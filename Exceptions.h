@@ -51,6 +51,8 @@ class InterpEx;
 
 //Parser exceptions
 #define E_PARSER        200
+#define E_INVALID_CHAR  E_PARSER + 0
+#define E_EOF           E_PARSER + 1
 
 #include <exception>
 #include <list>
