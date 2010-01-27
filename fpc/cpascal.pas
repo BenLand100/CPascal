@@ -1,72 +1,34 @@
-{**
- *  Copyright 2010 by Benjamin J. Land (a.k.a. BenLand100)
- *
- *  This file is part of CPascal.
- *
- *  CPascal is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  CPascal is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with CPascal. If not, see <http://www.gnu.org/licenses/>.
- *}
-
 program cpascal;
 
 {$mode objfpc}{$H+}
 
-uses Classes, SysUtils, dynlibs;
+uses Classes, SysUtils, DynLibs;
 
-{$link ../build/Debug/GNU-Linux-x86/Container.o}
-{$link ../build/Debug/GNU-Linux-x86/Element.o}
-{$link ../build/Debug/GNU-Linux-x86/Exceptions.o}
-{$link ../build/Debug/GNU-Linux-x86/Expression.o}
-{$link ../build/Debug/GNU-Linux-x86/Interpreter.o}
-{$link ../build/Debug/GNU-Linux-x86/lexer.o}
-{$link ../build/Debug/GNU-Linux-x86/Operator.o}
-{$link ../build/Debug/GNU-Linux-x86/parser.o}
-{$link ../build/Debug/GNU-Linux-x86/Type.o}
-{$link ../build/Debug/GNU-Linux-x86/Value.o}
-{$link ../build/Debug/GNU-Linux-x86/Variable.o}
-{$linklib stdc++}
-{$linklib m}
-{$linklib c}
-
-function interp_init(ppg: PChar): Pointer; cdecl; external;
-procedure interp_meth(interp: Pointer; addr: Pointer; def: PChar); cdecl; external;
-procedure interp_run(interp: Pointer); cdecl; external; 
-procedure interp_free(interp: Pointer); cdecl; external; 
-
-function e: real; stdcall;
-begin
-    e:= 2.78;
-end;
-
-procedure add1v(var i: integer); stdcall;
-begin
-    i:= i + 1;
-end;
+var
+  instance: pointer;
 
 type
-    pinteger = ^integer;
+  TPrecompiler_Callback = function(name, args: PChar): boolean; stdcall;                         
+  TErrorHandeler_Callback = procedure(line, pos: integer; err: PChar; runtime: boolean); stdcall;
 
-procedure add1p(i: pinteger); stdcall;
-begin
-    i^:= i^ + 1;
-end;
+function interp_init(precomp: TPrecompiler_Callback; err: TErrorHandeler_Callback): Pointer; cdecl; external;
+procedure interp_meth(interp: Pointer; addr: Pointer; def: PChar); cdecl; external;
+procedure interp_set(interp: Pointer; ppg: PChar); cdecl; external;
+function interp_comp(interp: Pointer): boolean; cdecl; external;
+function interp_run(interp: Pointer): boolean; cdecl; external;
+procedure interp_free(interp: Pointer); cdecl; external;   
 
+{$ifdef LINUX}
+  {$link ../dist/libcpascal.so}
+{$else}
+  {$linklib ../dist/libcpascal.dll}
+{$endif}
 
 function readfile(const path: ansistring): ansistring;
 var
   a: TFileStream;
 begin
-    try
+  try
     a := TFileStream.Create(path, fmShareDenyNone or fmOpenRead);
     SetLength(readfile, a.Size);
     if a.size > 0 then
@@ -79,36 +41,61 @@ end;
 
 procedure import_plugin(interp: Pointer; lib: longint);
 var
-    meth_count: function: longint; stdcall;
-    meth_info: function(i: longint; var addr: Pointer; var def: PChar): longint; stdcall;
-    addr: Pointer;
-    def: PChar;
-    count, i: integer;
+  meth_count: function: longint; stdcall;
+  meth_info: function(i: longint; var addr: Pointer; var def: PChar): longint; stdcall;
+  addr: Pointer;
+  def: PChar;
+  count, i: integer;
 begin
-    Pointer(meth_count):= GetProcAddress(lib, PChar('GetFunctionCount'));
-    Pointer(meth_info):= GetProcAddress(lib, PChar('GetFunctionInfo'));
-    def:= StrAlloc(255); //should be large enough
-    count:= meth_count();
-    for i:= 0 to count - 1 do
-    begin
-        meth_info(i,addr,def);
-        interp_meth(interp,addr,def);
-    end;
+  Pointer(meth_count):= GetProcAddress(lib, PChar('GetFunctionCount'));
+  Pointer(meth_info):= GetProcAddress(lib, PChar('GetFunctionInfo'));
+  def:= StrAlloc(255); //should be large enough
+  count:= meth_count();
+  for i:= 0 to count - 1 do
+  begin
+    meth_info(i,addr,def);
+    interp_meth(instance,addr,def);
+  end;
 end;
 
+function Interpreter_Precompiler(name, args: PChar): boolean; stdcall;    
 var
-    interp: Pointer;
-    str: ansistring;
-    smartlib: longint;
+  lib: integer;                                                           
+begin                
+  result:= false;                              
+  if CompareText(name,'loaddll') = 0 then 
+  begin
+    result:= true;
+    lib:= LoadLibrary(args+'.so');
+    if lib <> 0 then
+      import_plugin(instance, lib)
+    else
+      result:= false;   
+  end;                                     
+end;                                                                                          
+                                                                                              
+procedure Interpreter_ErrorHandler(line, pos: integer; err: PChar; runtime: boolean); stdcall;
+begin                                                                                         
+  if runtime then                                                                             
+    writeln('RuntimeError: ' + err + ' (' + inttostr(line) + ':' + inttostr(pos) + ')')                                        
+  else                                                                                                                             
+    writeln('CompileError: ' + err + ' (' + inttostr(line) + ':' + inttostr(pos) + ')');                                             
+end;                
+
+procedure Interpreter_Writeln(str: string);
 begin
-    str:= readfile('./test.pas');
-    interp:= interp_init(PChar(str));
-    smartlib:= LoadLibrary('./libsmart.so');
-    import_plugin(interp, smartlib);
-    interp_meth(interp, @e, 'function e: real;');
-    interp_meth(interp, @add1v, 'procedure add1v(var i: integer);');
-    interp_meth(interp, @add1p, 'procedure add1p(i: ^integer);');
-    interp_run(interp);
-    interp_free(interp);
-    FreeLibrary(smartlib);
+  writeln(str);
+end;
+                                                                        
+var
+    str: ansistring;
+begin
+    str:= readfile('./maze.pas');
+    
+    instance:= interp_init(@Interpreter_Precompiler, @Interpreter_ErrorHandler);
+    interp_set(instance,PChar(str));
+    interp_comp(instance);
+    interp_meth(instance,@Interpreter_Writeln,PChar('procedure writeln(str: string);'));
+    interp_run(instance);
+    interp_free(instance);
 end.
