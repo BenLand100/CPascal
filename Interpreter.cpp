@@ -107,15 +107,12 @@ char* realtostr(double i) {
     return res;
 }
 
-Interpreter::Interpreter(char* ppg, PreCompiler_Callback precomp, ErrorHandeler_Callback err) : exception(0) {
-    exception = 0;
+Interpreter::Interpreter(PreCompiler_Callback precomp, ErrorHandeler_Callback err) {
+    this-> exception = 0;
     this->precomp = precomp;
     this->err = err;
-    char* tokens = lex(ppg, names, precomp);
-    prog = parse(tokens);
-    freetoks(tokens);
-    this->ppg = new char[strlen(ppg)+1];
-    strcpy(this->ppg,ppg);
+    this->ppg = 0;
+    this->prog = 0;
     #ifdef DEBUG
     //addMethod((void*)&ms_time,CONV_C_STDCALL,(char*)"function time: integer;");
     //addMethod((void*)&ms_wait,CONV_C_STDCALL,(char*)"procedure wait(ms: integer);");
@@ -130,59 +127,91 @@ Interpreter::Interpreter(char* ppg, PreCompiler_Callback precomp, ErrorHandeler_
 }
 
 Interpreter::~Interpreter() {
-    delete [] ppg;
-    delete prog;
+    if (ppg) delete [] ppg;
+    if (prog) delete prog;
+    if (exception)   delete exception;
+}
+
+void Interpreter::handle(InterpEx *ex) {
     if (exception) {
         delete exception;
         exception = 0;
+    }
+    if (err) {
+        int line, pos;
+        const char* cause;
+        ex->getData(ppg,line,pos,cause);
+        err(line,pos,cause,ex->getType() == E_RUNTIME);
+        delete ex;
+    } else {
+        ex->printStackTrace(ppg);
+        exception = ex;
     }
 }
 
-bool Interpreter::run() {
-    if (exception) {
-        delete exception;
-        exception = 0;
+void Interpreter::setScript(char* ppg) {
+    if (this->ppg) delete [] ppg;
+    this->ppg = new char[strlen(ppg)+1];
+    strcpy(this->ppg,ppg);
+}
+
+bool Interpreter::compile() {
+    if (!ppg) return false;
+    try {
+        char* tokens = lex(ppg, names, precomp);
+        if (prog) delete prog;
+        prog = parse(tokens);
+        freetoks(tokens);
+    } catch (InterpEx* ex) {
+        handle(ex);
+        return false;
     }
+    return true;
+}
+    
+bool Interpreter::run() {
     debug("Symbols: " << names.size() << '\n');
-    Frame* frame = new Frame(names.size(), prog);
+    if (!prog) return false;
+    Frame* env = new Frame(this);
+    Frame* frame = new Frame(env, prog);
     try {
         evalBlock(&prog->block, frame);
     } catch (InterpEx* ex) {
-        if (err) {
-            int line, pos;
-            const char* cause;
-            ex->getData(ppg,line,pos,cause);
-            err(line,pos,cause);
-            delete ex;
-        } else {
-            ex->printStackTrace(ppg);
-            exception = ex;
-        }
+        handle(ex);
         delete frame;
+        delete env;
         return false;
     }
     delete frame;
+    delete env;
     return true;
 }
 
 void Interpreter::addMethod(void* addr, int conv, char* def) {
+    debug("Importing Method: " << def << '\n');
     char* tokens = lex(def, names, 0);
     char* cur = tokens;
-    Method* meth = parseMethod(cur,prog->types);
+    Method* meth = parseMethod(cur,types);
     meth->address = addr;
     meth->mtype = conv;
-    prog->methods.push_back(meth);
+    methods.push_back(meth);
     freetoks(tokens);
 }
 
-Frame::Frame(int numslots, Container* container_impl) :  parent(0), container(container_impl) {
-    this->numslots = numslots;
+Frame::Frame(Interpreter *env) : parent(0), container(0) {
+    this->env = env;
+    numslots = env->names.size();
     slots = new Value*[numslots];
     memset(slots,0,numslots*sizeof(Value*));
-    init(container_impl);
+    std::vector<Method*>::iterator iter = env->methods.begin();
+    std::vector<Method*>::iterator end = env->methods.end();
+    while (iter != end) {
+        slots[(*iter)->name] = new MethodValue(*iter);
+        iter++;
+    }
 }
 
-Frame::Frame(Frame* frame, Container* container_impl) :  parent(frame), container(container_impl) {
+Frame::Frame(Frame* frame, Container* container_impl) :  parent(frame), container(container_impl), env(0) {
     numslots = frame->numslots;
     slots = new Value*[numslots];
     memset(slots,0,numslots*sizeof(Value*));
@@ -218,21 +247,30 @@ void Frame::init(Container* container) throw(int,InterpEx*) {
 }
 
 Frame::~Frame() {
-    int numMethods = container->methods.size();
-    for (int i = 0; i < numMethods; i++) {
-        Value* s = slots[container->methods[i]->name];
-        Value::decref(s);
-    }
-    int numVariables = container->variables.size();
-    for (int i = 0; i < numVariables; i++) {
-        Value* s = slots[container->variables[i]->name];
-        Value::decref(s);
-    }
-    std::map<int, Expression*>::iterator iter = container->constants.begin();
-    std::map<int, Expression*>::iterator end = container->constants.end();
-    while (iter != end) {
-        Value::decref(slots[iter->first]);
-        iter++;
+    if (env) {
+        std::vector<Method*>::iterator iter = env->methods.begin();
+        std::vector<Method*>::iterator end = env->methods.end();
+        while (iter != end) {
+            Value::decref(slots[(*iter)->name]);
+            iter++;
+        }
+    } else {
+        int numMethods = container->methods.size();
+        for (int i = 0; i < numMethods; i++) {
+            Value* s = slots[container->methods[i]->name];
+            Value::decref(s);
+        }
+        int numVariables = container->variables.size();
+        for (int i = 0; i < numVariables; i++) {
+            Value* s = slots[container->variables[i]->name];
+            Value::decref(s);
+        }
+        std::map<int, Expression*>::iterator iter = container->constants.begin();
+        std::map<int, Expression*>::iterator end = container->constants.end();
+        while (iter != end) {
+            Value::decref(slots[iter->first]);
+            iter++;
+        }
     }
     delete [] slots;
 }
@@ -244,12 +282,20 @@ Value* Frame::resolve(int symbol) throw(int, InterpEx*) {
     throw E_UNRESOLVABLE;
 }
 
-void* interp_init(char* ppg, PreCompiler_Callback precomp, ErrorHandeler_Callback err)  {
-    return (void*) new Interpreter(ppg, precomp, err);
+void* interp_init(PreCompiler_Callback precomp, ErrorHandeler_Callback err)  {
+    return (void*) new Interpreter(precomp, err);
 }
 
 void interp_meth(void* interp, void* addr, char* def) {
     ((Interpreter*)interp)->addMethod(addr, CONV_FPC_STDCALL, def);
+}
+
+void interp_set(void* interp, char *ppg) {
+    ((Interpreter*)interp)->setScript(ppg);
+}
+
+bool interp_comp(void* interp) {
+    return ((Interpreter*)interp)->compile();
 }
 
 bool interp_run(void* interp) {

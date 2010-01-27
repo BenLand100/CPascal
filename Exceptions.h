@@ -58,7 +58,7 @@ class InterpEx;
 #include <exception>
 #include <list>
 
-typedef void(*ErrorHandeler_Callback)(int line, int pos, const char* err) __attribute__((stdcall));
+typedef void(*ErrorHandeler_Callback)(int line, int pos, const char* err, bool runtime) __attribute__((stdcall));
 
 class InterpEx : public std::exception {
 public:

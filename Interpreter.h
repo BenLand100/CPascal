@@ -30,11 +30,14 @@ class Frame;
 #include "Expression.h"
 
 class Interpreter {
+    friend class Frame;
 public:
-    Interpreter(char* ppg, PreCompiler_Callback precomp, ErrorHandeler_Callback err);
+    Interpreter(PreCompiler_Callback precomp, ErrorHandeler_Callback err);
     ~Interpreter();
 
     bool run();
+    bool compile();
+    void setScript(char *ppg);
     void addMethod(void* addr,  int conv, char* def);
 private:
     PreCompiler_Callback precomp;
@@ -42,15 +45,19 @@ private:
     InterpEx* exception;
     Program* prog;
     char* ppg;
+    std::map<int,Type*> types;
+    std::vector<Method*> methods;
     std::map<std::string,int> names;
+
+    void handle(InterpEx *ex);
 };
 
 class Frame {
     friend class MethodValue;
     friend class PointerValue;
 public:
+    Frame(Interpreter* env);
     Frame(Frame* frame, Container* container);
-    Frame(int numslots, Container* container);
     ~Frame();
 
     Value* resolve(int symbol) throw(int,InterpEx*);
@@ -61,13 +68,17 @@ private:
     Frame* parent;
     Container* container;
 
+    Interpreter* env;
+
     void init(Container* container)  throw(int,InterpEx*);
 };
 
 extern "C" {
-    void* interp_init(char* ppg, PreCompiler_Callback precomp, ErrorHandeler_Callback err) __attribute__((cdecl));
+    void* interp_init(PreCompiler_Callback precomp, ErrorHandeler_Callback err) __attribute__((cdecl));
     void interp_meth(void* interp, void* addr, char* def) __attribute__((cdecl));
+    void interp_set(void* interp, char *ppg) __attribute__((cdecl));
     bool interp_run(void* interp) __attribute__((cdecl));
+    bool interp_comp(void* interp) __attribute__((cdecl));
     void interp_free(void* interp) __attribute__((cdecl));
 }
 

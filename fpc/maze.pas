@@ -344,10 +344,10 @@ begin
   writeln('Solving maze...');
   //writeln('c1:'+inttostr(length(maze)));
   //writeln('c2:'+inttostr(length(maze[0])));
-  t:= time();
+  //t:= time();
   //writeln('start: (' + inttostr(start.x) + ',' + inttostr(start.y) + ') finish: (' + inttostr(finish.x) + ',' + inttostr(finish.y) + ')');
   benland100_solver(jack,jills,ParseMaze(small_maze,start,finish),start,finish);
-  t:= time() - t;
+  //t:= time() - t;
   writeln('Took ' + realtostr(t / 1000.0) + ' seconds');
   writeln('Longest Path: ' + inttostr(length(jack)));
   writeln('#Other Paths: ' + inttostr(jills));
