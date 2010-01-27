@@ -1,8 +1,5 @@
 program maze;
 
-{$define test}
-{$wat}
-
 const small_maze =
 '25' + #10 +
 '13' + #10 +

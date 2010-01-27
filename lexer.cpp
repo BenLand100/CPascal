@@ -100,7 +100,7 @@ inline void tolower(char* ppg) {
     }
 }
 
-char* lex(char* ppg, std::map<std::string,int> &names) throw (InterpEx*) {
+char* lex(char* ppg, std::map<std::string,int> &names, PreCompiler_Callback precomp) throw (InterpEx*) {
     reserved(names);
     int nextord = names.size();
     char* res = new char[strlen(ppg)*6]; //this should suffice, haha.
@@ -294,7 +294,13 @@ char* lex(char* ppg, std::map<std::string,int> &names) throw (InterpEx*) {
                     }
                     goto lexer_eof;
 precompcmd:
-                    std::cout << "Running Precompiler Command: " << cmd << ' ' << (arg ? arg : "") << '\n';
+                    debug(std::cout << "Running Precompiler Command: " << cmd << ' ' << (arg ? arg : "") << '\n');
+                    //FIXME: DO DEFAULT COMMANDS - INCLUDE
+                    if (precomp) {
+                        precomp(cmd,arg);
+                    } else {
+                        goto lexer_precomp;
+                    }
                 } else while (*(++ppg) != '}'); //; is important
                 break;
             //***BEGIN SPECIAL***
@@ -413,6 +419,11 @@ lexer_invalid_char:
                 throw ex;
 lexer_eof:
                 ex = new InterpEx(E_EOF);
+                ex->addTrace(ppg - start);
+                freetoks(res);
+                throw ex;
+lexer_precomp:
+                ex = new InterpEx(E_BAD_PRECOMP);
                 ex->addTrace(ppg - start);
                 freetoks(res);
                 throw ex;

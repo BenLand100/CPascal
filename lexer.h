@@ -115,6 +115,8 @@
 #include <string>
 #include "Exceptions.h"
 
+typedef bool(*PreCompiler_Callback)(char* name, char* args) __attribute__((stdcall));
+
 /**
  * PBOOLEAN is followed by its BOOL_ definition
  * POPERATOR is followed by its OP_ definition
@@ -125,7 +127,7 @@
  * PINTEGER is followed by a long value
  * PNAME is followed by a unique integer (first few are reserved)
  */
-char* lex(char* ppg, std::map<std::string,int> &names) throw (InterpEx*);
+char* lex(char* ppg, std::map<std::string,int> &names, PreCompiler_Callback precomp) throw (InterpEx*);
 
 void freetoks(char* tokens);
 

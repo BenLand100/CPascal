@@ -34,6 +34,22 @@ InterpEx::~InterpEx() throw() {
 
 }
 
+void InterpEx::getData(char* ppg, int &line, int &pos, const char* &err) {
+    int end = strlen(ppg);
+    end = end < pos ? end : pos;
+    int lines = 2;
+    int lastline = 0;
+    for (int i = 0; i <= end; i++) {
+        if (ppg[i] == '\n') {
+            lines++;
+            lastline = i;
+        }
+    }
+    pos = end - lastline;
+    line = lines;
+    err = what();
+}
+
 void InterpEx::addTrace(int pos) {
     trace.push_back(pos);
 }
@@ -113,6 +129,8 @@ const char* InterpEx::what() const throw() {
             return "Invalid character in script";
         case E_EOF:
             return "Reached end of file";
+        case E_BAD_PRECOMP:
+            return "Unknown precompiler directive";
         default:
             return "Unknown error!";
     }

@@ -32,7 +32,7 @@
 
 //#define debug(x) std::cout << x << '\n'
 #define debug(x)
-
+/*
 int ms_time() __attribute__((stdcall));
 int ms_time() {
     timeb t;
@@ -49,7 +49,7 @@ void ms_wait(int ms) {
     while (nanosleep(&a,&b)) {
         if (!nanosleep(&b,&a)) break;
     }
-}
+}*/
 
 void writenofeed(char* str) __attribute__((stdcall));
 void writenofeed(char* str) {
@@ -107,16 +107,21 @@ char* realtostr(double i) {
     return res;
 }
 
-Interpreter::Interpreter(char* ppg) : exception(0) {
-    char* tokens = lex(ppg, names);
+Interpreter::Interpreter(char* ppg, PreCompiler_Callback precomp, ErrorHandeler_Callback err) : exception(0) {
+    exception = 0;
+    this->precomp = precomp;
+    this->err = err;
+    char* tokens = lex(ppg, names, precomp);
     prog = parse(tokens);
     freetoks(tokens);
     this->ppg = new char[strlen(ppg)+1];
     strcpy(this->ppg,ppg);
-    addMethod((void*)&ms_time,CONV_C_STDCALL,(char*)"function time: integer;");
-    addMethod((void*)&ms_wait,CONV_C_STDCALL,(char*)"procedure wait(ms: integer);");
+    #ifdef DEBUG
+    //addMethod((void*)&ms_time,CONV_C_STDCALL,(char*)"function time: integer;");
+    //addMethod((void*)&ms_wait,CONV_C_STDCALL,(char*)"procedure wait(ms: integer);");
     addMethod((void*)&writenofeed,CONV_C_STDCALL,(char*)"procedure write(str: string);");
     addMethod((void*)&writeln,CONV_C_STDCALL,(char*)"procedure writeln(str: string);");
+    #endif
     addMethod((void*)&strtoint,CONV_C_STDCALL,(char*)"function strtoint(str: string): integer;");
     addMethod((void*)&inttostr,CONV_C_STDCALL,(char*)"function inttostr(i: integer): string;");
     addMethod((void*)&chartostr,CONV_C_STDCALL,(char*)"function chartostr(c: char): string;");
@@ -133,7 +138,7 @@ Interpreter::~Interpreter() {
     }
 }
 
-void Interpreter::run() {
+bool Interpreter::run() {
     if (exception) {
         delete exception;
         exception = 0;
@@ -143,14 +148,25 @@ void Interpreter::run() {
     try {
         evalBlock(&prog->block, frame);
     } catch (InterpEx* ex) {
-        ex->printStackTrace(ppg);
-        exception = ex;
+        if (err) {
+            int line, pos;
+            const char* cause;
+            ex->getData(ppg,line,pos,cause);
+            err(line,pos,cause);
+            delete ex;
+        } else {
+            ex->printStackTrace(ppg);
+            exception = ex;
+        }
+        delete frame;
+        return false;
     }
     delete frame;
+    return true;
 }
 
 void Interpreter::addMethod(void* addr, int conv, char* def) {
-    char* tokens = lex(def, names);
+    char* tokens = lex(def, names, 0);
     char* cur = tokens;
     Method* meth = parseMethod(cur,prog->types);
     meth->address = addr;
@@ -228,16 +244,16 @@ Value* Frame::resolve(int symbol) throw(int, InterpEx*) {
     throw E_UNRESOLVABLE;
 }
 
-void* interp_init(char* ppg) {
-    return (void*) new Interpreter(ppg);
+void* interp_init(char* ppg, PreCompiler_Callback precomp, ErrorHandeler_Callback err)  {
+    return (void*) new Interpreter(ppg, precomp, err);
 }
 
 void interp_meth(void* interp, void* addr, char* def) {
     ((Interpreter*)interp)->addMethod(addr, CONV_FPC_STDCALL, def);
 }
 
-void interp_run(void* interp) {
-    ((Interpreter*)interp)->run();
+bool interp_run(void* interp) {
+    return ((Interpreter*)interp)->run();
 }
 
 void interp_free(void* interp) {

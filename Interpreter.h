@@ -31,12 +31,14 @@ class Frame;
 
 class Interpreter {
 public:
-    Interpreter(char* ppg);
+    Interpreter(char* ppg, PreCompiler_Callback precomp, ErrorHandeler_Callback err);
     ~Interpreter();
 
-    void run();
+    bool run();
     void addMethod(void* addr,  int conv, char* def);
 private:
+    PreCompiler_Callback precomp;
+    ErrorHandeler_Callback err;
     InterpEx* exception;
     Program* prog;
     char* ppg;
@@ -63,9 +65,9 @@ private:
 };
 
 extern "C" {
-    void* interp_init(char* pchar) __attribute__((cdecl));
+    void* interp_init(char* ppg, PreCompiler_Callback precomp, ErrorHandeler_Callback err) __attribute__((cdecl));
     void interp_meth(void* interp, void* addr, char* def) __attribute__((cdecl));
-    void interp_run(void* interp) __attribute__((cdecl));
+    bool interp_run(void* interp) __attribute__((cdecl));
     void interp_free(void* interp) __attribute__((cdecl));
 }
 

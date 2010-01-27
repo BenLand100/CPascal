@@ -53,9 +53,12 @@ class InterpEx;
 #define E_PARSER        200
 #define E_INVALID_CHAR  E_PARSER + 0
 #define E_EOF           E_PARSER + 1
+#define E_BAD_PRECOMP   E_PARSER + 2
 
 #include <exception>
 #include <list>
+
+typedef void(*ErrorHandeler_Callback)(int line, int pos, const char* err) __attribute__((stdcall));
 
 class InterpEx : public std::exception {
 public:
@@ -64,6 +67,7 @@ public:
     InterpEx(int cause);
     ~InterpEx() throw ();
 
+    void getData(char* ppg, int &line, int &pos, const char* &err);
     void addTrace(int pos);
     int getType();
     int getCause();

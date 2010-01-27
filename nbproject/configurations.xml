@@ -58,6 +58,9 @@
       <compileType>
         <ccTool>
           <commandLine>-Wall -O3</commandLine>
+          <preprocessorList>
+            <Elem>DEBUG</Elem>
+          </preprocessorList>
         </ccTool>
         <linkerTool>
           <output>dist/Debug/${CND_PLATFORM}/cpascal</output>
@@ -67,29 +70,41 @@
         </linkerTool>
       </compileType>
     </conf>
-    <conf name="Release" type="1">
+    <conf name="Windows_Simba" type="1">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <compilerSet>MINGW|GNU</compilerSet>
+        <platform>2</platform>
+      </toolsSet>
+      <compileType>
+        <ccTool>
+          <developmentMode>6</developmentMode>
+          <commandLine>-g -mwindows</commandLine>
+        </ccTool>
+        <linkerTool>
+          <output>${CND_DISTDIR}/libcpascal.dll</output>
+          <linkerLibItems>
+          </linkerLibItems>
+          <commandLine>-shared -mwindows --eh-frame-hdr</commandLine>
+        </linkerTool>
+      </compileType>
+    </conf>
+    <conf name="Linux_Simba" type="1">
       <toolsSet>
         <developmentServer>localhost</developmentServer>
         <compilerSet>GNU|GNU</compilerSet>
         <platform>2</platform>
       </toolsSet>
       <compileType>
-        <cTool>
-          <developmentMode>5</developmentMode>
-        </cTool>
         <ccTool>
           <developmentMode>6</developmentMode>
-          <stripSymbols>true</stripSymbols>
-          <commandLine>-Wall</commandLine>
+          <commandLine>-g</commandLine>
         </ccTool>
-        <fortranCompilerTool>
-          <developmentMode>5</developmentMode>
-        </fortranCompilerTool>
         <linkerTool>
-          <stripSymbols>true</stripSymbols>
+          <output>${CND_DISTDIR}/libcpascal.so</output>
           <linkerLibItems>
           </linkerLibItems>
-          <commandLine>--eh-frame-hdr</commandLine>
+          <commandLine>-fPIC -shared --eh-frame-hdr</commandLine>
         </linkerTool>
       </compileType>
     </conf>
