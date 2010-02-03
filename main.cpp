@@ -17,6 +17,8 @@
  *  along with CPascal. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifdef DEBUG
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -70,3 +72,4 @@ int main(int argc, char** argv) {
     return 0;
 }
 
+#endif

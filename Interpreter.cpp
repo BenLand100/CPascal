@@ -32,24 +32,25 @@
 
 //#define debug(x) std::cout << x << '\n'
 #define debug(x)
-/*
-int ms_time() __attribute__((stdcall));
-int ms_time() {
-    timeb t;
-    ftime(&t);
-    return (t.time * 1000 + t.millitm) & 0x7FFFFFFF;
-}
 
-void ms_wait(int ms) __attribute__((stdcall));
-void ms_wait(int ms) {
-    struct timespec a;
-    a.tv_sec = ms/1000;
-    a.tv_nsec = (ms%1000)*1000000L;
-    struct timespec b;
-    while (nanosleep(&a,&b)) {
-        if (!nanosleep(&b,&a)) break;
-    }
-}*/
+#ifdef DEBUG
+//int ms_time() __attribute__((stdcall));
+//int ms_time() {
+//   timeb t;
+//    ftime(&t);
+//    return (t.time * 1000 + t.millitm) & 0x7FFFFFFF;
+//}
+
+//void ms_wait(int ms) __attribute__((stdcall));
+//void ms_wait(int ms) {
+//    struct timespec a;
+//    a.tv_sec = ms/1000;
+//    a.tv_nsec = (ms%1000)*1000000L;
+//    struct timespec b;
+//    while (nanosleep(&a,&b)) {
+//        if (!nanosleep(&b,&a)) break;
+//    }
+//}
 
 void writenofeed(char* str) __attribute__((stdcall));
 void writenofeed(char* str) {
@@ -60,6 +61,7 @@ void writeln(char* str) __attribute__((stdcall));
 void writeln(char* str) {
     printf("%s\n",str);
 }
+#endif
 
 int strtoint(char* str) __attribute__((stdcall));
 int strtoint(char* str) {
@@ -107,12 +109,10 @@ char* realtostr(double i) {
     return res;
 }
 
-Interpreter::Interpreter(PreCompiler_Callback precomp, ErrorHandeler_Callback err) {
-    this-> exception = 0;
+Interpreter::Interpreter(PreCompiler_Callback precomp, ErrorHandeler_Callback err) : exception(0), prog(0), ppg(0) {
     this->precomp = precomp;
     this->err = err;
-    this->ppg = 0;
-    this->prog = 0;
+    debug("exception:" << exception << " ppg:" << (int)(ppg) << " prog:" << (int)(prog));
     #ifdef DEBUG
     //addMethod((void*)&ms_time,CONV_C_STDCALL,(char*)"function time: integer;");
     //addMethod((void*)&ms_wait,CONV_C_STDCALL,(char*)"procedure wait(ms: integer);");
@@ -170,7 +170,7 @@ bool Interpreter::compile() {
 }
     
 bool Interpreter::run() {
-    debug("Symbols: " << names.size() << '\n');
+    debug("Total Symbols: " << names.size());
     if (!prog) return false;
     Frame* env = new Frame(this);
     Frame* frame = new Frame(env, prog);
@@ -188,7 +188,7 @@ bool Interpreter::run() {
 }
 
 void Interpreter::addMethod(void* addr, int conv, char* def) {
-    debug("Importing Method: " << def << '\n');
+    debug("Importing Method: " << def);
     char* tokens = lex(def, names, 0);
     char* cur = tokens;
     Method* meth = parseMethod(cur,types);
@@ -206,6 +206,7 @@ Frame::Frame(Interpreter *env) : parent(0), container(0) {
     std::vector<Method*>::iterator iter = env->methods.begin();
     std::vector<Method*>::iterator end = env->methods.end();
     while (iter != end) {
+        if (slots[(*iter)->name]) Value::decref(slots[(*iter)->name]);
         slots[(*iter)->name] = new MethodValue(*iter);
         iter++;
     }
@@ -251,7 +252,8 @@ Frame::~Frame() {
         std::vector<Method*>::iterator iter = env->methods.begin();
         std::vector<Method*>::iterator end = env->methods.end();
         while (iter != end) {
-            Value::decref(slots[(*iter)->name]);
+            if (slots[(*iter)->name]) Value::decref(slots[(*iter)->name]);
+            slots[(*iter)->name] = 0;
             iter++;
         }
     } else {

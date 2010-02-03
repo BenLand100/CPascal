@@ -52,7 +52,7 @@
     <conf name="Debug" type="1">
       <toolsSet>
         <developmentServer>localhost</developmentServer>
-        <compilerSet>GNU|GNU</compilerSet>
+        <compilerSet>MINGW|GNU</compilerSet>
         <platform>2</platform>
       </toolsSet>
       <compileType>
@@ -79,7 +79,7 @@
       <compileType>
         <ccTool>
           <developmentMode>6</developmentMode>
-          <commandLine>-g -mwindows</commandLine>
+          <commandLine>-g</commandLine>
         </ccTool>
         <linkerTool>
           <output>${CND_DISTDIR}/libcpascal.dll</output>
@@ -98,13 +98,13 @@
       <compileType>
         <ccTool>
           <developmentMode>6</developmentMode>
-          <commandLine>-g</commandLine>
+          <commandLine>-g -fPIC</commandLine>
         </ccTool>
         <linkerTool>
           <output>${CND_DISTDIR}/libcpascal.so</output>
           <linkerLibItems>
           </linkerLibItems>
-          <commandLine>-fPIC -shared --eh-frame-hdr</commandLine>
+          <commandLine>-shared --eh-frame-hdr</commandLine>
         </linkerTool>
       </compileType>
     </conf>

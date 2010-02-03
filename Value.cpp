@@ -23,6 +23,7 @@
 #include "lexer.h"
 #include "Interpreter.h"
 
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 //#define debug(x) std::cout << x << '\n'
@@ -225,14 +226,32 @@ Value* MethodValue::invoke(Value** args, unsigned int numArgs, Frame* cur) throw
         int argsz = 0;
         for (unsigned int i = 0; i < numArgs; i++)
             argsz += meth->arguments[i]->byRef ? 4 : args[i]->argSize();
+        bool refarg = false;
+        //This IF works for reference (pointer) types secret arg passing
+        if ((meth->mtype == CONV_FPC_STDCALL) && meth->type) {
+            switch (meth->type->type) {
+                case TYPE_STRING:
+                    argsz+=4;
+                    refarg = true;
+            }
+        }
         char* cargs = new char[argsz];
         char* stack = cargs;
+        int ref = 0; //Might not be used, but alloc here.
+        //The following if will push a fake ref arg onto the stack if it is needed
+        if ((meth->mtype == CONV_FPC_STDCALL) && refarg) {
+            debug("Pushing void ref");
+            ((void**)stack)[0] = &ref;
+            stack += 4;
+        }
         for (unsigned int i = 0; i < numArgs; i++) {
             if (meth->arguments[i]->byRef) {
                 args[i]->refArg((void*) stack);
+                debug("Arg: " << *(int*)stack);
                 stack += 4;
             } else {
                 args[i]->valArg((void*) stack);
+                debug("Arg: " << *(int*)stack);
                 stack += args[i]->argSize();
             }
         }
@@ -240,68 +259,63 @@ Value* MethodValue::invoke(Value** args, unsigned int numArgs, Frame* cur) throw
         if (meth->type) {
             if (meth->type->type == TYPE_REAL) {
                 double real;
-                asm volatile (
-                            "pushl %%ecx \n"
-                            "cmpl  $0, %%edx \n"
-                            "jz mkcall_real \n"
-                            "start_real: pushl (%%eax) \n"
-                            "cmpl %%eax, %%ecx \n"
-                            "jz mkcall_real \n"
-                            "subl $4, %%eax \n"
-                            "jmp start_real \n"
-                            "mkcall_real: call *%%ebx \n"
-                            "popl %%ecx \n"
-                            : "=t"(real)
-                            : "a"(stack), "b"(meth->address), "c"(cargs), "d"(argsz)
-                            : "memory"
-                            );
+                asm (
+                    "pushl %%ecx \n"
+                    "start_real: cmpl %%eax, %%ecx \n"
+                    "ja mkcall_real \n"
+                    "pushl (%%eax) \n"
+                    "subl $4, %%eax \n"
+                    "jmp start_real \n"
+                    "mkcall_real: call *%%edx \n"
+                    "popl %%ecx \n"
+                    : "=t"(real)
+                    : "a"(stack), "c"(cargs), "d"(meth->address)
+                    : "memory"
+                );
                 delete[] cargs;
                 return new RealValue(real);
             } else {
-                void* eax;
-                asm volatile (
-                            "pushl %%ecx \n"
-                            "cmpl  $0, %%edx \n"
-                            "jz mkcall_all \n"
-                            "start_all: pushl (%%eax) \n"
-                            "cmpl %%eax, %%ecx \n"
-                            "jz mkcall_all \n"
-                            "subl $4, %%eax \n"
-                            "jmp start_all \n"
-                            "mkcall_all: call *%%ebx \n"
-                            "popl %%ecx \n"
-                            : "=a" (eax)
-                            : "a"(stack), "b"(meth->address), "c"(cargs), "d"(argsz)
-                            : "memory"
-                            );
+                int eax;
+                asm (
+                    "pushl %%ecx \n"
+                    "start_all: cmpl %%eax, %%ecx \n"
+                    "ja mkcall_all \n"
+                    "pushl (%%eax) \n"
+                    "subl $4, %%eax \n"
+                    "jmp start_all \n"
+                    "mkcall_all: call *%%edx \n"
+                    "popl %%ecx \n"
+                    : "=a"(eax)
+                    : "a"(stack), "c"(cargs), "d"(meth->address)
+                    : "memory"
+                );
                 delete[] cargs;
                 Value* val = Value::fromType(meth->type);
+                if ((meth->mtype == CONV_FPC_STDCALL) && refarg) eax = ref;
                 switch (meth->mtype) {
                     case CONV_C_STDCALL:
-                        val->read_c(eax);
+                        val->read_c((void*)eax);
                         break;
                     case CONV_FPC_STDCALL:
-                        val->read_fpc(eax);
+                        val->read_fpc((void*)eax);
                         break;
                 }
                 return val;
             }
         } else {
-            asm volatile (
-                        "pushl %%ecx \n"
-                        "cmpl  $0, %%edx \n"
-                        "jz mkcall_void \n"
-                        "start_void: pushl (%%eax) \n"
-                        "cmpl %%eax, %%ecx \n"
-                        "jz mkcall_void \n"
-                        "subl $4, %%eax \n"
-                        "jmp start_void \n"
-                        "mkcall_void: call *%%ebx \n"
-                        "popl %%ecx \n"
-                        :
-                        : "a"(stack), "b"(meth->address), "c"(cargs), "d"(argsz)
-                        : "memory"
-                        );
+            asm (
+                "pushl %%ecx \n"
+                "start_void: cmpl %%eax, %%ecx \n"
+                "ja mkcall_void \n"
+                "pushl (%%eax) \n"
+                "subl $4, %%eax \n"
+                "jmp start_void \n"
+                "mkcall_void: call *%%edx \n"
+                "popl %%ecx \n"
+                :
+                : "a"(stack), "c"(cargs), "d"(meth->address)
+                : "memory"
+            );
             delete[] cargs;
             return new Value();
         }
@@ -457,7 +471,7 @@ StringValue::StringValue(std::string cpp_str) : Value(TYPE_STRING, Type::getStri
     *mem = new char[8 + len + 1];
     objref = new int*;
     *objref = (int*) (*mem);
-    **objref = 1;
+    **objref = -1;
     size = new int*;
     *size = (int*) (*mem + 4);
     **size = len;
@@ -485,7 +499,7 @@ void StringValue::set(Value* val) throw (int, InterpEx*) {
     int len = **sval->size;
     *mem = new char[8 + len + 1];
     *objref = (int*) (*mem);
-    **objref = 1;
+    **objref = -1;
     *size = (int*) (*mem + 4);
     **size = len;
     *str = (char*) (*mem + 8);

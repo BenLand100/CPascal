@@ -109,7 +109,7 @@ var
   c: char;
   i,w,h,x,y: integer;
 begin
-  write(raw);
+  //write(raw);
   writeln('Parsing...');
   i:= 1;
   w:= strtoint(readLine(raw,i));

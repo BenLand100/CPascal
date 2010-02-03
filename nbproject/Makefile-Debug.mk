@@ -12,14 +12,14 @@ MKDIR=mkdir
 CP=cp
 CCADMIN=CCadmin
 RANLIB=ranlib
-CC=gcc
-CCC=g++
-CXX=g++
+CC=i586-mingw32msvc-gcc
+CCC=i586-mingw32msvc-g++
+CXX=i586-mingw32msvc-g++
 FC=
-AS=as
+AS=i586-mingw32msvc-as
 
 # Macros
-CND_PLATFORM=GNU-Linux-x86
+CND_PLATFORM=MINGW-Linux-x86
 CND_CONF=Debug
 CND_DISTDIR=dist
 
@@ -64,10 +64,10 @@ LDLIBSOPTIONS=
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
-	${MAKE}  -f nbproject/Makefile-Debug.mk dist/Debug/GNU-Linux-x86/cpascal
+	${MAKE}  -f nbproject/Makefile-Debug.mk dist/Debug/MINGW-Linux-x86/cpascal
 
-dist/Debug/GNU-Linux-x86/cpascal: ${OBJECTFILES}
-	${MKDIR} -p dist/Debug/GNU-Linux-x86
+dist/Debug/MINGW-Linux-x86/cpascal: ${OBJECTFILES}
+	${MKDIR} -p dist/Debug/MINGW-Linux-x86
 	${LINK.cc} --eh-frame-hdr -o dist/Debug/${CND_PLATFORM}/cpascal ${OBJECTFILES} ${LDLIBSOPTIONS} 
 
 ${OBJECTDIR}/EFence.o: nbproject/Makefile-${CND_CONF}.mk EFence.cpp 
@@ -146,7 +146,7 @@ ${OBJECTDIR}/Exceptions.o: nbproject/Makefile-${CND_CONF}.mk Exceptions.cpp
 # Clean Targets
 .clean-conf: ${CLEAN_SUBPROJECTS}
 	${RM} -r build/Debug
-	${RM} dist/Debug/GNU-Linux-x86/cpascal
+	${RM} dist/Debug/MINGW-Linux-x86/cpascal
 
 # Subprojects
 .clean-subprojects:
