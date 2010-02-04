@@ -295,8 +295,10 @@ char* lex(char* ppg, std::map<std::string,int> &names, PreCompiler_Callback prec
                     goto lexer_eof;
 precompcmd:
                     debug(std::cout << "Running Precompiler Command: " << cmd << ' ' << (arg ? arg : "") << '\n');
-                    //FIXME: DO DEFAULT COMMANDS - INCLUDE
-                    if (precomp) {
+                    //FIXME: DO DEFAULT COMMANDS
+                    if ((strcmp(cmd,"include") == 0) && arg) {
+                        std::cout << "Including file... " << arg << '\n';
+                    } else if (precomp) {
                         precomp(cmd,arg);
                     } else {
                         goto lexer_precomp;

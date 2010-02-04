@@ -382,7 +382,7 @@ Expression* parseExpr(char* &cur) {
     std::stack<opprec>* oper = new std::stack<opprec>();
     char lastType = -1, nextType = -1;
     bool prefix = false;
-    int off = offset(cur);
+    int off = offset(next(cur));
     while (*cur) {
         char* tok = next(cur);
         lastType = nextType;

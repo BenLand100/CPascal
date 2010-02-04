@@ -34,19 +34,19 @@ InterpEx::~InterpEx() throw() {
 
 }
 
-void InterpEx::getData(char* ppg, int &line, int &pos, const char* &err) {
+inline int postoline(char *ppg, int pos) {
     int end = strlen(ppg);
     end = end < pos ? end : pos;
-    int lines = 2;
-    int lastline = 0;
-    for (int i = 0; i <= end; i++) {
-        if (ppg[i] == '\n') {
+    int lines = 1;
+    for (int i = 0; i <= end; i++)
+        if (ppg[i] == '\n')
             lines++;
-            lastline = i;
-        }
-    }
-    pos = end - lastline;
-    line = lines;
+    return lines;
+}
+
+void InterpEx::getData(char* ppg, int &line, int &pos, const char* &err) {
+    line = postoline(ppg,*trace.begin());
+    pos = 0;
     err = what();
 }
 
@@ -64,16 +64,6 @@ int InterpEx::getCause() {
 
 std::list<int> InterpEx::getTrace() {
     return trace;
-}
-
-inline int postoline(char *ppg, int pos) {
-    int end = strlen(ppg);
-    end = end < pos ? end : pos;
-    int lines = 2;
-    for (int i = 0; i <= end; i++)
-        if (ppg[i] == '\n')
-            lines++;
-    return lines;
 }
 
 void InterpEx::printStackTrace(char *ppg) {
