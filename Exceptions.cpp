@@ -121,8 +121,23 @@ const char* InterpEx::what() const throw() {
             return "Reached end of file";
         case E_BAD_PRECOMP:
             return "Unknown precompiler directive";
+        case E_EXPECTED:
+            return "Something was expected and not found";
         default:
             return "Unknown error!";
     }
+}
+
+ParserEx::ParserEx(char* error) : InterpEx(E_EXPECTED) {
+    this->error = new char[strlen(error)+1];
+    strcpy((char*)this->error,error);
+}
+
+ParserEx::~ParserEx() throw() {
+    delete error;
+}
+
+const char* ParserEx::what() const throw() {
+    return error;
 }
 

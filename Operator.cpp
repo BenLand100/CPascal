@@ -531,7 +531,7 @@ ArrayGet::~ArrayGet() {
 }
 void ArrayGet::preform(std::stack<Value*>& stack, Frame* frame) throw(int,InterpEx*) {
     Value* arr = stack.top();
-    Value* res;
+    Value* res = 0;
     stack.pop();
     for (int i = 0; i < numIndexes; i++) {
         Value* index = evalExpr(indexes[i],frame,stack);

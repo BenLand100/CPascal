@@ -61,7 +61,6 @@ void writeln(char* str) __attribute__((stdcall));
 void writeln(char* str) {
     printf("%s\n",str);
 }
-#endif
 
 int strtoint(char* str) __attribute__((stdcall));
 int strtoint(char* str) {
@@ -109,6 +108,8 @@ char* realtostr(double i) {
     return res;
 }
 
+#endif
+
 Interpreter::Interpreter(PreCompiler_Callback precomp, ErrorHandeler_Callback err) : exception(0), prog(0), ppg(0) {
     this->precomp = precomp;
     this->err = err;
@@ -118,12 +119,12 @@ Interpreter::Interpreter(PreCompiler_Callback precomp, ErrorHandeler_Callback er
     //addMethod((void*)&ms_wait,CONV_C_STDCALL,(char*)"procedure wait(ms: integer);");
     addMethod((void*)&writenofeed,CONV_C_STDCALL,(char*)"procedure write(str: string);");
     addMethod((void*)&writeln,CONV_C_STDCALL,(char*)"procedure writeln(str: string);");
-    #endif
     addMethod((void*)&strtoint,CONV_C_STDCALL,(char*)"function strtoint(str: string): integer;");
     addMethod((void*)&inttostr,CONV_C_STDCALL,(char*)"function inttostr(i: integer): string;");
     addMethod((void*)&chartostr,CONV_C_STDCALL,(char*)"function chartostr(c: char): string;");
     addMethod((void*)&booltostr,CONV_C_STDCALL,(char*)"function booltostr(b: boolean): string;");
     addMethod((void*)&realtostr,CONV_C_STDCALL,(char*)"function realtostr(r: real): string;");
+    #endif
 }
 
 Interpreter::~Interpreter() {
@@ -133,6 +134,10 @@ Interpreter::~Interpreter() {
 }
 
 void Interpreter::handle(InterpEx *ex) {
+    handle(ex,ppg);
+}
+
+void Interpreter::handle(InterpEx *ex, char* ppg) {
     if (exception) {
         delete exception;
         exception = 0;
@@ -160,9 +165,14 @@ bool Interpreter::compile() {
     try {
         char* tokens = lex(ppg, names, precomp);
         if (prog) delete prog;
-        prog = parse(tokens);
+        prog = parse(tokens,types,methods);
         freetoks(tokens);
     } catch (InterpEx* ex) {
+        handle(ex);
+        return false;
+    } catch (int exi) {
+        InterpEx* ex = new InterpEx(exi);
+        ex->addTrace(-1);
         handle(ex);
         return false;
     }
@@ -181,17 +191,67 @@ bool Interpreter::run() {
         delete frame;
         delete env;
         return false;
+    } catch (int exi) {
+        InterpEx* ex = new InterpEx(exi);
+        ex->addTrace(-1);
+        handle(ex);
+        delete frame;
+        delete env;
+        return false;
     }
     delete frame;
     delete env;
     return true;
 }
 
+void Interpreter::addType(char* def) {
+    debug("Importing Type: " << def);
+    char* tokens = lex(def, names, precomp);
+    char* cur = tokens;
+    try {
+        parseTypes(cur,types);
+    } catch (InterpEx* ex) {
+        char temp[1024];
+        sprintf(temp, "Failed to import: %s \n\tBecause: %s",def,ex->what());
+        delete ex;
+        ex = new ParserEx(temp);
+        ex->addTrace(-1);
+        handle(ex,def);
+        return;
+    } catch (int exi) {
+        char temp[1024];
+        sprintf(temp, "Failed to import: %s",def);
+        InterpEx* ex = new ParserEx(temp);
+        ex->addTrace(-1);
+        handle(ex,def);
+        return;
+    }
+    freetoks(tokens);
+}
+
 void Interpreter::addMethod(void* addr, int conv, char* def) {
     debug("Importing Method: " << def);
-    char* tokens = lex(def, names, 0);
+    char* tokens = lex(def, names, precomp);
     char* cur = tokens;
-    Method* meth = parseMethod(cur,types);
+    Method* meth;
+    try {
+        meth = parseMethod(cur,types);
+    } catch (InterpEx* ex) {
+        char temp[1024];
+        sprintf(temp, "Failed to import: %s \n\tBecause: %s",def,ex->what());
+        delete ex;
+        ex = new ParserEx(temp);
+        ex->addTrace(-1);
+        handle(ex,def);
+        return;
+    } catch (int exi) {
+        char temp[1024];
+        sprintf(temp, "Failed to import: %s",def);
+        InterpEx* ex = new ParserEx(temp);
+        ex->addTrace(-1);
+        handle(ex,def);
+        return;
+    }
     meth->address = addr;
     meth->mtype = conv;
     methods.push_back(meth);
@@ -292,6 +352,10 @@ void interp_meth(void* interp, void* addr, char* def) {
     ((Interpreter*)interp)->addMethod(addr, CONV_FPC_STDCALL, def);
 }
 
+void interp_type(void* interp, char* def) {
+    ((Interpreter*)interp)->addType(def);
+}
+
 void interp_set(void* interp, char *ppg) {
     ((Interpreter*)interp)->setScript(ppg);
 }
@@ -307,3 +371,4 @@ bool interp_run(void* interp) {
 void interp_free(void* interp) {
     delete (Interpreter*)interp;
 }
+

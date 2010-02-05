@@ -54,6 +54,7 @@ class InterpEx;
 #define E_INVALID_CHAR  E_PARSER + 0
 #define E_EOF           E_PARSER + 1
 #define E_BAD_PRECOMP   E_PARSER + 2
+#define E_EXPECTED      E_PARSER + 3
 
 #include <exception>
 #include <list>
@@ -65,18 +66,28 @@ public:
     static int getType(int cause);
 
     InterpEx(int cause);
-    ~InterpEx() throw ();
+    virtual ~InterpEx() throw ();
 
     void getData(char* ppg, int &line, int &pos, const char* &err);
     void addTrace(int pos);
     int getType();
     int getCause();
     std::list<int> getTrace();
-    const char* what() const throw();
+    virtual const char* what() const throw();
     void printStackTrace(char *ppg);
-private:
+protected:
     std::list<int> trace;
     int cause;
+};
+
+class ParserEx : public InterpEx {
+public:
+    ParserEx(char* error);
+    virtual ~ParserEx() throw ();
+
+    virtual const char* what() const throw();
+protected:
+    const char* error;
 };
 
 #endif	/* _EXCEPTIONS_H */

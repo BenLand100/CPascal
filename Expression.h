@@ -63,7 +63,7 @@ private:
     int length;
 };
 
-inline Value* evalExpr(Expression* expr, Frame* frame, std::stack<Value*>& stack) {
+inline Value* evalExpr(Expression* expr, Frame* frame, std::stack<Value*>& stack) throw(InterpEx*,int)  {
     int start = stack.size();
     expr->eval(frame,stack);
     Value* res = stack.top();
@@ -83,7 +83,7 @@ inline void cleanStack(std::stack<Value*>& stack) {
     }
 }
 
-inline void evalBlock(Block* block, Frame* frame, std::stack<Value*>& stack) {
+inline void evalBlock(Block* block, Frame* frame, std::stack<Value*>& stack) throw(InterpEx*,int)  {
     Expression** elems = block->elems;
     Expression** end = elems + block->length;
     debug("evalBlock{" << elems << "}");
@@ -113,7 +113,7 @@ inline void evalBlock(Block* block, Frame* frame, std::stack<Value*>& stack) {
     }
 }
 
-inline void evalBlock(Block* block, Frame* frame) throw(InterpEx*) {
+inline void evalBlock(Block* block, Frame* frame) throw(InterpEx*,int) {
     std::stack<Value*> stack;
     evalBlock(block,frame,stack);
     cleanStack(stack);

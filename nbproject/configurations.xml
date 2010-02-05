@@ -24,12 +24,10 @@
                    displayName="Source Files"
                    projectFiles="true">
       <itemPath>Container.cpp</itemPath>
-      <itemPath>EFence.cpp</itemPath>
       <itemPath>Element.cpp</itemPath>
       <itemPath>Exceptions.cpp</itemPath>
       <itemPath>Expression.cpp</itemPath>
       <itemPath>Interpreter.cpp</itemPath>
-      <itemPath>LeakTracer.cpp</itemPath>
       <itemPath>Operator.cpp</itemPath>
       <itemPath>Type.cpp</itemPath>
       <itemPath>Value.cpp</itemPath>
@@ -52,12 +50,13 @@
     <conf name="Debug" type="1">
       <toolsSet>
         <developmentServer>localhost</developmentServer>
-        <compilerSet>MINGW|GNU</compilerSet>
+        <compilerSet>GNU|GNU</compilerSet>
         <platform>2</platform>
       </toolsSet>
       <compileType>
         <ccTool>
-          <commandLine>-Wall -O3</commandLine>
+          <developmentMode>6</developmentMode>
+          <commandLine>-Wall -g</commandLine>
           <preprocessorList>
             <Elem>DEBUG</Elem>
           </preprocessorList>

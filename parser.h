@@ -22,8 +22,9 @@
 
 #include "Container.h"
 
-Program* parse(char* tokens);
-Method* parseMethod(char* &cur, std::map<int,Type*> &reftypes);
+Program* parse(char* tokens, std::map<int,Type*> &types, std::vector<Method*> &methods) throw(InterpEx*) ;
+Method* parseMethod(char* &cur, std::map<int,Type*> &reftypes)  throw(InterpEx*,int);
+void parseTypes(char* &cur, std::map<int,Type*> &reftypes) throw(InterpEx*,int);
 
 #endif	/* _PARSER_H */
 

@@ -414,7 +414,6 @@ precompcmd:
                 continue;
             default:
                 InterpEx* ex;
-lexer_invalid_char:
                 ex = new InterpEx(E_INVALID_CHAR);
                 ex->addTrace(ppg - start);
                 freetoks(res);

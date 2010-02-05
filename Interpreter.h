@@ -39,6 +39,7 @@ public:
     bool compile();
     void setScript(char *ppg);
     void addMethod(void* addr,  int conv, char* def);
+    void addType(char* def);
 private:
     PreCompiler_Callback precomp;
     ErrorHandeler_Callback err;
@@ -50,6 +51,7 @@ private:
     std::map<std::string,int> names;
 
     void handle(InterpEx *ex);
+    void handle(InterpEx *ex, char* ppg);
 };
 
 class Frame {
@@ -76,6 +78,7 @@ private:
 extern "C" {
     void* interp_init(PreCompiler_Callback precomp, ErrorHandeler_Callback err) __attribute__((cdecl));
     void interp_meth(void* interp, void* addr, char* def) __attribute__((cdecl));
+    void interp_type(void* interp, char* def) __attribute__((cdecl));
     void interp_set(void* interp, char *ppg) __attribute__((cdecl));
     bool interp_run(void* interp) __attribute__((cdecl));
     bool interp_comp(void* interp) __attribute__((cdecl));
