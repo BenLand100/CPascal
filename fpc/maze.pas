@@ -1,5 +1,7 @@
 program maze;
 
+{$loaddll libsmart}
+{
 const small_maze =
 '25' + #10 +
 '13' + #10 +
@@ -89,9 +91,9 @@ type TpointArray = array of TPoint;
 
 type TpointArrayArray = array of TpointArray;
 
-type TboolGrid = array of array of boolean;
+type TboolGrid = array of array of boolean;}
 
-function readLine(raw: string; var off: integer): string;
+function readLine(raw: string; var off: longint): string;
 begin
   result:= '';
   while raw[off] <> #10 do
@@ -102,7 +104,7 @@ begin
   off:= off + 1;
 end;
 
-
+{
 function ParseMaze(raw: string; var start, finish: TPoint): TboolGrid;
 var
   tiles: TboolGrid;
@@ -351,4 +353,4 @@ begin
   writeln('Took ' + realtostr(t / 1000.0) + ' seconds');
   writeln('Longest Path: ' + inttostr(length(jack)));
   writeln('#Other Paths: ' + inttostr(jills));
-end.
+end.}

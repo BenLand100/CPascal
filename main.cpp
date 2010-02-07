@@ -50,6 +50,12 @@ void add1v(int& i) {
     i++;
 }
 
+bool precomp(char* name, char* arg) __attribute__((stdcall));
+bool precomp(char* name, char* arg) {
+    //cout << "Precompiler Command: " << name << '\n';
+    return true;
+}
+
 int main(int argc, char** argv) {
     ifstream in;
     in.open("./fpc/maze.pas", ifstream::ate | ifstream::binary);
@@ -60,7 +66,7 @@ int main(int argc, char** argv) {
     in.read(ppg,size);
     in.close();
     ppg[size] = '\0';
-    Interpreter* interp = new Interpreter(0,0);
+    Interpreter* interp = new Interpreter(&precomp,0);
     //interp->addMethod((void*)&e,CONV_C_STDCALL,(char*)"function e: real;");
     //interp->addMethod((void*)&add1v,CONV_C_STDCALL,(char*)"procedure add1v(var i: integer);");
     //interp->addMethod((void*)&add1p,CONV_C_STDCALL,(char*)"procedure add1p(i: ^integer);");

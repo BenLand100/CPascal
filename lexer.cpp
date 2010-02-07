@@ -276,33 +276,35 @@ char* lex(char* ppg, std::map<std::string,int> &names, PreCompiler_Callback prec
             //***BEGIN COMMENT***
             case '{':
                 if (ppg[1] == '$') {
+                    char* copy = toks;
                     ++ppg;
-                    char *cmd = ++ppg;
+                    char *cmd = copy;
                     char *arg = 0;
                     while (*(++ppg)) {
                         switch (*ppg) {
                             case ' ':
                             case '\t':
-                                *ppg = 0;
+                                *(copy++) = 0;
                                 break;
                             case '}':
-                                *(ppg++) = 0;
-                                goto precompcmd;
+                                *(copy++) = 0;
+                                debug(std::cout << "Running Precompiler Command: " << cmd << ' ' << (arg ? arg : "") << '\n');
+                                //FIXME: DO DEFAULT COMMANDS
+                                if ((strcmp(cmd,"include") == 0) && arg) {
+                                    std::cout << "Including file... " << arg << '\n';
+                                } else if (precomp) {
+                                    precomp(cmd,arg);
+                                } else {
+                                    goto lexer_precomp;
+                                }
+                                goto endprecomp;
                             default:
-                                if (!ppg[-1]) arg = ppg;
+                                *(copy++) = *ppg;
+                                if (!copy[-2]) arg = copy-1;
                         }
                     }
-                    goto lexer_eof;
-precompcmd:
-                    debug(std::cout << "Running Precompiler Command: " << cmd << ' ' << (arg ? arg : "") << '\n');
-                    //FIXME: DO DEFAULT COMMANDS
-                    if ((strcmp(cmd,"include") == 0) && arg) {
-                        std::cout << "Including file... " << arg << '\n';
-                    } else if (precomp) {
-                        precomp(cmd,arg);
-                    } else {
-                        goto lexer_precomp;
-                    }
+                    endprecomp:
+                    if (!*(ppg+1)) goto lexer_eof;
                 } else while (*(++ppg) != '}'); //; is important
                 break;
             //***BEGIN SPECIAL***

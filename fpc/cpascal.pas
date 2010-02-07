@@ -12,6 +12,7 @@ var
   instance: pointer;  libcpascal: integer;                                                                               
   interp_init: function(precomp: TPrecompiler_Callback; err: TErrorHandeler_Callback): Pointer; cdecl;
   interp_meth: procedure(interp: Pointer; addr: Pointer; def: PChar); cdecl;                         
+  interp_type: procedure(interp: Pointer; def: PChar); cdecl;                         
   interp_set: procedure(interp: Pointer; ppg: PChar); cdecl;                                         
   interp_comp: function(interp: Pointer): boolean; cdecl;                                            
   interp_run: function(interp: Pointer): boolean; cdecl;                                             
@@ -58,6 +59,7 @@ begin
     raise Exception.Create('CPascal library not found');
   Pointer(interp_init):= GetProcAddress(libcpascal, PChar('interp_init'));
   Pointer(interp_meth):= GetProcAddress(libcpascal, PChar('interp_meth'));
+  Pointer(interp_type):= GetProcAddress(libcpascal, PChar('interp_type'));
   Pointer(interp_set):= GetProcAddress(libcpascal, PChar('interp_set'));
   Pointer(interp_comp):= GetProcAddress(libcpascal, PChar('interp_comp'));
   Pointer(interp_run):= GetProcAddress(libcpascal, PChar('interp_run'));
@@ -73,7 +75,8 @@ begin
   if CompareText(name,'loaddll') = 0 then 
   begin
     result:= true;
-    lib:= LoadLibrary(args+'.so');
+    lib:= LoadLibrary('./'+args+'.so');
+    writeln('loading library: ' + args + '@' + inttostr(lib));
     if lib <> 0 then
       import_plugin(instance, lib)
     else
@@ -108,8 +111,7 @@ var
     str: ansistring;
 begin
     str:= cp_inttostr(50);
-    str:= readfile('./maze.pas');
-    
+    str:= readfile('./plugintest.simb');
     
     LoadCPascal('../dist/');
     
@@ -117,6 +119,7 @@ begin
     interp_set(instance,PChar(str));
     interp_meth(instance,@cp_IntToStr,'function IntToStr(i: integer): string;');
     interp_meth(instance,@cp_StrToInt,'function StrToInt(str: string): integer;');
+    interp_type(instance,'type byte = integer;');
     interp_comp(instance);
     interp_meth(instance,@Interpreter_Writeln,PChar('procedure writeln(str: string);'));
     interp_run(instance);

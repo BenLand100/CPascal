@@ -37,6 +37,9 @@ class PointerValue;
 #ifndef _VALUE_H
 #define	_VALUE_H
 
+typedef void* (*GETMEM)(int size) __attribute__((stdcall));
+typedef void (*FREEMEM)(void* mem) __attribute__((stdcall));
+
 class Value : public Element {
 public:
     static Value* decref(Value *val) throw(int,InterpEx*);
