@@ -120,6 +120,8 @@ begin
     interp_meth(instance,@cp_IntToStr,'function IntToStr(i: integer): string;');
     interp_meth(instance,@cp_StrToInt,'function StrToInt(str: string): integer;');
     interp_type(instance,'type byte = integer;');
+    interp_type(instance,'type pointer = integer;');
+    interp_type(instance,'type extended = real;');
     interp_comp(instance);
     interp_meth(instance,@Interpreter_Writeln,PChar('procedure writeln(str: string);'));
     interp_run(instance);

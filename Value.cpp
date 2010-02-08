@@ -196,7 +196,7 @@ void Value::read_fpc(void* res) {
 
 //**** BEGIN METHODVALUE DEFINITION ***
 
-MethodValue::MethodValue(void* mem, Meth* type) : Value(TYPE_METH, type, false){
+MethodValue::MethodValue(void* mem, Meth* type) : Value(TYPE_METH, type, false) {
     meth = (Method**) mem;
     *meth = 0;
 }
@@ -221,6 +221,7 @@ void MethodValue::set(Value* val) throw (int, InterpEx*) {
 
 Value* MethodValue::invoke(Value** args, unsigned int numArgs, Frame* cur) throw (int, InterpEx*) {
     Method* meth = *this->meth;
+    //std::cout << "N:" << meth->name << " A:" << meth->address << " G:" << numArgs << " E:" << meth->arguments.size() << '\n';
     if (numArgs != meth->arguments.size()) throw E_WRONG_NUM_ARG;
     if (meth->address) {
         int argsz = 0;

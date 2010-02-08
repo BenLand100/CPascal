@@ -130,7 +130,13 @@ Interpreter::Interpreter(PreCompiler_Callback precomp, ErrorHandeler_Callback er
 Interpreter::~Interpreter() {
     if (ppg) delete [] ppg;
     if (prog) delete prog;
-    if (exception)   delete exception;
+    if (exception) delete exception;
+    std::vector<Method*>::iterator iter = methods.begin();
+    std::vector<Method*>::iterator end = methods.end();
+    while (iter != end) {
+        delete *iter;
+        iter++;
+    }
 }
 
 void Interpreter::handle(InterpEx *ex) {
@@ -236,6 +242,7 @@ void Interpreter::addMethod(void* addr, int conv, char* def) {
     Method* meth;
     try {
         meth = parseMethod(cur,types);
+        //std::cout << def << "\n => "<< meth->arguments.size() << " N:" << meth->name << " A:" << addr << '\n';
     } catch (InterpEx* ex) {
         char temp[1024];
         sprintf(temp, "Failed to import: %s \n\tBecause: %s",def,ex->what());
