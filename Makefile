@@ -36,18 +36,6 @@ CP=cp
 CCADMIN=CCadmin
 RANLIB=ranlib
 
-BUILDOBJS = \
-build/Windows_Simba/MINGW-Linux-x86/Container.o \
-build/Windows_Simba/MINGW-Linux-x86/Element.o \
-build/Windows_Simba/MINGW-Linux-x86/Exceptions.o \
-build/Windows_Simba/MINGW-Linux-x86/Expression.o \
-build/Windows_Simba/MINGW-Linux-x86/Interpreter.o \
-build/Windows_Simba/MINGW-Linux-x86/lexer.o \
-build/Windows_Simba/MINGW-Linux-x86/Operator.o \
-build/Windows_Simba/MINGW-Linux-x86/parser.o \
-build/Windows_Simba/MINGW-Linux-x86/Type.o \
-build/Windows_Simba/MINGW-Linux-x86/Value.o \
-build/Windows_Simba/MINGW-Linux-x86/Variable.o
 
 # build
 build: .build-post
@@ -56,8 +44,6 @@ build: .build-post
 # Add your pre 'build' code here...
 
 .build-post: .build-impl
-	i586-mingw32msvc-ar rc dist/libcpascal.lib $(BUILDOBJS)
-	i586-mingw32msvc-dlltool -D dist/libcpascal.dll --input-def dist/libcpascal.def --output-lib dist/libcpascal.a
 
 # clean
 clean: .clean-post

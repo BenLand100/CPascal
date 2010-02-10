@@ -35,21 +35,6 @@
 
 using namespace std;
 
-double e() __attribute__((stdcall));
-double e() {
-    return 2.78000000000;
-}
-
-void add1p(int* i) __attribute__((stdcall));
-void add1p(int* i) {
-    (*i)++;
-}
-
-void add1v(int& i) __attribute__((stdcall));
-void add1v(int& i) {
-    i++;
-}
-
 bool precomp(char* name, char* arg) __attribute__((stdcall));
 bool precomp(char* name, char* arg) {
     //cout << "Precompiler Command: " << name << '\n';
@@ -58,23 +43,29 @@ bool precomp(char* name, char* arg) {
 
 int main(int argc, char** argv) {
     ifstream in;
-    in.open("./fpc/maze.pas", ifstream::ate | ifstream::binary);
-    if (!in) return 1;
+    if (argc != 2) {
+        cout << "Usage: cpascal [sourcefile]\n";
+        return 1;
+    }
+    in.open(argv[1], ifstream::ate | ifstream::binary);
+    if (!in) {
+        cout << "File not found!\n";
+        return 1;
+    }
     int size = in.tellg();
     char* ppg = new char[size+1];
     in.seekg(0,ios::beg);
     in.read(ppg,size);
     in.close();
     ppg[size] = '\0';
-    Interpreter* interp = new Interpreter(&precomp,0);
-    //interp->addMethod((void*)&e,CONV_C_STDCALL,(char*)"function e: real;");
-    //interp->addMethod((void*)&add1v,CONV_C_STDCALL,(char*)"procedure add1v(var i: integer);");
-    //interp->addMethod((void*)&add1p,CONV_C_STDCALL,(char*)"procedure add1p(i: ^integer);");
-    interp->setScript(ppg);
+
+    void* interp = interp_init(&precomp,0);
+    interp_set(interp,ppg);
+    interp_comp(interp);
+    interp_run(interp);
+    interp_free(interp);
+    
     delete [] ppg;
-    interp->compile();
-    interp->run();
-    delete interp;
     return 0;
 }
 

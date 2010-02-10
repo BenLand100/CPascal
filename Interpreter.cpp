@@ -110,7 +110,7 @@ char* realtostr(double i) {
 
 #endif
 
-Interpreter::Interpreter(PreCompiler_Callback precomp, ErrorHandeler_Callback err) : exception(0), prog(0), ppg(0) {
+Interpreter::Interpreter(PreCompiler_Callback precomp, ErrorHandeler_Callback err) : Container(-1,0), exception(0), prog(0), ppg(0) {
     this->precomp = precomp;
     this->err = err;
     debug("exception:" << exception << " ppg:" << (int)(ppg) << " prog:" << (int)(prog));
@@ -131,12 +131,6 @@ Interpreter::~Interpreter() {
     if (ppg) delete [] ppg;
     if (prog) delete prog;
     if (exception) delete exception;
-    std::vector<Method*>::iterator iter = methods.begin();
-    std::vector<Method*>::iterator end = methods.end();
-    while (iter != end) {
-        delete *iter;
-        iter++;
-    }
 }
 
 void Interpreter::handle(InterpEx *ex) {
@@ -171,7 +165,7 @@ bool Interpreter::compile() {
     try {
         char* tokens = lex(ppg, names, precomp);
         if (prog) delete prog;
-        prog = parse(tokens,types,methods);
+        prog = parse(tokens,this);
         freetoks(tokens);
     } catch (InterpEx* ex) {
         handle(ex);
@@ -188,25 +182,21 @@ bool Interpreter::compile() {
 bool Interpreter::run() {
     debug("Total Symbols: " << names.size());
     if (!prog) return false;
-    Frame* env = new Frame(this);
-    Frame* frame = new Frame(env, prog);
+    Frame* frame = new Frame(prog);
     try {
         evalBlock(&prog->block, frame);
     } catch (InterpEx* ex) {
         handle(ex);
         delete frame;
-        delete env;
         return false;
     } catch (int exi) {
         InterpEx* ex = new InterpEx(exi);
         ex->addTrace(-1);
         handle(ex);
         delete frame;
-        delete env;
         return false;
     }
     delete frame;
-    delete env;
     return true;
 }
 
@@ -215,7 +205,7 @@ void Interpreter::addType(char* def) {
     char* tokens = lex(def, names, precomp);
     char* cur = tokens;
     try {
-        parseTypes(cur,types);
+        parseTypes(cur,this);
     } catch (InterpEx* ex) {
         char temp[1024];
         sprintf(temp, "Failed to import: %s \n\tBecause: %s",def,ex->what());
@@ -241,7 +231,7 @@ void Interpreter::addMethod(void* addr, int conv, char* def) {
     char* cur = tokens;
     Method* meth;
     try {
-        meth = parseMethod(cur,types);
+        meth = parseMethod(cur,this);
         //std::cout << def << "\n => "<< meth->arguments.size() << " N:" << meth->name << " A:" << addr << '\n';
     } catch (InterpEx* ex) {
         char temp[1024];
@@ -261,94 +251,213 @@ void Interpreter::addMethod(void* addr, int conv, char* def) {
     }
     meth->address = addr;
     meth->mtype = conv;
-    methods.push_back(meth);
+    Container::addMethod(meth);
     freetoks(tokens);
 }
 
-Frame::Frame(Interpreter *env) : parent(0), container(0) {
-    this->env = env;
-    numslots = env->names.size();
+Frame::Frame() : parent(0), container(0) {
+    localstart = 0;
+    localcount = 0;
+    numslots = 0;
     slots = new Value*[numslots];
-    memset(slots,0,numslots*sizeof(Value*));
-    std::vector<Method*>::iterator iter = env->methods.begin();
-    std::vector<Method*>::iterator end = env->methods.end();
-    while (iter != end) {
-        if (slots[(*iter)->name]) Value::decref(slots[(*iter)->name]);
-        slots[(*iter)->name] = new MethodValue(*iter);
-        iter++;
+}
+
+Frame::Frame(Program *dat) : parent(0), container(dat) {
+    localstart = dat->local_start;
+    localcount = dat->locals.size();
+    numslots = localstart + localcount;
+    slots = new Value*[numslots];
+    for (int i = 0; i < localcount; i++) {
+        slots[i + localstart] = Value::fromType((Type*) container->locals[i]->type);
+        debug("init_var=" << i << '@' << i+localstart);
     }
 }
 
-Frame::Frame(Frame* frame, Container* container_impl) :  parent(frame), container(container_impl), env(0) {
-    numslots = frame->numslots;
+Frame::Frame(Frame* frame, Method* dat, Value **args) :  parent(frame), container(dat) {
+    localstart = dat->slot_start;
+    int numargs = dat->arguments.size();
+    localcount = dat->locals.size() + numargs;
+    numslots = localstart + localcount;
     slots = new Value*[numslots];
-    memset(slots,0,numslots*sizeof(Value*));
-    memcpy(slots,frame->slots,numslots*sizeof(Value*));
-    init(container_impl);
-}
-
-void Frame::init(Container* container) throw(int,InterpEx*) {
-    debug("init_frame");
-    int numMethods = container->methods.size();
-    for (int i = 0; i < numMethods; i++) {
-        Method* meth = container->methods[i];
-        slots[meth->name] = new MethodValue(meth);
-        debug("init_meth=" << meth->name);
+    if (frame) memcpy(slots,frame->slots,localstart*sizeof(Value*));
+    int i;
+    for (i = 0; i < numargs; i++) {
+        Variable* var = dat->getArg(i);
+        slots[i + localstart] = var->byRef ? Value::incref(args[i]) : args[i]->clone();
+        debug("set_arg=" << i << '@' << i+localstart);
     }
-    int numVariables = container->variables.size();
-    for (int i = 0; i < numVariables; i++) {
-        Variable* var = container->variables[i];
-        slots[var->name] = Value::fromType((Type*) var->type);
-        debug("init_var=" << var->name);
+    int offset = dat->local_start;
+    for (; i < localcount; i++) {
+        slots[i + localstart] = Value::fromType((Type*) container->locals[i-offset]->type);
+        debug("init_var="  << i << '@' << i+localstart);
     }
-    std::map<int, Expression*>::iterator iter = container->constants.begin();
-    std::map<int, Expression*>::iterator end = container->constants.end();
-    std::stack<Value*> stack;
-    Frame* me = this;
-    while (iter != end) {
-        Value* val = evalExpr(iter->second,me,stack);
-        slots[iter->first] = val;
-        debug("init_const=" << iter->first);
-        iter++;
-    }
-    cleanStack(stack);
 }
 
 Frame::~Frame() {
-    if (env) {
-        std::vector<Method*>::iterator iter = env->methods.begin();
-        std::vector<Method*>::iterator end = env->methods.end();
-        while (iter != end) {
-            if (slots[(*iter)->name]) Value::decref(slots[(*iter)->name]);
-            slots[(*iter)->name] = 0;
-            iter++;
-        }
-    } else {
-        int numMethods = container->methods.size();
-        for (int i = 0; i < numMethods; i++) {
-            Value* s = slots[container->methods[i]->name];
-            Value::decref(s);
-        }
-        int numVariables = container->variables.size();
-        for (int i = 0; i < numVariables; i++) {
-            Value* s = slots[container->variables[i]->name];
-            Value::decref(s);
-        }
-        std::map<int, Expression*>::iterator iter = container->constants.begin();
-        std::map<int, Expression*>::iterator end = container->constants.end();
-        while (iter != end) {
-            Value::decref(slots[iter->first]);
-            iter++;
-        }
+    for (int i = localstart; i < numslots; i++) {
+        Value::decref(slots[i]);
     }
     delete [] slots;
 }
 
-Value* Frame::resolve(int symbol) throw(int, InterpEx*) {
-    debug("resolve_symbol=" << symbol);
-    Value* res = slots[symbol];
-    if (res) return Value::incref(res);
-    throw E_UNRESOLVABLE;
+Value* Frame::resolve(int slot) throw(int, InterpEx*) {
+    debug("resolve_slot=" << slot-localstart << '@' << slot);
+    return Value::incref(slots[slot]);
+}
+
+
+Container::Container(int name_impl, Container *super_scope) : name(name_impl), block() {
+    if (super_scope)
+        slot_start = super_scope->locals.size();
+    else
+        slot_start = 0;
+    local_start = slot_start;
+    this->super_scope = super_scope;
+}
+
+Container::~Container() {
+    std::map<int,local*>::iterator iter = scope_map.begin();
+    std::map<int,local*>::iterator end = scope_map.end();
+    while (iter != end) {
+        switch (iter->second->localtype) {
+            case METHOD:
+                delete iter->second->meth;
+                break;
+            case VARIABLE:
+            case ARGUMENT:
+                delete iter->second->var;
+                break;
+            case CONSTANT:
+                Value::decref(iter->second->val);
+                break;
+            case TYPE:
+                break;
+        }
+        delete iter->second;
+        iter++;
+    }
+    cleanBlock(&block);
+}
+
+bool Container::addMethod(Method* meth) {
+    if (scope_map.find(meth->name) != scope_map.end()) return false;
+    local *l = new local;
+    l->localtype = METHOD;
+    l->meth = meth;
+    l->index = -1;
+    scope_map[meth->name] = l;
+    return true;
+}
+
+bool Container::addVariable(Variable* var) {
+    if (scope_map.find(var->name) != scope_map.end()) return false;
+    local *l = new local;
+    l->localtype = VARIABLE;
+    l->var = var;
+    l->index = locals.size() + local_start;
+    scope_map[var->name] = l;
+    locals.push_back(var);
+    return true;
+}
+
+bool Container::addConst(int name, Value* val) {
+    if (scope_map.find(name) != scope_map.end()) return false;
+    local *l = new local;
+    l->localtype = CONSTANT;
+    l->val = val;
+    l->index = -1;
+    scope_map[name] = l;
+    return true;
+}
+
+bool Container::addType(int name, Type* type) {
+    if (scope_map.find(name) != scope_map.end()) return false;
+    local *l = new local;
+    l->localtype = TYPE;
+    l->type = type;
+    l->index = -1;
+    scope_map[name] = l;
+    return true;
+}
+
+local* Container::resolve(int name) {
+    std::map<int,local*>::iterator find = scope_map.find(name);
+    if (find == scope_map.end()) return super_scope ? super_scope->resolve(name) : 0;
+    return find->second;
+}
+
+Method* Container::getMethod(int name) {
+    local *l = resolve(name);
+    if (!l ||  l->localtype != METHOD) return 0;
+    return l->meth;
+}
+
+Variable* Container::getVariable(int name) {
+    local *l = resolve(name);
+    if (!l ||  !(l->localtype == VARIABLE || l->localtype == ARGUMENT)) return 0;
+    return l->var;
+}
+
+Value* Container::getConst(int name) {
+    local *l = resolve(name);
+    if (!l ||  l->localtype != CONSTANT) return 0;
+    return l->val;
+}
+
+Type* Container::getType(int name) {
+    local *l = resolve(name);
+    if (!l ||  l->localtype != TYPE) return 0;
+    return l->type;
+}
+
+int Container::getNameSlot(int name) {
+    local *l = resolve(name);
+    if (!l) return -1;
+    return l->index;
+}
+
+Program::Program(int name, Container *static_scope) : Container(name,static_scope) { }
+Program::~Program() { }
+
+Method::Method(int name, Container *super_scope) : Container(name, super_scope), address(0), mtype(CONV_INTERNAL), type(0) {
+
+}
+Method::~Method() {
+}
+
+bool Method::setResultType(Type *type) {
+    this->type = type;
+    if (!addVariable(new Variable(RES_RESULT,type))) return false;
+    res_idx = getNameSlot(RES_RESULT);
+    return true;
+}
+Type* Method::getResultType() {
+    return type;
+}
+
+int Method::getResultSlot() {
+    return res_idx;
+}
+
+bool Method::addArgument(Variable *arg) {
+    if (scope_map.find(arg->name) != scope_map.end()) return false; //exists
+    if (locals.size() != 0) return false; //args must be added first
+    local_start++;
+    local *l = new local;
+    l->localtype = ARGUMENT;
+    l->var = arg;
+    l->index = arguments.size() + slot_start;
+    scope_map[arg->name] = l;
+    arguments.push_back(arg);
+    return true;
+}
+
+Variable* Method::getArg(int idx) {
+    return arguments[idx];
+}
+
+unsigned int Method::numArgs() {
+    return arguments.size();
 }
 
 void* interp_init(PreCompiler_Callback precomp, ErrorHandeler_Callback err)  {

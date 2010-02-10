@@ -4,7 +4,6 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
-      <itemPath>Container.h</itemPath>
       <itemPath>Element.h</itemPath>
       <itemPath>Exceptions.h</itemPath>
       <itemPath>Expression.h</itemPath>
@@ -23,7 +22,6 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
-      <itemPath>Container.cpp</itemPath>
       <itemPath>Element.cpp</itemPath>
       <itemPath>Exceptions.cpp</itemPath>
       <itemPath>Expression.cpp</itemPath>

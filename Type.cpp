@@ -19,7 +19,7 @@
 
 #include "Type.h"
 #include "lexer.h"
-#include "Container.h"
+#include "Interpreter.h"
 #include <sstream>
 
 #include <iostream>
@@ -32,13 +32,13 @@ std::map<std::string, Type*>* Type::alltypes() {
 }
 
 Meth* Type::getMethodType(Method* meth) {
-    int numArgs = meth->arguments.size();
-    Type* ret = meth->type;
+    int numArgs = meth->numArgs();
+    Type* ret = meth->getResultType();
     std::string res(ret ? ret->descr : "nil");
     std::string descr(res);
     descr.append("(");
     for (int i = 0; i < numArgs; i++) {
-        descr.append(meth->arguments[i]->type->descr);
+        descr.append(meth->getArg(i)->type->descr);
         descr.append(";");
     }
     descr.append(")");

@@ -20,11 +20,11 @@
 #ifndef _PARSER_H
 #define	_PARSER_H
 
-#include "Container.h"
+#include "Interpreter.h"
 
-Program* parse(char* tokens, std::map<int,Type*> &types, std::vector<Method*> &methods) throw(InterpEx*) ;
-Method* parseMethod(char* &cur, std::map<int,Type*> &reftypes)  throw(InterpEx*,int);
-void parseTypes(char* &cur, std::map<int,Type*> &reftypes) throw(InterpEx*,int);
+Program* parse(char* tokens, Container *static_scope) throw(InterpEx*) ;
+Method* parseMethod(char* &cur, Container *scope)  throw(InterpEx*,int);
+void parseTypes(char* &cur, Container *scope) throw(InterpEx*,int);
 
 #endif	/* _PARSER_H */
 

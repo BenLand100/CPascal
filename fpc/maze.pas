@@ -1,7 +1,7 @@
 program maze;
 
 {$loaddll libsmart}
-{
+
 const small_maze =
 '25' + #10 +
 '13' + #10 +
@@ -91,9 +91,9 @@ type TpointArray = array of TPoint;
 
 type TpointArrayArray = array of TpointArray;
 
-type TboolGrid = array of array of boolean;}
+type TboolGrid = array of array of boolean;
 
-function readLine(raw: string; var off: longint): string;
+function readLine(raw: string; var off: integer): string;
 begin
   result:= '';
   while raw[off] <> #10 do
@@ -104,14 +104,14 @@ begin
   off:= off + 1;
 end;
 
-{
+
 function ParseMaze(raw: string; var start, finish: TPoint): TboolGrid;
 var
   tiles: TboolGrid;
   c: char;
   i,w,h,x,y: integer;
 begin
-  //write(raw);
+  write(raw);
   writeln('Parsing...');
   i:= 1;
   w:= strtoint(readLine(raw,i));
@@ -350,7 +350,7 @@ begin
   //writeln('start: (' + inttostr(start.x) + ',' + inttostr(start.y) + ') finish: (' + inttostr(finish.x) + ',' + inttostr(finish.y) + ')');
   benland100_solver(jack,jills,ParseMaze(small_maze,start,finish),start,finish);
   //t:= time() - t;
-  writeln('Took ' + realtostr(t / 1000.0) + ' seconds');
+  //writeln('Took ' + realtostr(t / 1000.0) + ' seconds');
   writeln('Longest Path: ' + inttostr(length(jack)));
   writeln('#Other Paths: ' + inttostr(jills));
-end.}
+end.

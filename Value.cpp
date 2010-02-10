@@ -19,7 +19,6 @@
 
 #include "Value.h"
 #include "Exceptions.h"
-#include "Container.h"
 #include "lexer.h"
 #include "Interpreter.h"
 
@@ -222,15 +221,15 @@ void MethodValue::set(Value* val) throw (int, InterpEx*) {
 Value* MethodValue::invoke(Value** args, unsigned int numArgs, Frame* cur) throw (int, InterpEx*) {
     Method* meth = *this->meth;
     //std::cout << "N:" << meth->name << " A:" << meth->address << " G:" << numArgs << " E:" << meth->arguments.size() << '\n';
-    if (numArgs != meth->arguments.size()) throw E_WRONG_NUM_ARG;
+    if (numArgs != meth->numArgs()) throw E_WRONG_NUM_ARG;
     if (meth->address) {
         int argsz = 0;
         for (unsigned int i = 0; i < numArgs; i++)
-            argsz += meth->arguments[i]->byRef ? 4 : args[i]->argSize();
+            argsz += meth->getArg(i)->byRef ? 4 : args[i]->argSize();
         bool refarg = false;
         //This IF works for reference (pointer) types secret arg passing
-        if ((meth->mtype == CONV_FPC_STDCALL) && meth->type) {
-            switch (meth->type->type) {
+        if ((meth->mtype == CONV_FPC_STDCALL) && meth->getResultType()) {
+            switch (meth->getResultType()->type) {
                 case TYPE_STRING:
                     argsz+=4;
                     refarg = true;
@@ -246,7 +245,7 @@ Value* MethodValue::invoke(Value** args, unsigned int numArgs, Frame* cur) throw
             stack += 4;
         }
         for (unsigned int i = 0; i < numArgs; i++) {
-            if (meth->arguments[i]->byRef) {
+            if (meth->getArg(i)->byRef) {
                 args[i]->refArg((void*) stack);
                 debug("Arg: " << *(int*)stack);
                 stack += 4;
@@ -257,8 +256,8 @@ Value* MethodValue::invoke(Value** args, unsigned int numArgs, Frame* cur) throw
             }
         }
         stack -= 4;
-        if (meth->type) {
-            if (meth->type->type == TYPE_REAL) {
+        if (meth->getResultType()) {
+            if (meth->getResultType()->type == TYPE_REAL) {
                 double real;
                 asm (
                     "pushl %%ecx \n"
@@ -291,7 +290,7 @@ Value* MethodValue::invoke(Value** args, unsigned int numArgs, Frame* cur) throw
                     : "memory"
                 );
                 delete[] cargs;
-                Value* val = Value::fromType(meth->type);
+                Value* val = Value::fromType(meth->getResultType());
                 if ((meth->mtype == CONV_FPC_STDCALL) && refarg) eax = ref;
                 switch (meth->mtype) {
                     case CONV_C_STDCALL:
@@ -322,15 +321,7 @@ Value* MethodValue::invoke(Value** args, unsigned int numArgs, Frame* cur) throw
         }
     } else {
         //FIXME must check method types
-        Frame* frame = new Frame(cur, meth);
-        debug("resolve_args");
-        for (unsigned int i = 0; i < numArgs; i++) {
-            Variable* var = meth->arguments[i];
-            frame->slots[var->name] = var->byRef ? Value::incref(args[i]) : args[i]->clone();
-            debug("argset=" << (var->name) << " " << args[i] << " " << frame->slots[var->name]);
-        }
-        if (meth->type) frame->slots[RES_RESULT] = Value::fromType(meth->type);
-        debug("resolve_method");
+        Frame* frame = new Frame(cur, meth, args);
         try {
             evalBlock(&meth->block, frame);
         } catch (InterpEx* ex) {
@@ -338,28 +329,17 @@ Value* MethodValue::invoke(Value** args, unsigned int numArgs, Frame* cur) throw
                 delete ex;
                 goto exit;
             }
-            debug("unwinding frame");
-            for (unsigned int i = 0; i < numArgs; i++) {
-                Value::decref(frame->slots[meth->arguments[i]->name]);
-            }
             delete frame;
             throw ex;
         } catch (int exi) {
             if (exi == E_EXIT) goto exit;
-            debug("unwinding frame");
-            for (unsigned int i = 0; i < numArgs; i++) {
-                 Value::decref(frame->slots[meth->arguments[i]->name]);
-            }
             delete frame;
             throw exi;
         }
         exit:
         debug("resolve_return");
-        for (unsigned int i = 0; i < numArgs; i++) {
-             Value::decref(frame->slots[meth->arguments[i]->name]);
-        }
-        if (meth->type) {
-            Value* res = frame->slots[RES_RESULT];
+        if (meth->getResultType()) {
+            Value* res = Value::incref(frame->slots[meth->getResultSlot()]);
             delete frame;
             return res;
         } else {

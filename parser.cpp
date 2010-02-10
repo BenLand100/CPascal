@@ -22,7 +22,7 @@
 #include "Type.h"
 #include "Expression.h"
 #include "Variable.h"
-#include "Container.h"
+#include "Interpreter.h"
 #include "Operator.h"
 #include "Exceptions.h"
 #include <iostream>
@@ -34,9 +34,9 @@
 //#define debug(x) std::cout << x << '\n'
 #define debug(x)
 
-Expression* parseExpr(char* &cur) throw(InterpEx*,int) ;
-std::list<Variable*> parseVars(char* &cur, std::map<int,Type*> &reftypes) throw(InterpEx*,int) ;
-std::list<Expression*> parseBlock(char* &cur) throw(InterpEx*,int) ;
+Expression* parseExpr(char* &cur, Container *scope) throw(InterpEx*,int) ;
+std::list<Variable*> parseVars(char* &cur, Container *scope) throw(InterpEx*,int) ;
+std::list<Expression*> parseBlock(char* &cur, Container *scope) throw(InterpEx*,int) ;
 void parseContainer(char* &cur, Container* container) throw(InterpEx*,int) ;
 
 inline int offset(char* cur) {
@@ -95,18 +95,18 @@ inline bool reserved(int name) {
     return MAX_PROTECTED > name;
 }
 
-Type* parseType(char* &cur, std::map<int,Type*> &reftypes) throw(InterpEx*,int) {
+Type* parseType(char* &cur, Container *scope) throw(InterpEx*,int) {
     debug("parseType");
     if (cur[0] == POPERATOR && cur[1] == OP_DEREFGET) {
         cur = next(cur);
-        return Type::getPointerType(parseType(cur, reftypes));
+        return Type::getPointerType(parseType(cur, scope));
     }
     if (cur[0] != PNAME) fatal("Type definition expected",cur);
     int name = *(int*)(cur+1);
     switch (name) {
         case RES_FUNCTION:
         case RES_PROCEDURE: {
-            Method* meth = new Method(-1);
+            Method* meth = new Method(-1,0);
             cur = next(cur);
             std::list<int> untyped;
             bool byref = false;
@@ -124,14 +124,14 @@ Type* parseType(char* &cur, std::map<int,Type*> &reftypes) throw(InterpEx*,int) 
                             break;
                         case SPC_COLON: {
                             cur = next(cur);
-                            Type* type = parseType(cur, reftypes);
+                            Type* type = parseType(cur, scope);
                             if (!hasArgs || !moreArgs) {
-                                meth->type = type;
+                                meth->setResultType(type);
                                 cur = next(cur);
                                 goto end_defparse;
                             } else {
                                 while (!untyped.empty()) {
-                                    meth->arguments.push_back(new Variable(untyped.front(), type, byref));
+                                    meth->addArgument(new Variable(untyped.front(), type, byref));
                                     untyped.pop_front();
                                 }
                                 byref = false;
@@ -184,15 +184,15 @@ Type* parseType(char* &cur, std::map<int,Type*> &reftypes) throw(InterpEx*,int) 
                         fatal("Malformed array specifier",tkfrom);
                 }
                 cur = next(next(next(tkto))); //skip the ] of
-                Type* type = parseType(cur,reftypes);
+                Type* type = parseType(cur,scope);
                 return Type::getBoundArrayType(type, from, to);
             } else { //Already ate the of
                 if (cur[0] != PNAME || cur[1] != RES_OF) fatal("Of expected",cur);
                 cur = next(cur);
-                return Type::getDynamicArrayType(parseType(cur,reftypes));
+                return Type::getDynamicArrayType(parseType(cur,scope));
             }
         case RES_RECORD: {
-            std::list<Variable*> vars = parseVars(cur,reftypes);
+            std::list<Variable*> vars = parseVars(cur,scope);
             cur = next(cur);
             std::map<int,Type*> fields;
             std::list<Variable*>::iterator iter = vars.begin();
@@ -208,19 +208,16 @@ Type* parseType(char* &cur, std::map<int,Type*> &reftypes) throw(InterpEx*,int) 
         default:
             Type* res = Type::getType(name);
             if (res->type == TYPE_REF) {
-                if (reftypes.find(name) != reftypes.end()) {
-                    return reftypes[name];
-                } else {
-                    fatal("Unknown type reference",cur);
-                    return res;
-                }
+                Type *deref = scope->getType(name);
+                if (deref) return deref;
+                fatal("Unknown type reference",cur);
             } else {
                 return res;
             }
     }
 }
 
-void parseTypes(char* &cur, std::map<int,Type*> &reftypes) throw(InterpEx*,int) {
+void parseTypes(char* &cur, Container *scope) throw(InterpEx*,int) {
     debug("parseTypes");
     if (cur[0] != PNAME || *(int*)(cur+1) != RES_TYPE) fatal("Type Expected",cur);
     char* tok = next(cur);
@@ -231,17 +228,17 @@ void parseTypes(char* &cur, std::map<int,Type*> &reftypes) throw(InterpEx*,int) 
         cur = next(tok); //skip =
         if (cur[0] != POPERATOR || cur[1] != OP_EQU) fatal("Type assignment expected",cur);
         cur = next(cur);
-        Type* type = parseType(cur, reftypes);
+        Type* type = parseType(cur, scope);
         cur = next(cur); //skip ;
         if (cur[0] != PSPECIAL || cur[1] != SPC_SEMICOLON) fatal("Semicolon expected",cur);
-        if (reftypes.find(name) != reftypes.end()) fatal("Type already defined",cur);
-        reftypes[name] = type;
+        if (scope->getType(name)) fatal("Type already defined",cur);
+        scope->addType(name,type);
         tok = next(cur);
     } while (*tok);
 }
 
 
-std::map<int,Expression*> parseConsts(char* &cur) throw(InterpEx*,int)  {
+std::map<int,Expression*> parseConsts(char* &cur, Container *scope) throw(InterpEx*,int)  {
     debug("parseConsts");
     std::map<int,Expression*> consts;
     char* tok = next(cur);
@@ -253,7 +250,7 @@ std::map<int,Expression*> parseConsts(char* &cur) throw(InterpEx*,int)  {
         }
         cur = next(tok); //skip =
         if (cur[0] != POPERATOR || cur[1] != OP_EQU) fatal("Const assignment expected",cur);
-        Expression* expr = parseExpr(cur); //eats the ;
+        Expression* expr = parseExpr(cur, scope); //eats the ;
         consts[name] = expr;
         tok = next(cur);
     }
@@ -261,7 +258,7 @@ std::map<int,Expression*> parseConsts(char* &cur) throw(InterpEx*,int)  {
     return consts;
 }
 
-std::list<Variable*> parseVars(char* &cur, std::map<int,Type*> &reftypes) throw(InterpEx*,int) {
+std::list<Variable*> parseVars(char* &cur, Container *scope) throw(InterpEx*,int) {
     debug("parseVars");
     std::list<Variable*> vars;
     std::stack<int> untyped;
@@ -271,7 +268,7 @@ std::list<Variable*> parseVars(char* &cur, std::map<int,Type*> &reftypes) throw(
             switch (tok[1]) { 
                 case SPC_COLON: {
                     tok = next(tok);
-                    Type* type = parseType(tok, reftypes);
+                    Type* type = parseType(tok, scope);
                     while (!untyped.empty()) {
                         vars.push_back(new Variable(untyped.top(), type));
                         untyped.pop();
@@ -300,11 +297,10 @@ std::list<Variable*> parseVars(char* &cur, std::map<int,Type*> &reftypes) throw(
     return vars;
 }
 
-Method* parseMethod(char* &cur, std::map<int,Type*> &reftypes) throw(InterpEx*,int) {
+Method* parseMethod(char* &cur, Container* scope) throw(InterpEx*,int) {
     debug("parseMethod");
     cur = next(cur);
-    Method* meth = new Method(*(int*)(cur+1));
-    meth->types.insert(reftypes.begin(),reftypes.end());
+    Method* meth = new Method(*(int*)(cur+1),scope);
     std::list<int> untyped;
     bool byref = false;
     bool hasArgs = false;
@@ -321,15 +317,15 @@ Method* parseMethod(char* &cur, std::map<int,Type*> &reftypes) throw(InterpEx*,i
                     break;
                 case SPC_COLON: {
                     cur = next(cur);
-                    Type* type = parseType(cur,reftypes);
+                    Type* type = parseType(cur,meth);
                     if (!hasArgs || !moreArgs) {
-                        meth->type = type;
+                        meth->setResultType(type);
                         cur = next(cur);
                         goto end_defparse;
                     } else {
                         while (!untyped.empty()) {
                             debug("argument:" << untyped.front());
-                            meth->arguments.push_back(new Variable(untyped.front(), type, byref));
+                            meth->addArgument(new Variable(untyped.front(), type, byref));
                             untyped.pop_front();
                         }
                         byref = false;
@@ -358,7 +354,6 @@ Method* parseMethod(char* &cur, std::map<int,Type*> &reftypes) throw(InterpEx*,i
     fatal("Reached end of file",0);
     end_defparse:
     meth->val_type = Type::getMethodType(meth);
-    meth->types.insert(reftypes.begin(),reftypes.end());
     parseContainer(cur,meth);
     return meth;
 }
@@ -413,7 +408,7 @@ inline opprec mk_opprec(Operator* op, char prec) {
     return res;
 }
 
-Expression* parseExpr(char* &cur) throw(InterpEx*,int) {
+Expression* parseExpr(char* &cur, Container *scope) throw(InterpEx*,int) {
     debug("parseExpr");
     static std::map<char,char> precedence = precedence_map();
     std::list<Element*> expr;
@@ -455,7 +450,7 @@ Expression* parseExpr(char* &cur) throw(InterpEx*,int) {
                     case SPC_LBRACE: {
                         std::list<Expression*> indexes;
                         do {
-                            indexes.push_back(parseExpr(tok));
+                            indexes.push_back(parseExpr(tok, scope));
                         } while (tok[0] != PSPECIAL && tok[1] != SPC_RBRACE);
                         char* temp = next(tok);
                         if (temp[0] == POPERATOR && temp[1] == OP_ASGN) {
@@ -551,29 +546,34 @@ Expression* parseExpr(char* &cur) throw(InterpEx*,int) {
                 oper->push(mk_opprec(Operator::get(tok[1]),prec));
             } break;
             case PNAME: {//Could be a variable or method
-                //***FIXME*** This will eventually remap names to indexes in a scope...
                 int name = *(int*)(tok+1);
                 switch (name) { //handle faux-functions
                     case RES_SIZE: {
                         tok = next(tok);
-                        Expression* array = parseExpr(tok); //shouldn't eat the )
+                        Expression* array = parseExpr(tok, scope); //shouldn't eat the )
                         tok = next(tok);
+                        if (tok[0] != PSPECIAL || tok[1] != SPC_RPAREN) fatal("Close paren expected",tok);
                         expr.push_back(new Size(array));
                     } goto next_exprparse;
                     case RES_RESIZE:{
                         tok = next(tok);
-                        Expression* array = parseExpr(tok); //eats the ,
-                        Expression* dim = parseExpr(tok); //shouldn't eat the )
+                        Expression* array = parseExpr(tok, scope); //eats the ,
+                        if (tok[0] != PSPECIAL || tok[1] != SPC_COMMA) fatal("Comma expected",tok);
+                        Expression* dim = parseExpr(tok, scope); //shouldn't eat the )
                         tok = next(tok);
+                        if (tok[0] != PSPECIAL || tok[1] != SPC_RPAREN) fatal("Close paren expected",tok);
                         expr.push_back(new Resize(array,dim));
                     } goto next_exprparse;
                     case RES_ARRAY:{
                         tok = next(tok);
+                        if (tok[0] != PSPECIAL || tok[1] != SPC_RPAREN) fatal("Close paren expected",tok);
                         std::list<Expression*> elems;
                         char* temp = next(tok);
                         while (temp[0] != PSPECIAL || temp[0] != SPC_RPAREN) {
-                            elems.push_back(parseExpr(tok)); //eats the ,
+                            elems.push_back(parseExpr(tok,scope)); //eats the ,
+                            if (tok[0] != PSPECIAL || tok[1] != SPC_COMMA) fatal("Comma expected",tok);
                             temp = next(tok);
+                            if (!tok[0]) fatal("Reached end of file",tok);
                         }
                         tok = temp;
                         expr.push_back(new ArrayDef(elems));
@@ -586,7 +586,19 @@ Expression* parseExpr(char* &cur) throw(InterpEx*,int) {
                     } goto next_exprparse;
                 }
                 if (reserved(name)) goto end_exprparse; //All reserved words break expression parsing
-                expr.push_back(new Symbol(name));
+                int idx = scope->getNameSlot(name);
+                if (idx == -1) {
+                    Method *meth = scope->getMethod(name);
+                    if (!meth) {
+                        Value *val = scope->getConst(name);
+                        if (!val) fatal("Symbol undefined",tok);
+                        expr.push_back(Value::incref(val));
+                    } else {
+                        expr.push_back(new MethodValue(meth));
+                    }
+                } else {
+                    expr.push_back(new Symbol(idx));
+                }
                 if (*tok) {
                     char* temp = next(tok);
                     if (temp[0] == PSPECIAL && temp[1] == SPC_LPAREN) {
@@ -598,7 +610,7 @@ Expression* parseExpr(char* &cur) throw(InterpEx*,int) {
                                 tok = temp;
                                 break;
                             }
-                            args.push_back(parseExpr(tok));
+                            args.push_back(parseExpr(tok,scope));
                         }
                         expr.push_back(new Invoke(args));
                     }
@@ -640,23 +652,23 @@ Expression* parseExpr(char* &cur) throw(InterpEx*,int) {
     return new Expression(expr, off);
 }
 
-Until* parseUntil(char* &cur) throw(InterpEx*,int) {
+Until* parseUntil(char* &cur, Container *scope) throw(InterpEx*,int) {
    debug("parseUntil");
    char* tok = next(cur);
    if (tok[0] != PNAME || *(int*)(tok+1) != RES_REPEAT) fatal("Repeat expected",cur);
    int off = offset(cur);
-   std::list<Expression*> block = parseBlock(cur); //eats the until
+   std::list<Expression*> block = parseBlock(cur, scope); //eats the until
    if (cur[0] != PNAME || *(int*)(cur+1) != RES_UNTIL) fatal("Until expected",cur);
-   Expression* cond = parseExpr(cur);
+   Expression* cond = parseExpr(cur,scope);
    return new Until(block,cond,off);
 }
 
-Case* parseCase(char* &cur) throw(InterpEx*,int) {
+Case* parseCase(char* &cur, Container *scope) throw(InterpEx*,int) {
     debug("parseCase");
     int off = offset(cur);
     cur = next(cur); //skip case
     if (cur[0] != PNAME || *(int*)(cur+1) != RES_CASE) fatal("Case expected",cur);
-    Expression* cond = parseExpr(cur);
+    Expression* cond = parseExpr(cur,scope);
     cur = next(cur); //skip of
     if (cur[0] != PNAME || *(int*)(cur+1) != RES_OF) fatal("Of expected",cur);
     Case* pcase = new Case(cond,off);
@@ -665,7 +677,7 @@ Case* parseCase(char* &cur) throw(InterpEx*,int) {
         if (cur[0] == PNAME) {
             switch (*(int*)(cur+1)) {
                 case RES_ELSE: {
-                    std::list<Expression*> def = parseBlock(cur);
+                    std::list<Expression*> def = parseBlock(cur,scope);
                     pcase->setDefault(def);
                     cur = next(cur); //skip end
                     if (cur[0] != PNAME || *(int*)(cur+1) != RES_END) fatal("End expected",cur);
@@ -687,7 +699,7 @@ Case* parseCase(char* &cur) throw(InterpEx*,int) {
             }
             cur = next(cur);
         } while (cur[0] != PSPECIAL || cur[1] != SPC_COLON); //breaks on colon
-        std::list<Expression*> block = parseBlock(cur);
+        std::list<Expression*> block = parseBlock(cur,scope);
         while (!switches.empty()) {
             pcase->addBranch(switches.top(),block);
             switches.pop();
@@ -696,62 +708,62 @@ Case* parseCase(char* &cur) throw(InterpEx*,int) {
     return pcase;
 }
 
-For* parseFor(char* &cur) throw(InterpEx*,int)  {
+For* parseFor(char* &cur, Container *scope) throw(InterpEx*,int)  {
     debug("parseFor");
     int off = offset(cur);
     cur = next(cur); //skip for
     if (cur[0] != PNAME || *(int*)(cur+1) != RES_FOR) fatal("For expected",cur);
     cur = next(cur); //get var
     if (cur[0] != PNAME) fatal("Symbol expected",cur);
-    int var = *(int*)(cur+1);
+    int var = scope->getNameSlot(*(int*)(cur+1));
     cur = next(cur); //skip :=
     if (cur[0] != POPERATOR || cur[1] != OP_ASGN) fatal("Assignment expected",cur);
-    Expression* begin = parseExpr(cur);
+    Expression* begin = parseExpr(cur, scope);
     cur = next(cur); //grap the to/downto
     if (cur[0] != PNAME) fatal("to/downto expected",cur);
     bool inc = cur[1] == RES_TO;
-    Expression* end = parseExpr(cur);
+    Expression* end = parseExpr(cur, scope);
     cur = next(cur); //skip do
     if (cur[0] != PNAME || *(int*)(cur+1) != RES_DO) fatal("Do expected",cur);
-    std::list<Expression*> block = parseBlock(cur);
+    std::list<Expression*> block = parseBlock(cur,scope);
     return new For(var,begin,inc,end,block,off);
 }
 
-While* parseWhile(char* &cur) throw(InterpEx*,int)  {
+While* parseWhile(char* &cur, Container *scope) throw(InterpEx*,int)  {
     debug("parseWhile");
     int off = offset(cur);
     cur = next(cur); //skip while
     if (cur[0] != PNAME || *(int*)(cur+1) != RES_WHILE) fatal("While expected",cur);
-    Expression* cond = parseExpr(cur);
+    Expression* cond = parseExpr(cur, scope);
     cur = next(cur); //skip do
     if (cur[0] != PNAME || *(int*)(cur+1) != RES_DO) fatal("Do expected",cur);
-    std::list<Expression*> block = parseBlock(cur);
+    std::list<Expression*> block = parseBlock(cur,scope);
     return new While(cond,block,off);
 }
 
-If* parseIf(char* &cur) throw(InterpEx*,int)  {
+If* parseIf(char* &cur, Container *scope) throw(InterpEx*,int)  {
     debug("parseIf");
     int off = offset(cur);
     cur = next(cur); //skip if
     if (cur[0] != PNAME || *(int*)(cur+1) != RES_IF) fatal("If expected",cur);
-    Expression* cond = parseExpr(cur);
+    Expression* cond = parseExpr(cur, scope);
     cur = next(cur); //skip then
     if (cur[0] != PNAME || *(int*)(cur+1) != RES_THEN) fatal("Then expected",cur);
-    std::list<Expression*> block = parseBlock(cur);
+    std::list<Expression*> block = parseBlock(cur,scope);
     If* res = new If(cond,block,off);
     while (*cur) {
         char* tok = next(cur);
         if (tok[0] == PNAME && *(int*)(tok+1) == RES_ELSE) {
             char* temp = next(tok);
             if (temp[0] == PNAME && *(int*)(temp+1) == RES_IF) {
-                cond = parseExpr(temp);
+                cond = parseExpr(temp, scope);
                 temp = next(temp); //skip then
                 if (temp[0] != PNAME || *(int*)(temp+1) != RES_THEN) fatal("Then expected",temp);
-                block = parseBlock(temp);
+                block = parseBlock(temp,scope);
                 res->addBranch(cond, block);
                 cur = temp;
             } else {
-                block = parseBlock(tok);
+                block = parseBlock(tok,scope);
                 res->setDefault(block);
                 cur = tok;
             }
@@ -762,22 +774,22 @@ If* parseIf(char* &cur) throw(InterpEx*,int)  {
     return res;
 }
 
-Try* parseTry(char* &cur) throw(InterpEx*,int) {
+Try* parseTry(char* &cur, Container *scope) throw(InterpEx*,int) {
     debug("parseTry");
     int off = offset(cur);
-    std::list<Expression*> danger = parseBlock(cur);
+    std::list<Expression*> danger = parseBlock(cur,scope);
     std::list<Expression*> saftey;
     std::list<Expression*> always;
     char* tok = next(cur);
     if (*tok != PNAME) fatal("Symbol expected", tok);
     switch (*(int*)(tok+1)) {
         case RES_EXCEPT:
-            saftey = parseBlock(cur);
+            saftey = parseBlock(cur,scope);
             tok = next(cur);
             if (tok[0] != PNAME || *(int*)(tok+1) != RES_FINALLY)
                 break;
         case RES_FINALLY:
-            always = parseBlock(cur);
+            always = parseBlock(cur,scope);
             break;
         default:
             fatal("Unclosed try statement", tok);
@@ -785,7 +797,7 @@ Try* parseTry(char* &cur) throw(InterpEx*,int) {
     return new Try(danger,saftey,always,off);
 }
 
-std::list<Expression*> parseBlock(char* &cur) throw(InterpEx*,int) {
+std::list<Expression*> parseBlock(char* &cur, Container *scope) throw(InterpEx*,int) {
     debug("parseBlock");
     std::list<Expression*> block;
     bool fullblock;
@@ -822,25 +834,25 @@ std::list<Expression*> parseBlock(char* &cur) throw(InterpEx*,int) {
                 case RES_FINALLY:
                     goto end_blockparse;
                 case RES_IF:
-                    block.push_back(parseIf(cur));
+                    block.push_back(parseIf(cur,scope));
                     break;
                 case RES_WHILE:
-                    block.push_back(parseWhile(cur));
+                    block.push_back(parseWhile(cur,scope));
                     break;
                 case RES_CASE:
-                    block.push_back(parseCase(cur));
+                    block.push_back(parseCase(cur,scope));
                     break;
                 case RES_REPEAT:
-                    block.push_back(parseUntil(cur));
+                    block.push_back(parseUntil(cur,scope));
                     break;
                 case RES_FOR:
-                    block.push_back(parseFor(cur));
+                    block.push_back(parseFor(cur,scope));
                     break;
                 case RES_TRY:
-                    block.push_back(parseTry(cur));
+                    block.push_back(parseTry(cur,scope));
                     break;
                 default: //Name but not reserved
-                    block.push_back(parseExpr(cur));
+                    block.push_back(parseExpr(cur, scope));
                     break;
             }
         } while (fullblock);
@@ -861,23 +873,39 @@ void parseContainer(char* &cur, Container* container) throw(InterpEx*,int) {
         if (*tok != PNAME) fatal("Symbol expected but not found",tok);
         switch (*(int*)(tok+1)) {
             case RES_CONST: { //multi
-                std::map<int,Expression*> consts = parseConsts(tok);
-                container->constants.insert(consts.begin(),consts.end());
+                std::map<int,Expression*> consts = parseConsts(tok,container);
+                std::map<int,Expression*>::iterator iter = consts.begin();
+                std::map<int,Expression*>::iterator end = consts.end();
+                Frame empty; //AUTOFREE!!!
+                std::stack<Value*> stack;
+                while (iter != end) {
+                    container->addConst(iter->first,evalExpr(iter->second,&empty,stack));
+                    delete iter->second;
+                    iter++;
+                }
+                cleanStack(stack);
             } break;
             case RES_TYPE: { //multi
-                parseTypes(tok,container->types);
+                parseTypes(tok,container); //adds to container
             } break;
             case RES_VAR: { //multi
-                std::list<Variable*> vars = parseVars(tok,container->types);
-                container->variables.insert(container->variables.end(),vars.begin(),vars.end());
+                std::list<Variable*> vars = parseVars(tok,container); //adds to container
+                std::list<Variable*>::iterator iter = vars.begin();
+                std::list<Variable*>::iterator end = vars.end();
+                while (iter != end) {
+                    if (!container->addVariable(*iter))
+                        fatal("Symbol already defined",cur);
+                    iter++;
+                }
             } break;
             case RES_PROCEDURE: //multi
             case RES_FUNCTION: { //multi
-                 Method* meth = parseMethod(tok,container->types);
-                 container->methods.push_back(meth);
+                 Method* meth = parseMethod(tok,container);
+                 if (!container->addMethod(meth))
+                     fatal("Symbol already defined",cur);
             } break;
             case RES_BEGIN: { //single
-                std::list<Expression*> block = parseBlock(cur);
+                std::list<Expression*> block = parseBlock(cur,container);
                 fillBlock(&container->block,&block);
                 return;
             }
@@ -888,8 +916,8 @@ void parseContainer(char* &cur, Container* container) throw(InterpEx*,int) {
     } while (*cur);
 }
 
-//FIXME methods is unused currently. It will link at compile time eventually, this is for that
-Program* parse(char* tokens, std::map<int,Type*> &types, std::vector<Method*> &methods) throw(InterpEx*) {
+//give the parser a static scope...
+Program* parse(char* tokens, Container *static_scope) throw(InterpEx*) {
     debug("parse");
     Program* prog = 0;
     try {
@@ -898,15 +926,9 @@ Program* parse(char* tokens, std::map<int,Type*> &types, std::vector<Method*> &m
             fatal("Identifier not found: program",cur);
         cur = next(cur); //name
         if (*cur != PNAME) fatal("Program name expected",cur);
-        prog = new Program(*(int*)(cur+1));
+        prog = new Program(*(int*)(cur+1),static_scope);
         cur = next(cur); //skip ;
         if (cur[0] != PSPECIAL || cur[1] != SPC_SEMICOLON) fatal("Semicolon expected",cur);
-        std::map<int,Type*>::iterator iter = types.begin();
-        std::map<int,Type*>::iterator end = types.end();
-        while (iter != end) {
-            prog->types[iter->first] = iter->second;
-            iter++;
-        }
         parseContainer(cur,prog);
     } catch (int exi) {
         if (prog) delete prog;
