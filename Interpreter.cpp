@@ -416,6 +416,12 @@ int Container::getNameSlot(int name) {
     return l->index;
 }
 
+Type* Container::getSlotType(int slot) {
+    if (slot >= local_start + (int)locals.size()) return 0;
+    if (slot < local_start) return super_scope ? super_scope->getSlotType(slot) : 0;
+    return locals[slot]->type;
+}
+
 Program::Program(int name, Container *static_scope) : Container(name,static_scope) { }
 Program::~Program() { }
 
@@ -437,6 +443,17 @@ Type* Method::getResultType() {
 
 int Method::getResultSlot() {
     return res_idx;
+}
+
+
+Type* Method::getSlotType(int slot) {
+    if (slot >= local_start + (int)locals.size()) return 0;
+    if (slot < local_start) {
+        if (slot < slot_start) return super_scope ? super_scope->getSlotType(slot) : 0;
+        return arguments[slot-slot_start]->type;
+    } else {
+        return locals[slot-local_start]->type;
+    }
 }
 
 bool Method::addArgument(Variable *arg) {

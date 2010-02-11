@@ -18,6 +18,7 @@
  */
 
 #include "Type.h"
+#include "Variable.h"
 #include "lexer.h"
 #include "Interpreter.h"
 #include <sstream>
@@ -48,14 +49,12 @@ Meth* Type::getMethodType(Method* meth) {
     return new Meth(descr, meth);
 }
 
-Record* Type::getRecordType(std::map<int,Type*> fields) {
+Record* Type::getRecordType(std::list<Variable*> fields) {
     std::stringstream str;
     str << '{';
-    std::list<Variable*> vars;
-    std::map<int,Type*>::iterator iter = fields.begin();
+    std::list<Variable*>::iterator iter = fields.begin();
     while (iter != fields.end()) {
-        vars.push_back(new Variable(iter->first, iter->second));
-        str << iter->first << ':' << iter->second->descr << ',';
+        str << (*iter)->name << ':' << (*iter)->type->descr << ',';
         iter++;
     }
     str << '}';
@@ -63,7 +62,7 @@ Record* Type::getRecordType(std::map<int,Type*> fields) {
     std::map<std::string, Type*>* types = alltypes();
     if (types->find(descr) != types->end())
         return (Record*)(*types)[descr];
-    return new Record(descr, vars);
+    return new Record(descr, fields);
 }
 
 Array* Type::getBoundArrayType(Type* element, int from, int to) {
@@ -224,18 +223,29 @@ int Array::sizeOf() {
     }
 }
 
-Record::Record(std::string descr_impl, std::list<Variable*> fields_impl) : Type(descr_impl,TYPE_RECORD), fields(fields_impl), size(0) { }
+Record::Record(std::string descr_impl, std::list<Variable*>& fields) : Type(descr_impl,TYPE_RECORD), size(0) {
+    std::list<Variable*>::iterator iter = fields.begin();
+    std::list<Variable*>::iterator end = fields.end();
+    for (int i = 0; iter != end; i++, iter++) {
+        namemap[(*iter)->name] = i;
+        slots.push_back((*iter)->type);
+    }
+}
 
 bool Record::instanceOf(Type* type) {
-    return this->type == type->type && this->fields == ((Record*)type)->fields;
+    return this->type == type->type && this->slots == ((Record*)type)->slots && (this->namemap == ((Record*)type)->namemap);
+}
+
+int Record::getNameSlot(int name) {
+    return namemap[name];
 }
 
 int Record::sizeOf() {
     if (size) return size;
-    std::list<Variable*>::iterator iter = fields.begin();
-    std::list<Variable*>::iterator end = fields.end();
+    std::vector<Type*>::iterator iter = slots.begin();
+    std::vector<Type*>::iterator end = slots.end();
     while (iter != end) {
-        size += (*iter)->type->sizeOf();
+        size += (*iter)->sizeOf();
         iter++;
     }
     return size;

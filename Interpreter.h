@@ -64,6 +64,7 @@ public:
     Type* getType(int name);
 
     int getNameSlot(int name);
+    virtual Type* getSlotType(int slot);
 
     //E.G. a generic container
     Container(int name, Container *super_scope);
@@ -96,6 +97,7 @@ public:
     unsigned int numArgs();
     Type* getResultType();
     int getResultSlot();
+    virtual Type* getSlotType(int slot);
 
     void* address;
     int mtype;

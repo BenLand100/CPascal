@@ -423,9 +423,9 @@ StringValue::StringValue(void* mem_impl) : Value(TYPE_STRING, Type::getString(),
     objref = new int*;
     *objref = (int*) * mem;
     **objref = 1;
-    size = new int*;
-    *size = (int*) (*mem + 4);
-    **size = len;
+    ssize = new int*;
+    *ssize = (int*) (*mem + 4);
+    **ssize = len;
     str = new char*;
     *str = (char*) (*mem + 8);
     **str = 0;
@@ -438,9 +438,9 @@ StringValue::StringValue(char* str_impl) : Value(TYPE_STRING, Type::getString(),
     objref = new int*;
     *objref = (int*) (*mem);
     **objref = 1;
-    size = new int*;
-    *size = (int*) (*mem + 4);
-    **size = len;
+    ssize = new int*;
+    *ssize = (int*) (*mem + 4);
+    **ssize = len;
     str = new char*;
     *str = (char*) (*mem + 8);
     strcpy(*str, str_impl);
@@ -453,9 +453,9 @@ StringValue::StringValue(std::string cpp_str) : Value(TYPE_STRING, Type::getStri
     objref = new int*;
     *objref = (int*) (*mem);
     **objref = -1;
-    size = new int*;
-    *size = (int*) (*mem + 4);
-    **size = len;
+    ssize = new int*;
+    *ssize = (int*) (*mem + 4);
+    **ssize = len;
     str = new char*;
     *str = (char*) (*mem + 8);
     strcpy(*str, cpp_str.c_str());
@@ -465,7 +465,7 @@ StringValue::~StringValue() {
     delete [] * mem;
     if (owns_mem) delete mem;
     delete objref;
-    delete size;
+    delete ssize;
     delete str;
 }
 
@@ -477,12 +477,12 @@ void StringValue::set(Value* val) throw (int, InterpEx*) {
     if (val->type != TYPE_STRING) throw E_NOT_STRING;
     delete [] * mem;
     StringValue* sval = (StringValue*) val;
-    int len = **sval->size;
+    int len = **sval->ssize;
     *mem = new char[8 + len + 1];
     *objref = (int*) (*mem);
     **objref = -1;
-    *size = (int*) (*mem + 4);
-    **size = len;
+    *ssize = (int*) (*mem + 4);
+    **ssize = len;
     *str = (char*) (*mem + 8);
     strcpy(*str, *sval->str);
 }
@@ -492,13 +492,32 @@ char* StringValue::asString() throw (int, InterpEx*) {
 }
 
 void StringValue::setIndex(int index, Value* val) throw (int, InterpEx*) {
-    if (index < 1 || index > **size) throw E_INDEX_BOUNDS;
+    if (index < 1 || index > **ssize) throw E_INDEX_BOUNDS;
     (*str)[index-1] = val->asChar();
 }
 
 Value* StringValue::getIndex(int index) throw (int, InterpEx*) {
-    if (index < 1 || index > **size) throw E_INDEX_BOUNDS;
+    if (index < 1 || index > **ssize) throw E_INDEX_BOUNDS;
     return new CharValue((*str)[index-1]);
+}
+
+void StringValue::resize(int size) throw (int, InterpEx*) {
+    if (**ssize == size) return;
+    char *mem = new char[8+size+1];
+    int *objref = (int*)(str);
+    *objref = **this->objref;
+    int *ssize = (int*)(str+4);
+    *ssize = size;
+    char *str = (mem+8);
+    strcpy(str,*this->str);
+    *this->mem = mem;
+    *this->str = str;
+    *this->objref = objref;
+    *this->ssize = ssize;
+}
+
+int StringValue::size() throw(int, InterpEx*) {
+    return **ssize;
 }
 
 int StringValue::argSize() {
@@ -1037,81 +1056,61 @@ void PointerValue::refArg(void* mem) {
 //**** BEGIN RECORDVALUE DEFINITION ***
 
 RecordValue::RecordValue(Record* rec, void* mem_impl) : Value(TYPE_RECORD, rec, false) {
-    memsize = new int;
-    *memsize = rec->sizeOf();
-    indexes = new int*;
-    *indexes = new int[rec->fields.size()];
-    mem = new char*;
-    *mem = (char*) mem_impl;
-    fields = new std::map<int, Value*>;
-    std::list<Variable*>::iterator iter = rec->fields.begin();
-    std::list<Variable*>::iterator end = rec->fields.end();
+    memsize = rec->sizeOf();
+    mem = (char*)mem_impl;
+    len = rec->slots.size();
+    indexes = new int[len];
+    slots = new Value*[len];
     int pos = 0;
-    for (int i = 0; iter != end; i++, iter++) {
-        Type* ftype = (Type*) (*iter)->type;
-        (*fields)[(*iter)->name] = Value::fromTypeMem(ftype, *mem + pos);
-        (*indexes)[i] = ftype->sizeOf();
-        pos += (*indexes)[i];
+    for (int i = 0; i < len; i++) {
+        Type* ftype = rec->slots[i];
+        slots[i] = Value::fromTypeMem(ftype, mem + pos);
+        indexes[i] = ftype->sizeOf();
+        pos += indexes[i];
     }
 }
 
 RecordValue::RecordValue(Record* rec) : Value(TYPE_RECORD, rec, true) {
-    memsize = new int;
-    *memsize = rec->sizeOf();
-    indexes = new int*;
-    *indexes = new int[rec->fields.size()];
-    mem = new char*;
-    *mem = new char[*memsize];
-    fields = new std::map<int, Value*>;
-    std::list<Variable*>::iterator iter = rec->fields.begin();
-    std::list<Variable*>::iterator end = rec->fields.end();
+    memsize = rec->sizeOf();
+    mem = new char[memsize];
+    len = rec->slots.size();
+    indexes = new int[len];
+    slots = new Value*[len];
     int pos = 0;
-    for (int i = 0; iter != end; i++, iter++) {
-        Type* ftype = (Type*) (*iter)->type;
-        (*fields)[(*iter)->name] = Value::fromTypeMem(ftype, *mem + pos);
-        (*indexes)[i] = ftype->sizeOf();
-        pos += (*indexes)[i];
+    for (int i = 0; i < len; i++) {
+        Type* ftype = rec->slots[i];
+        slots[i] = Value::fromTypeMem(ftype, mem + pos);
+        indexes[i] = ftype->sizeOf();
+        pos += indexes[i];
     }
 }
 
 RecordValue::RecordValue(Record* rec, bool internal) : Value(TYPE_RECORD, rec, true) {
-    memsize = new int;
-    indexes = new int*;
-    fields = new std::map<int, Value*>;
-    mem = new char*;
+    memsize = rec->sizeOf();
+    mem = new char[memsize];
+    len = rec->slots.size();
+    indexes = new int[len];
+    slots = new Value*[len];
 }
 
 RecordValue::~RecordValue() {
-    std::map<int, Value*>::iterator iter = fields->begin();
-    std::map<int, Value*>::iterator end = fields->end();
-    while (iter != end) {
-        Value::decref(iter->second);
-        iter++;
+    for (int i = 0; i < len; i++) {
+        Value::decref(slots[i]);
     }
-    if (owns_mem) delete [] * mem;
-    delete [] * indexes;
-
-    delete indexes;
-    delete memsize;
-    delete fields;
-    delete mem;
+    if (owns_mem) delete [] mem;
+    delete [] indexes;
+    delete [] slots;
 }
 
 Value* RecordValue::clone() {
     RecordValue* rec = new RecordValue((Record*) typeObj, true);
-
-    *rec->memsize = *memsize;
-    *rec->indexes = new int[((Record*) typeObj)->fields.size()];
-    *rec->mem = new char[*memsize];
-    std::list<Variable*>::iterator iter = ((Record*) typeObj)->fields.begin();
-    std::list<Variable*>::iterator end = ((Record*) typeObj)->fields.end();
     int pos = 0;
-    for (int i = 0; iter != end; i++, iter++) {
-        Type* ftype = (*iter)->type;
-        (*(rec->fields))[(*iter)->name] = Value::fromTypeMem(ftype, *(rec->mem) + pos);
-        (*(rec->fields))[(*iter)->name]->set((*(fields))[(*iter)->name]);
-        (*(rec->indexes))[i] = (*indexes)[i];
-        pos += (*indexes)[i];
+    for (int i = 0; i < len; i++) {
+        Type* ftype = ((Record*)typeObj)->slots[i];
+        rec->slots[i] = Value::fromTypeMem(ftype, rec->mem + pos);
+        rec->slots[i]->set(slots[i]);
+        rec->indexes[i] = indexes[i];
+        pos += indexes[i];
     }
     return rec;
 }
@@ -1119,33 +1118,28 @@ Value* RecordValue::clone() {
 void RecordValue::set(Value* val) throw (int, InterpEx*) {
     if (val->type != TYPE_RECORD) throw E_NOT_RECORD;
     RecordValue* rec = (RecordValue*) val;
-    std::map<int, Value*>::iterator iter = rec->fields->begin();
-    std::map<int, Value*>::iterator end = rec->fields->end();
-    while (iter != end) {
-        (*fields)[iter->first]->set(iter->second);
-        iter++;
+    for (int i = 0; i < len; i++) {
+        slots[i]->set(rec->slots[i]);
     }
 }
 
-Value* RecordValue::getField(int name) throw (int, InterpEx*) {
-    if (fields->find(name) == fields->end()) throw E_NO_FIELD;
-    return (*fields)[name];
+Value* RecordValue::getField(int slot) throw (int, InterpEx*) {
+    return slots[slot];
 }
 
-void RecordValue::setField(int name, Value* value) throw (int, InterpEx*) {
-    if (fields->find(name) == fields->end()) throw E_NO_FIELD;
-    (*fields)[name]->set(value);
+void RecordValue::setField(int slot, Value* value) throw (int, InterpEx*) {
+    slots[slot]->set(value);
 }
 
 int RecordValue::argSize() {
-    return *memsize;
+    return memsize;
 }
 
 void RecordValue::valArg(void* mem_impl) {
-    *(char**) mem_impl = *mem;
+    *(char**) mem_impl = mem;
 }
 
 void RecordValue::refArg(void* mem_impl) {
-    *(char***) mem_impl = mem;
+    *(char***) mem_impl = &mem;
 }
 

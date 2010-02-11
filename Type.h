@@ -40,6 +40,7 @@ class Meth;
 
 #include <string>
 #include <map>
+#include <vector>
 #include <list>
 #include "Variable.h"
 
@@ -55,7 +56,7 @@ public:
     static Type* getReal();
     static Type* getBoolean();
     static Type* getChar();
-    static Record* getRecordType(std::map<int,Type*> fields);
+    static Record* getRecordType(std::list<Variable*> fields);
     static Array* getBoundArrayType(Type* element, int from, int to);
     static Array* getDynamicArrayType(Type* element);
     static Pointer* getPointerType(Type* type);
@@ -124,13 +125,15 @@ protected:
 class Record : public Type {
     friend class Type;
 public:
-    std::list<Variable*> fields;
+    std::vector<Type*> slots;
 
     bool instanceOf(Type* type);
     int sizeOf();
+    int getNameSlot(int name);
 protected:
+    std::map<int,int> namemap;
     int size;
-    Record(std::string descr, std::list<Variable*> fields);
+    Record(std::string descr, std::list<Variable*>& fields);
 };
 
 #endif	/* _TYPE_H */

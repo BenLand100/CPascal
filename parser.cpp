@@ -194,16 +194,7 @@ Type* parseType(char* &cur, Container *scope) throw(InterpEx*,int) {
         case RES_RECORD: {
             std::list<Variable*> vars = parseVars(cur,scope);
             cur = next(cur);
-            std::map<int,Type*> fields;
-            std::list<Variable*>::iterator iter = vars.begin();
-            std::list<Variable*>::iterator end = vars.end();
-            while (iter != end) {
-                Variable* var = *iter;
-                fields[var->name] = var->type;
-                delete var;
-                iter++;
-            }
-            return Type::getRecordType(fields);
+            return Type::getRecordType(vars);
         }
         default:
             Type* res = Type::getType(name);
@@ -408,6 +399,14 @@ inline opprec mk_opprec(Operator* op, char prec) {
     return res;
 }
 
+inline void pushOper(std::list<Element*> &expr, std::stack<opprec>* stack, opprec oper) {
+    while (!stack->empty() && oper.prec <= stack->top().prec) {
+        expr.push_back(stack->top().op);
+        stack->pop();
+    }
+    stack->push(oper);
+}
+
 Expression* parseExpr(char* &cur, Container *scope) throw(InterpEx*,int) {
     debug("parseExpr");
     static std::map<char,char> precedence = precedence_map();
@@ -415,6 +414,7 @@ Expression* parseExpr(char* &cur, Container *scope) throw(InterpEx*,int) {
     std::stack<std::stack<opprec>*> parseStack;
     std::stack<opprec>* oper = new std::stack<opprec>();
     char lastType = -1, nextType = -1;
+    Type* stackType = Type::getNil();
     bool prefix = false;
     if (!*cur || !*next(cur)) fatal("Expression expected",cur);
     int off = offset(next(cur));
@@ -441,13 +441,15 @@ Expression* parseExpr(char* &cur, Container *scope) throw(InterpEx*,int) {
                         delete oper;
                         oper = parseStack.top();
                         parseStack.pop();
-                        nextType = -1;
+                        //FIXME: Currently, I have no idea how to handle this... Will work for most cases
+                        //nextType = ???;
                         goto next_exprparse;
                     case SPC_LPAREN:
                         parseStack.push(oper);
                         oper = new std::stack<opprec>();
                         goto next_exprparse;
                     case SPC_LBRACE: {
+                        if (stackType->type != TYPE_ARRAY && stackType->type != TYPE_STRING) fatal("Cannot access elements of a non-array",tok);
                         std::list<Expression*> indexes;
                         do {
                             indexes.push_back(parseExpr(tok, scope));
@@ -455,19 +457,17 @@ Expression* parseExpr(char* &cur, Container *scope) throw(InterpEx*,int) {
                         char* temp = next(tok);
                         if (temp[0] == POPERATOR && temp[1] == OP_ASGN) {
                             tok = temp;
-                            char prec = precedence[OP_ARRAYSET];
-                            while (!oper->empty() && prec <= oper->top().prec) {
-                                expr.push_back(oper->top().op);
-                                oper->pop();
-                            }
-                            oper->push(mk_opprec(new ArraySet(indexes),prec));
+                            pushOper(expr,oper,mk_opprec(new ArraySet(indexes),precedence[OP_ARRAYSET]));
                         } else {
-                            char prec = precedence[OP_ARRAYGET];
-                            while (!oper->empty() && prec <= oper->top().prec) {
-                                expr.push_back(oper->top().op);
-                                oper->pop();
-                            }
-                            oper->push(mk_opprec(new ArrayGet(indexes),prec));
+                            pushOper(expr,oper,mk_opprec(new ArrayGet(indexes),precedence[OP_ARRAYGET]));
+                        }
+                        switch (stackType->type) {
+                            case TYPE_ARRAY:
+                                stackType = ((Array*)stackType)->element;
+                                break;
+                            case TYPE_STRING:
+                                stackType = Type::getChar();
+                                break;
                         }
                     } goto next_exprparse;
                     default:
@@ -476,56 +476,36 @@ Expression* parseExpr(char* &cur, Container *scope) throw(InterpEx*,int) {
             case POPERATOR: {
                 switch (tok[1]) {
                     case OP_DEREFGET: {
+                        if (stackType->type != TYPE_POINTER) fatal("Cannot dereference a non-pointer",tok);
                         char* temp = next(tok);
                         if (temp[0] == POPERATOR && temp[1] == OP_ASGN) {
                             tok = temp;
-                            char prec = precedence[OP_DEREFSET];
-                            while (!oper->empty() && prec <= oper->top().prec) {
-                                expr.push_back(oper->top().op);
-                                oper->pop();
-                            }
-                            oper->push(mk_opprec(Operator::get(OP_DEREFSET),prec));
+                            pushOper(expr,oper,mk_opprec(Operator::get(OP_DEREFSET),precedence[OP_DEREFSET]));
                         } else {
-                            char prec = precedence[OP_DEREFGET];
-                            while (!oper->empty() && prec <= oper->top().prec) {
-                                expr.push_back(oper->top().op);
-                                oper->pop();
-                            }
-                            oper->push(mk_opprec(Operator::get(OP_DEREFGET),prec));
+                            pushOper(expr,oper,mk_opprec(Operator::get(OP_DEREFGET),precedence[OP_DEREFGET]));
                         }
+                        stackType = ((Pointer*)stackType)->pointsTo;
                     } goto next_exprparse;
                     case OP_FIELDGET: {
                         tok = next(tok);
-                        int name = *(int*)(tok+1);
+                        if (stackType->type != TYPE_RECORD) fatal("Record variable expected",tok);
+                        int slot = ((Record*)stackType)->getNameSlot(*(int*)(tok+1));
+                        if (slot == -1) fatal("Record has no field by this name",tok);
                         char* temp = next(tok);
                         if (temp[0] == POPERATOR && temp[1] == OP_ASGN) {
                             tok = temp;
-                            char prec = precedence[OP_FIELDSET];
-                            while (!oper->empty() && prec <= oper->top().prec) {
-                                expr.push_back(oper->top().op);
-                                oper->pop();
-                            }
-                            oper->push(mk_opprec(new FieldSet(name),prec));
+                            pushOper(expr,oper,mk_opprec(new FieldSet(slot),precedence[OP_FIELDSET]));
                         } else {
-                            char prec = precedence[OP_FIELDGET];
-                            while (!oper->empty() && prec <= oper->top().prec) {
-                                expr.push_back(oper->top().op);
-                                oper->pop();
-                            }
-                            oper->push(mk_opprec(new FieldGet(name),prec));
+                            pushOper(expr,oper,mk_opprec(new FieldGet(slot),precedence[OP_FIELDGET]));
                         }
+                        stackType = ((Record*)stackType)->slots[slot];
                     } goto next_exprparse;
                     case OP_ASGN: {
                         Symbol* symbol = (Symbol*)expr.back();
                         expr.pop_back();
                         int name = symbol->name;
                         delete symbol;
-                        char prec = precedence[OP_ASGN];
-                        while (!oper->empty() && prec <= oper->top().prec) {
-                            expr.push_back(oper->top().op);
-                            oper->pop();
-                        }
-                        oper->push(mk_opprec(new Asgn(name),prec));
+                        pushOper(expr,oper,mk_opprec(new Asgn(name),precedence[OP_ASGN]));
                     } goto next_exprparse;
                 }
                 if (lastType == POPERATOR && tok[0] == POPERATOR && tok[1] == OP_SUB) //special operator renaming
@@ -539,11 +519,7 @@ Expression* parseExpr(char* &cur, Container *scope) throw(InterpEx*,int) {
                         oper->push(mk_opprec(Operator::get(tok[1]),prec));
                         goto next_exprparse;
                 }
-                while (!oper->empty() && prec <= oper->top().prec) {
-                    expr.push_back(oper->top().op);
-                    oper->pop();
-                }
-                oper->push(mk_opprec(Operator::get(tok[1]),prec));
+                pushOper(expr,oper,mk_opprec(Operator::get(tok[1]),prec));
             } break;
             case PNAME: {//Could be a variable or method
                 int name = *(int*)(tok+1);
@@ -554,6 +530,7 @@ Expression* parseExpr(char* &cur, Container *scope) throw(InterpEx*,int) {
                         tok = next(tok);
                         if (tok[0] != PSPECIAL || tok[1] != SPC_RPAREN) fatal("Close paren expected",tok);
                         expr.push_back(new Size(array));
+                        stackType = Type::getNil();
                     } goto next_exprparse;
                     case RES_RESIZE:{
                         tok = next(tok);
@@ -563,6 +540,7 @@ Expression* parseExpr(char* &cur, Container *scope) throw(InterpEx*,int) {
                         tok = next(tok);
                         if (tok[0] != PSPECIAL || tok[1] != SPC_RPAREN) fatal("Close paren expected",tok);
                         expr.push_back(new Resize(array,dim));
+                        stackType = Type::getNil();
                     } goto next_exprparse;
                     case RES_ARRAY:{
                         tok = next(tok);
@@ -577,12 +555,15 @@ Expression* parseExpr(char* &cur, Container *scope) throw(InterpEx*,int) {
                         }
                         tok = temp;
                         expr.push_back(new ArrayDef(elems));
+                        stackType = Type::getNil();
                     } goto next_exprparse;
                     case RES_EXIT:{
                         expr.push_back(new Throw(E_EXIT));
+                        stackType = Type::getNil();
                     } goto next_exprparse;
                     case RES_BREAK:{
                         expr.push_back(new Throw(E_BREAK));
+                        stackType = Type::getNil();
                     } goto next_exprparse;
                 }
                 if (reserved(name)) goto end_exprparse; //All reserved words break expression parsing
@@ -593,15 +574,19 @@ Expression* parseExpr(char* &cur, Container *scope) throw(InterpEx*,int) {
                         Value *val = scope->getConst(name);
                         if (!val) fatal("Symbol undefined",tok);
                         expr.push_back(Value::incref(val));
+                        stackType = (Type*) val->typeObj;
                     } else {
                         expr.push_back(new MethodValue(meth));
+                        stackType = Type::getMethodType(meth);
                     }
                 } else {
                     expr.push_back(new Symbol(idx));
+                    stackType = scope->getSlotType(idx);
                 }
                 if (*tok) {
                     char* temp = next(tok);
                     if (temp[0] == PSPECIAL && temp[1] == SPC_LPAREN) {
+                        if (stackType->type != TYPE_METH) fatal("Method expected",tok);
                         std::list<Expression*> args;
                         tok = temp;
                         while (*temp) {
@@ -613,23 +598,30 @@ Expression* parseExpr(char* &cur, Container *scope) throw(InterpEx*,int) {
                             args.push_back(parseExpr(tok,scope));
                         }
                         expr.push_back(new Invoke(args));
+                        stackType = ((Method*)((Meth*)stackType)->meth)->getResultType();
+                        if (!stackType) stackType = Type::getNil();
                     }
                 }
             } break;
             case PINTEGER:
                 expr.push_back(new IntegerValue(*(int*)(tok+1)));
+                stackType = Type::getInteger();
                 break;
             case PREAL:
                 expr.push_back(new RealValue(*(float*)(tok+1)));
+                stackType = Type::getReal();
                 break;
             case PSTRING:
                 expr.push_back(new StringValue(tok+1));
+                stackType = Type::getString();
                 break;
             case PBOOLEAN:
                 expr.push_back(new BooleanValue(tok[1] != BOOL_FALSE));
+                stackType = Type::getBoolean();
                 break;
             case PCHAR:
                 expr.push_back(new CharValue(tok[1]));
+                stackType = Type::getChar();
         }
         next_exprparse:
         debug("next_exprparse");

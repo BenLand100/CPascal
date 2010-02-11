@@ -140,6 +140,8 @@ public:
     char* asString() throw(int,InterpEx*);
     Value* getIndex(int index) throw(int,InterpEx*);
     void setIndex(int index, Value* val) throw(int,InterpEx*);
+    void resize(int size) throw(int,InterpEx*);
+    int size() throw(int,InterpEx*);
 
     int argSize();
     void refArg(void* mem);
@@ -153,7 +155,7 @@ protected:
 private:
     char** mem;
     int** objref;
-    int** size;
+    int** ssize;
     char** str;
 };
 
@@ -296,8 +298,8 @@ public:
 
     Value* clone();
     void set(Value* val) throw(int,InterpEx*);
-    Value* getField(int name) throw(int,InterpEx*);
-    void setField(int name, Value* value) throw(int,InterpEx*);
+    Value* getField(int slot) throw(int,InterpEx*);
+    void setField(int slot, Value* value) throw(int,InterpEx*);
 
     int argSize();
     void refArg(void* mem);
@@ -307,11 +309,11 @@ protected:
     ~RecordValue();
 
 private:
-    int** objrefcount;
-    int* memsize;
-    int** indexes;
-    char** mem;
-    std::map<int,Value*>* fields;
+    int memsize;
+    char* mem;
+    int len;
+    int* indexes;
+    Value** slots;
     RecordValue(Record* rec, bool internal);
 };
 
