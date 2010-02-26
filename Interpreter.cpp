@@ -477,6 +477,12 @@ unsigned int Method::numArgs() {
     return arguments.size();
 }
 
+void interp_mem(MALLOC malloc, REALLOC realloc, FREE free) {
+    Value::malloc = malloc;
+    Value::realloc = realloc;
+    Value::free = free;
+}
+
 void* interp_init(PreCompiler_Callback precomp, ErrorHandeler_Callback err)  {
     return (void*) new Interpreter(precomp, err);
 }

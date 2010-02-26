@@ -43,6 +43,7 @@ class InterpEx;
 #define E_NOT_METHOD    E_RUNTIME + 15
 #define E_WRONG_NUM_ARG E_RUNTIME + 16
 #define E_REF_TYPE      E_RUNTIME + 17
+#define E_NO_EQUIV_VAL  E_RUNTIME + 18
 
 //Non-catchable exceptions
 #define E_NOCATCH       100

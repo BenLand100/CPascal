@@ -37,11 +37,27 @@ class PointerValue;
 #ifndef _VALUE_H
 #define	_VALUE_H
 
-typedef void* (*GETMEM)(int size) __attribute__((stdcall));
-typedef void (*FREEMEM)(void* mem) __attribute__((stdcall));
+typedef void* (*MALLOC)(int size) __attribute__((stdcall));
+typedef void* (*REALLOC)(void* mem, int size) __attribute__((stdcall));
+typedef void (*FREE)(void* mem) __attribute__((stdcall));
+
+typedef struct {
+    int refcount;
+    char data[0];
+} fpc_memory;
+
+typedef struct {
+    int refcount;
+    int size;
+    char data[0];
+} fpc_array;
 
 class Value : public Element {
 public:
+    static MALLOC malloc;
+    static REALLOC realloc;
+    static FREE free;
+
     static Value* decref(Value *val) throw(int,InterpEx*);
     static Value* incref(Value *val) throw(int,InterpEx*);
     static Value* fromType(Type* type) throw(int,InterpEx*);
@@ -73,10 +89,10 @@ public:
     virtual Value* invoke(Value** args, unsigned int numArgs, Frame* frame) throw (int,InterpEx*);
 
     virtual int argSize();
-    virtual void refArg(void* mem);
-    virtual void valArg(void* mem);
-    virtual void read_c(void* res);
-    virtual void read_fpc(void* res);
+    virtual void refArg(void* mem) throw(int,InterpEx*);
+    virtual void valArg(void* mem) throw(int,InterpEx*);
+    virtual void read_c(void* res) throw(int,InterpEx*);
+    virtual void read_fpc(void* res) throw(int,InterpEx*);
 
 protected:
     Value(int impl_type, Type* impl_typeObj, bool ownsmem);
@@ -117,10 +133,10 @@ public:
     int asInteger() throw(int,InterpEx*);
 
     int argSize();
-    void refArg(void* mem);
-    void valArg(void* mem);
-    void read_c(void* res);
-    void read_fpc(void* res);
+    void refArg(void* mem) throw(int,InterpEx*);
+    void valArg(void* mem) throw(int,InterpEx*);
+    void read_c(void* res) throw(int,InterpEx*);
+    void read_fpc(void* res) throw(int,InterpEx*);
 
 protected:
     ~IntegerValue();
@@ -144,19 +160,16 @@ public:
     int size() throw(int,InterpEx*);
 
     int argSize();
-    void refArg(void* mem);
-    void valArg(void* mem);
-    void read_c(void* res);
-    void read_fpc(void* res);
+    void refArg(void* mem) throw(int,InterpEx*);
+    void valArg(void* mem) throw(int,InterpEx*);
+    void read_c(void* res) throw(int,InterpEx*);
+    void read_fpc(void* res) throw(int,InterpEx*);
 
 protected:
     ~StringValue();
 
 private:
-    char** mem;
-    int** objref;
-    int** ssize;
-    char** str;
+    char** data;
 };
 
 class RealValue : public Value {
@@ -172,8 +185,8 @@ public:
     double asReal() throw(int,InterpEx*);
 
     int argSize();
-    void refArg(void* mem);
-    void valArg(void* mem);
+    void refArg(void* mem) throw(int,InterpEx*);
+    void valArg(void* mem) throw(int,InterpEx*);
 
 protected:
     ~RealValue();
@@ -196,10 +209,10 @@ public:
     char* asString() throw(int,InterpEx*);
 
     int argSize();
-    void refArg(void* mem);
-    void valArg(void* mem);
-    void read_c(void* res);
-    void read_fpc(void* res);
+    void refArg(void* mem) throw(int,InterpEx*);
+    void valArg(void* mem) throw(int,InterpEx*);
+    void read_c(void* res) throw(int,InterpEx*);
+    void read_fpc(void* res) throw(int,InterpEx*);
 
 protected:
     ~CharValue();
@@ -220,10 +233,10 @@ public:
     int asInteger() throw(int,InterpEx*);
 
     int argSize();
-    void refArg(void* mem);
-    void valArg(void* mem);
-    void read_c(void* res);
-    void read_fpc(void* res);
+    void refArg(void* mem) throw(int,InterpEx*);
+    void valArg(void* mem) throw(int,InterpEx*);
+    void read_c(void* res) throw(int,InterpEx*);
+    void read_fpc(void* res) throw(int,InterpEx*);
 
 protected:
     ~BooleanValue();
@@ -245,23 +258,20 @@ public:
     void setIndex(int index, Value* val) throw(int,InterpEx*);
 
     int argSize();
-    void refArg(void* mem);
-    void valArg(void* mem);
+    void refArg(void* mem) throw(int,InterpEx*);
+    void valArg(void* mem) throw(int,InterpEx*);
 
 protected:
     ~ArrayValue();
 
 private:
-    Type** elemType;
-    bool* dynamic;
-    int* start;
-    int* elemsz;
+    Type *elemType;
+    bool dynamic;
+    int start;
+    int elemsz;
 
-    char** mem;
-    int** objref;
-    int** asize;
-    Value*** array;
-    char** pas_array;
+    char** data;
+    Value** array;
     ArrayValue(Array* arr, bool internal);
 };
 
@@ -278,16 +288,16 @@ public:
     Value* invoke(Value** args, int numArgs, Frame* frame) throw (int,InterpEx*);
 
     int argSize();
-    void refArg(void* mem);
-    void valArg(void* mem);
+    void refArg(void* mem) throw(int,InterpEx*);
+    void valArg(void* mem) throw(int,InterpEx*);
 
 protected:
     ~PointerValue();
 
 private:
-    Value** ref;
+    Value* ref;
     void** pas_ref;
-    Type** refType;
+    Type* refType;
     PointerValue(Pointer* pt, bool internal);
 };
 
@@ -302,8 +312,8 @@ public:
     void setField(int slot, Value* value) throw(int,InterpEx*);
 
     int argSize();
-    void refArg(void* mem);
-    void valArg(void* mem);
+    void refArg(void* mem) throw(int,InterpEx*);
+    void valArg(void* mem) throw(int,InterpEx*);
 
 protected:
     ~RecordValue();

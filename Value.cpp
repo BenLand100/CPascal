@@ -28,6 +28,10 @@
 //#define debug(x) std::cout << x << '\n'
 #define debug(x)
 
+MALLOC Value::malloc;
+REALLOC Value::realloc;
+FREE Value::free;
+
 Value* Value::fromType(Type* type) throw (int, InterpEx*) {
     debug("fromType " << type->type);
     if (type->type == TYPE_REF) throw E_REF_TYPE;
@@ -181,16 +185,20 @@ int Value::argSize() {
     return -1;
 }
 
-void Value::valArg(void* mem) {
+void Value::valArg(void* mem) throw (int, InterpEx*) {
+    throw E_NO_EQUIV_VAL;
 }
 
-void Value::refArg(void* mem) {
+void Value::refArg(void* mem) throw (int, InterpEx*) {
+    throw E_NO_EQUIV_VAL;
 }
 
-void Value::read_c(void* res) {
+void Value::read_c(void* res) throw (int, InterpEx*) {
+    throw E_NO_EQUIV_VAL;
 }
 
-void Value::read_fpc(void* res) {
+void Value::read_fpc(void* res) throw (int, InterpEx*) {
+    throw E_NO_EQUIV_VAL;
 }
 
 //**** BEGIN METHODVALUE DEFINITION ***
@@ -398,19 +406,19 @@ int IntegerValue::argSize() {
     return 4;
 }
 
-void IntegerValue::valArg(void* mem) {
+void IntegerValue::valArg(void* mem) throw (int, InterpEx*) {
     *(int*) mem = *integer;
 }
 
-void IntegerValue::refArg(void* mem) {
+void IntegerValue::refArg(void* mem) throw (int, InterpEx*) {
     *(int**) mem = integer;
 }
 
-void IntegerValue::read_c(void* res) {
+void IntegerValue::read_c(void* res) throw (int, InterpEx*) {
     *integer = (int) res;
 }
 
-void IntegerValue::read_fpc(void* res) {
+void IntegerValue::read_fpc(void* res) throw (int, InterpEx*) {
     *integer = (int) res;
 }
 
@@ -418,129 +426,116 @@ void IntegerValue::read_fpc(void* res) {
 
 StringValue::StringValue(void* mem_impl) : Value(TYPE_STRING, Type::getString(), false) {
     int len = 0;
-    mem = (char**) mem_impl;
-    *mem = new char[8 + len + 1];
-    objref = new int*;
-    *objref = (int*) * mem;
-    **objref = 1;
-    ssize = new int*;
-    *ssize = (int*) (*mem + 4);
-    **ssize = len;
-    str = new char*;
-    *str = (char*) (*mem + 8);
-    **str = 0;
+    fpc_array *mem = (fpc_array*)Value::malloc(8 + len + 1);
+    mem->refcount = 1;
+    mem->size = len;
+    mem->data[0] = 0;
+    data = (char**)mem_impl;
+    *data = mem->data;
 }
 
 StringValue::StringValue(char* str_impl) : Value(TYPE_STRING, Type::getString(), true) {
     int len = strlen(str_impl);
-    mem = new char*;
-    *mem = new char[8 + len + 1];
-    objref = new int*;
-    *objref = (int*) (*mem);
-    **objref = 1;
-    ssize = new int*;
-    *ssize = (int*) (*mem + 4);
-    **ssize = len;
-    str = new char*;
-    *str = (char*) (*mem + 8);
-    strcpy(*str, str_impl);
+    fpc_array *mem = (fpc_array*)Value::malloc(8 + len + 1);
+    mem->refcount = 1;
+    mem->size = len;
+    data = new char*;
+    strcpy(mem->data, str_impl);
+    *data = mem->data;
 }
 
 StringValue::StringValue(std::string cpp_str) : Value(TYPE_STRING, Type::getString(), true) {
     int len = cpp_str.length();
-    mem = new char*;
-    *mem = new char[8 + len + 1];
-    objref = new int*;
-    *objref = (int*) (*mem);
-    **objref = -1;
-    ssize = new int*;
-    *ssize = (int*) (*mem + 4);
-    **ssize = len;
-    str = new char*;
-    *str = (char*) (*mem + 8);
-    strcpy(*str, cpp_str.c_str());
+    fpc_array *mem = (fpc_array*)Value::malloc(8 + len + 1);
+    mem->refcount = 1;
+    mem->size = len;
+    data = new char*;
+    strcpy(mem->data, cpp_str.c_str());
+    *data = mem->data;
 }
 
 StringValue::~StringValue() {
-    delete [] * mem;
-    if (owns_mem) delete mem;
-    delete objref;
-    delete ssize;
-    delete str;
+    fpc_array *mem = (fpc_array*)(*data-8);
+    if (!(--mem->refcount))
+        Value::free(mem);
+    if (owns_mem) delete data;
 }
 
 Value* StringValue::clone() {
-    return new StringValue(*str);
+    return new StringValue(*data);
 }
 
 void StringValue::set(Value* val) throw (int, InterpEx*) {
     if (val->type != TYPE_STRING) throw E_NOT_STRING;
-    delete [] * mem;
     StringValue* sval = (StringValue*) val;
-    int len = **sval->ssize;
-    *mem = new char[8 + len + 1];
-    *objref = (int*) (*mem);
-    **objref = -1;
-    *ssize = (int*) (*mem + 4);
-    **ssize = len;
-    *str = (char*) (*mem + 8);
-    strcpy(*str, *sval->str);
+    int len = sval->size();
+    resize(len);
+    fpc_array *mem = (fpc_array*)(*data-8);
+    mem->refcount = 1;
+    mem->size = len;
+    strcpy(mem->data, *sval->data);
+    *data = mem->data;
 }
 
 char* StringValue::asString() throw (int, InterpEx*) {
-    return *str;
+    return *data;
 }
 
 void StringValue::setIndex(int index, Value* val) throw (int, InterpEx*) {
-    if (index < 1 || index > **ssize) throw E_INDEX_BOUNDS;
-    (*str)[index-1] = val->asChar();
+    fpc_array *mem = (fpc_array*)(*data-8);
+    if (index < 1 || index > mem->size) throw E_INDEX_BOUNDS;
+    mem->data[index-1] = val->asChar();
 }
 
 Value* StringValue::getIndex(int index) throw (int, InterpEx*) {
-    if (index < 1 || index > **ssize) throw E_INDEX_BOUNDS;
-    return new CharValue((*str)[index-1]);
+    fpc_array *mem = (fpc_array*)(*data-8);
+    if (index < 1 || index > mem->size) throw E_INDEX_BOUNDS;
+    return new CharValue(mem->data[index-1]);
 }
 
 void StringValue::resize(int size) throw (int, InterpEx*) {
-    if (**ssize == size) return;
-    char *mem = new char[8+size+1];
-    int *objref = (int*)(str);
-    *objref = **this->objref;
-    int *ssize = (int*)(str+4);
-    *ssize = size;
-    char *str = (mem+8);
-    strcpy(str,*this->str);
-    *this->mem = mem;
-    *this->str = str;
-    *this->objref = objref;
-    *this->ssize = ssize;
+    fpc_array *orig = (fpc_array*)(*data-8);
+    if (orig->size == size) return;
+    fpc_array *mem = (fpc_array*) Value::malloc(8 + size + 1);
+    mem->refcount = orig->refcount;
+    mem->size = size;
+    int min = size < orig->size ? size : orig->size;
+    memcpy(mem->data, orig->data, min);
+    mem->data[min] = 0;
+    *data = mem->data;
+    if (!--(orig->refcount))
+        Value::free(orig);
 }
 
 int StringValue::size() throw(int, InterpEx*) {
-    return **ssize;
+    fpc_array *orig = (fpc_array*)(*data-8);
+    return orig->size;
 }
 
 int StringValue::argSize() {
     return 4;
 }
 
-void StringValue::valArg(void* mem) {
-    *(char**) mem = *str;
+void StringValue::valArg(void* mem) throw (int, InterpEx*) {
+    *(char**) mem = *data;
 }
 
-void StringValue::refArg(void* mem) {
-    *(char***) mem = str;
+void StringValue::refArg(void* mem) throw (int, InterpEx*) {
+    *(char***) mem = data;
 }
 
-void StringValue::read_c(void* res) {
+void StringValue::read_c(void* res) throw (int, InterpEx*) {
     StringValue val((char*) res);
     set(&val);
     delete [] (char*) res;
 }
 
-void StringValue::read_fpc(void* res) {
-    StringValue val((char*) res);
-    set(&val);
+void StringValue::read_fpc(void* res) throw (int, InterpEx*) {
+    fpc_array *orig = (fpc_array*)(*data-8);
+    if (!--orig->refcount)
+        Value::free(orig);
+    *data = *(char**)res;
+
 } //FIXME leaks like hell
 
 //**** BEGIN REALVALUE DEFINITION ***
@@ -587,11 +582,11 @@ int RealValue::argSize() {
     return 8;
 }
 
-void RealValue::valArg(void* mem) {
+void RealValue::valArg(void* mem) throw (int, InterpEx*) {
     *(double*) mem = *real;
 }
 
-void RealValue::refArg(void* mem) {
+void RealValue::refArg(void* mem) throw (int, InterpEx*) {
     *(double**) mem = real;
 }
 
@@ -653,19 +648,19 @@ int CharValue::argSize() {
     return 4;
 }
 
-void CharValue::valArg(void* mem) {
+void CharValue::valArg(void* mem) throw (int, InterpEx*) {
     *(char*) mem = *chr;
 }
 
-void CharValue::refArg(void* mem) {
+void CharValue::refArg(void* mem) throw (int, InterpEx*) {
     *(char**) mem = chr;
 }
 
-void CharValue::read_c(void* res) {
+void CharValue::read_c(void* res) throw (int, InterpEx*) {
     *chr = (char) (unsigned int) res;
 }
 
-void CharValue::read_fpc(void* res) {
+void CharValue::read_fpc(void* res) throw (int, InterpEx*) {
     *chr = (char) (unsigned int) res;
 }
 
@@ -706,350 +701,273 @@ int BooleanValue::argSize() {
     return 4;
 }
 
-void BooleanValue::valArg(void* mem) {
+void BooleanValue::valArg(void* mem) throw (int, InterpEx*) {
     *(char*) mem = *boolean;
 }
 
-void BooleanValue::refArg(void* mem) {
+void BooleanValue::refArg(void* mem) throw (int, InterpEx*) {
     *(char**) mem = boolean;
 }
 
-void BooleanValue::read_c(void* res) {
+void BooleanValue::read_c(void* res) throw (int, InterpEx*) {
     *boolean = (bool)res;
 }
 
-void BooleanValue::read_fpc(void* res) {
+void BooleanValue::read_fpc(void* res) throw (int, InterpEx*) {
     *boolean = (char) (unsigned int) res;
 }
 
 //**** BEGIN ARRAYVALUE DEFINITION ***
 
 ArrayValue::ArrayValue(Array* arr, void* mem_impl) : Value(TYPE_ARRAY, arr, false) {
-    elemType = new Type*;
-    *elemType = (Type*) arr->element;
-    dynamic = new bool;
-    *dynamic = arr->dynamic;
-    start = new int;
-    *start = arr->from;
-
-    elemsz = new int;
-    *elemsz = arr->element->sizeOf();
+    elemType = (Type*) arr->element;
+    dynamic = arr->dynamic;
+    start = arr->from;
+    elemsz = arr->element->sizeOf();
     int numelems = arr->to - arr->from + 1; //to == -1 and from == 0 for dynamic just for this
 
     if (arr->dynamic) {
-        mem = (char**) mem_impl;
-        *mem = new char[8 + (*elemsz) * numelems];
-        objref = new int*;
-        *objref = (int*) * mem;
-        **objref = 1;
-        asize = new int*;
-        *asize = (int*) (*mem + 4);
-        **asize = numelems;
+        fpc_array *mem = (fpc_array*)Value::malloc(8);
+        mem->refcount = 1;
+        mem->size = 0;
+        data = (char**)mem_impl;
+        *data = mem->data;
     } else {
-        mem = new char*;
-        *mem = (char*) mem_impl;
-        objref = new int*;
-        *objref = new int;
-        **objref = 1;
-        asize = new int*;
-        *asize = new int;
-        **asize = numelems;
+        data = new char*;
+        *data = (char*)mem_impl;
     }
 
-    array = new Value**;
-    *array = new Value*[**asize];
-    pas_array = new char*;
-    if (*dynamic) {
-        *pas_array = (char*) (*mem + 8);
-    } else {
-        *pas_array = *mem;
-    }
-
+    array = new Value*[numelems];
     for (int i = 0; i < numelems; i++) {
-        (*array)[i] = Value::fromTypeMem(*elemType, (void*) (*pas_array + (*elemsz) * i));
+        array[i] = Value::fromTypeMem(elemType, (void*) ((char*)*data + elemsz*i));
     }
 }
 
 ArrayValue::ArrayValue(Array* arr) : Value(TYPE_ARRAY, arr, true) {
-    elemType = new Type*;
-    *elemType = (Type*) arr->element;
-    dynamic = new bool;
-    *dynamic = arr->dynamic;
-    start = new int;
-    *start = arr->from;
-
-    elemsz = new int;
-    *elemsz = arr->element->sizeOf();
+    elemType = (Type*) arr->element;
+    dynamic = arr->dynamic;
+    start = arr->from;
+    elemsz = arr->element->sizeOf();
     int numelems = arr->to - arr->from + 1; //to == -1 and from == 0 for dynamic just for this
-    if (*dynamic) {
-        mem = new char*;
-        *mem = new char[8 + (*elemsz) * numelems];
-        objref = new int*;
-        *objref = (int*) * mem;
-        **objref = 1;
-        asize = new int*;
-        *asize = (int*) (*mem + 4);
-        **asize = numelems;
+
+    if (dynamic) {
+        fpc_array *mem = (fpc_array*)Value::malloc(8);
+        mem->refcount = 1;
+        mem->size = 0;
+        data = new char*;
+        *data = mem->data;
     } else {
-        mem = new char*;
-        *mem = new char[(*elemsz) * numelems];
-        objref = new int*;
-        *objref = new int;
-        **objref = 1;
-        asize = new int*;
-        *asize = new int;
-        **asize = numelems;
+        data = new char*;
+        *data = new char[numelems*elemsz];
     }
 
-    array = new Value**;
-    *array = new Value*[**asize];
-    pas_array = new char*;
-    if (*dynamic) {
-        *pas_array = (char*) (*mem + 8);
-    } else {
-        *pas_array = *mem;
-    }
-
+    array = new Value*[numelems];
     for (int i = 0; i < numelems; i++) {
-        (*array)[i] = Value::fromTypeMem(*elemType,  (void*) (*pas_array + (*elemsz) * i));
+        array[i] = Value::fromTypeMem(elemType,  (void*) ((char*)*data + elemsz*i));
     }
 }
 
 ArrayValue::ArrayValue(Array* arr, bool ownsmem) : Value(TYPE_ARRAY, arr, ownsmem) {
-    elemType = new Type*;
-    dynamic = new bool;
-    start = new int;
-    elemsz = new int;
-
-    mem = new char*;
-    objref = new int*;
-    asize = new int*;
-    array = new Value**;
-    pas_array = new char*;
 }
 
 ArrayValue::~ArrayValue() {
-    if (*dynamic) {
-        --**objref;
-        for (int i = 0; i < **asize; i++) {
-            Value::decref((*array)[i]);
+    if (dynamic) {
+        fpc_array *mem = (fpc_array*)(*data-8);
+        for (int i = 0; i < mem->size; i++) {
+            Value::decref(array[i]);
         }
-        delete [] * array;
-        delete [] * mem;
-        if (owns_mem) delete mem;
+        delete [] array;
+        if (!(--mem->refcount))
+            Value::free(mem);
+        if (owns_mem) delete data;
     } else {
-        for (int i = 0; i < **asize; i++) {
-             Value::decref((*array)[i]);
+        Array* arr = (Array*) typeObj;
+        int numelems = arr->to - arr->from + 1;
+        for (int i = 0; i < numelems; i++) {
+             Value::decref(array[i]);
         }
-        delete [] * array;
-        if (owns_mem) delete [] * mem;
-        delete mem;
-        delete *objref;
-        delete *asize;
+        delete [] array;
+        if (owns_mem) delete [] (char*)*data;
+        delete data;
     }
-    delete elemType;
-    delete dynamic;
-    delete start;
-    delete objref;
-    delete asize;
-    delete array;
-    delete pas_array;
-    delete elemsz;
 }
 
 Value* ArrayValue::clone() {
     ArrayValue* clone = new ArrayValue((Array*) typeObj, true);
-    *clone->elemType = *elemType;
-    *clone->dynamic = *dynamic;
-    *clone->start = *start;
+    clone->elemType = elemType;
+    clone->dynamic = dynamic;
+    clone->start = start;
+    clone->elemsz = elemsz;
 
-    *clone->elemsz = *elemsz;
     Array* arr = (Array*) typeObj;
     int numelems = arr->to - arr->from + 1; //to == -1 and from == 0 for dynamic just for this
 
-    if (arr->dynamic) {
-        numelems = **asize;
-        *clone->mem = new char[8 + (*elemsz) * numelems];
-        *clone->objref = (int*) * clone->mem;
-        **clone->objref = 1;
-        *clone->asize = (int*) (*clone->mem + 4);
-        **clone->asize = numelems;
+    if (dynamic) {
+        fpc_array *orig = (fpc_array*)(*data - 8);
+        fpc_array *mem = (fpc_array*)Value::malloc(8 + orig->size*elemsz);
+        mem->refcount = 1;
+        mem->size = orig->size;
+        numelems = mem->size;
+        clone->data = new char*;
+        *clone->data = mem->data;
     } else {
-        *clone->mem = new char[(*elemsz) * numelems];
-        *clone->objref = new int;
-        **clone->objref = 1;
-        *clone->asize = new int;
-        **clone->asize = numelems;
+        clone->data = new char*;
+        *clone->data = new char[elemsz*numelems];
     }
 
-    *clone->array = new Value*[**asize];
-    if (*dynamic) {
-        *clone->pas_array = (char*) (*clone->mem + 8);
-    } else {
-        *clone->pas_array = *clone->mem;
-    }
-
+    clone->array = new Value*[numelems];
     for (int i = 0; i < numelems; i++) {
-        (*clone->array)[i] = Value::fromTypeMem(*elemType, (void*) (*clone->pas_array + (*elemsz) * i));
-        (*clone->array)[i]->set((*array)[i]);
+        clone->array[i] = Value::fromTypeMem(elemType, (void*) (*clone->data + elemsz*i));
+        clone->array[i]->set(array[i]);
     }
     return clone;
 }
 
 void ArrayValue::set(Value* val) throw (int, InterpEx*) {
     if (val->type != TYPE_ARRAY) throw E_NOT_ARRAY;
-    ArrayValue *arr = (ArrayValue*)val;
-    if (*dynamic) {
-        if (**asize != **arr->asize) resize(**arr->asize);
-        for (int i = 0; i < **asize; i++) {
-            (*array)[i]->set((*arr->array)[i]);
+    ArrayValue *src = (ArrayValue*)val;
+    if (dynamic) {
+        fpc_array *dest = (fpc_array*)(*data - 8);
+        fpc_array *source = (fpc_array*)(*src->data - 8);
+        if (dest->size != source->size) resize(source->size); //Inefficient
+        for (int i = 0; i < source->size; i++) {
+            array[i]->set(src->array[i]);
         }
     } else {
-        if (**asize != **arr->asize) throw E_INDEX_BOUNDS;
-        for (int i = 0; i < **asize; i++) {
-            (*array)[i]->set((*arr->array)[i]);
+        Array* arr = (Array*) typeObj;
+        int numelems = arr->to - arr->from + 1;
+        if (arr->instanceOf((Type*)src->typeObj)) throw E_INDEX_BOUNDS;
+        for (int i = 0; i < numelems; i++) {
+            array[i]->set(src->array[i]);
         }
     }
-
 }
 
 int ArrayValue::size() throw (int, InterpEx*) {
-    return **asize;
+    fpc_array *mem = (fpc_array*)(*data - 8);
+    return mem->size;
 }
 
 void ArrayValue::resize(int len) throw (int, InterpEx*) {
-    if (!*dynamic) throw E_STATIC_ARRAY;
+    if (!dynamic) throw E_STATIC_ARRAY;
+    fpc_array *mem = (fpc_array*)(*data - 8);
+    fpc_array *res = (fpc_array*)Value::malloc(8 + elemsz*len);
+    res->refcount = mem->refcount;
+    res->size = len;
 
-    char* mem = new char[8 + (*elemsz) * len];
-    int* objref = (int*) mem;
-    *objref = 1;
-    int* asize = (int*) (mem + 4);
-    *asize = len;
     Value** array = new Value*[len];
-    char* pas_array = (char*) (mem + 8);
-
     for (int i = 0; i < len; i++) {
-        array[i] = Value::fromTypeMem(*elemType, (void*) (pas_array + (*elemsz) * i));
+        array[i] = Value::fromTypeMem(elemType, (void*) (res->data + elemsz*i));
     }
-    int min = **this->asize < len ? **this->asize : len;
+    int min = mem->size < len ? mem->size : len;
     for (int i = 0; i < min; i++) {
-        array[i]->set((*this->array)[i]);
+        array[i]->set(this->array[i]);
+        Value::decref(this->array[i]);
     }
-    for (int i = 0; i < **this->asize; i++) {
-        Value::decref((*this->array)[i]);
+    for (int i = min; i < mem->size; i++) {
+        Value::decref(this->array[i]);
     }
-    delete [] * this->array;
-    delete [] * this->mem;
-
-    *this->mem = mem;
-    *this->objref = objref;
-    *this->asize = asize;
-    *this->array = array;
-    *this->pas_array = pas_array;
-
+    *data = res->data;
+    Value::free(mem);
+    delete [] this->array;
+    this->array = array;
 }
 
 void ArrayValue::setIndex(int index, Value* val) throw (int, InterpEx*) {
-    index -= *start;
-    if (index >= **asize)
+    index -= start;
+    fpc_array *mem = (fpc_array*)(*data - 8);
+    if (index >= mem->size)
         throw E_INDEX_BOUNDS;
-    (*array)[index]->set(val);
+    array[index]->set(val);
 }
 
 Value* ArrayValue::getIndex(int index) throw (int, InterpEx*) {
-    index -= *start;
-    if (index >= **asize)
+    index -= start;
+    fpc_array *mem = (fpc_array*)(*data - 8);
+    if (index >= mem->size)
         throw E_INDEX_BOUNDS;
-    return Value::incref((*array)[index]);
+    return Value::incref(array[index]);
 }
 
 int ArrayValue::argSize() {
     return 4;
 }
 
-void ArrayValue::valArg(void* mem) {
-    *(char**) mem = *pas_array;
+void ArrayValue::valArg(void* mem) throw (int, InterpEx*) {
+    *(char**) mem = (char*) *data;
 }
 
-void ArrayValue::refArg(void* mem) {
-    *(char***) mem = pas_array;
+void ArrayValue::refArg(void* mem) throw (int, InterpEx*) {
+    *(char***) mem = (char**) data;
 }
 
 //**** BEGIN POINTERVALUE DEFINITION ***
 
 PointerValue::PointerValue(Pointer* pt, void* mem) : Value(TYPE_POINTER, pt, false) {
-    refType = new Type*;
-    *refType = (Type*) pt->pointsTo;
-    ref = new Value*;
-    *ref = new Value();
+    refType = (Type*) pt->pointsTo;
+    ref = new Value();
     pas_ref = (void**) mem;
-    (*ref)->refArg((void*) pas_ref);
+    //(*ref)->refArg((void*) pas_ref);
 }
 
 PointerValue::PointerValue(Pointer* pt) : Value(TYPE_POINTER, pt, true) {
-    refType = new Type*;
-    *refType = (Type*) pt->pointsTo;
-    ref = new Value*;
-    *ref = new Value();
+    refType = (Type*) pt->pointsTo;
+    ref = new Value();
     pas_ref = new void*;
-    (*ref)->refArg((void*) pas_ref);
+    //(*ref)->refArg((void*) pas_ref);
 }
 
 PointerValue::PointerValue(Pointer* pt, bool internal) : Value(TYPE_POINTER, pt, true) {
-    refType = new Type*;
-    ref = new Value*;
     pas_ref = new void*;
 }
 
 PointerValue::~PointerValue() {
-    delete refType;
-     Value::decref(*ref);
-    delete ref;
+     Value::decref(ref);
     if (owns_mem) delete pas_ref;
 }
 
 Value* PointerValue::clone() {
     PointerValue* pt = new PointerValue((Pointer*) typeObj, true);
-    *(pt->refType) = *refType;
-    *(pt->ref) = Value::incref(*ref);
-    (*ref)->refArg((void*) pt->pas_ref);
+    pt->refType = refType;
+    pt->ref = Value::incref(ref);
+    pt->pas_ref = pas_ref;
     return pt;
 }
 
 void PointerValue::set(Value* val) throw (int, InterpEx*) {
     if (val->type != TYPE_POINTER) throw E_NOT_POINTER;
-    *refType = *((PointerValue*) val)->refType;
-     Value::decref(*ref);
-    *ref = Value::incref(*((PointerValue*) val)->ref);
-    (*ref)->refArg((void*) pas_ref);
+    refType = ((PointerValue*) val)->refType;
+    Value::decref(ref);
+    ref = Value::incref(((PointerValue*) val)->ref);
+    ((PointerValue*) val)->pas_ref = pas_ref;
 }
 
 Value* PointerValue::getRef() throw (int, InterpEx*) {
-    return *ref;
+    return ref;
 }
 
 Value* PointerValue::invoke(Value** args, int numArgs, Frame* cur) throw (int, InterpEx*) {
-    if ((*ref)->type != TYPE_METH) throw E_NOT_METHOD;
-    return (*ref)->invoke(args,numArgs,cur);
+    if (ref->type != TYPE_METH) throw E_NOT_METHOD;
+    return ref->invoke(args,numArgs,cur);
 }
 
 //FIXME Should check assignment types
 
 void PointerValue::setRef(Value* ref_impl) throw (int, InterpEx*) {
-     Value::decref(*ref);
-    *ref = Value::incref(ref_impl);
-    (*ref)->refArg((void*) pas_ref);
+     Value::decref(ref);
+    ref = Value::incref(ref_impl);
+    ref->refArg((void*) pas_ref);
 }
 
 int PointerValue::argSize() {
     return 4;
 }
 
-void PointerValue::valArg(void* mem) {
+void PointerValue::valArg(void* mem) throw (int, InterpEx*) {
     *(void**) mem = *pas_ref;
 }
 
-void PointerValue::refArg(void* mem) {
+void PointerValue::refArg(void* mem) throw (int, InterpEx*) {
     *(void***) mem = pas_ref;
 }
 
@@ -1135,11 +1053,11 @@ int RecordValue::argSize() {
     return memsize;
 }
 
-void RecordValue::valArg(void* mem_impl) {
+void RecordValue::valArg(void* mem_impl) throw (int, InterpEx*) {
     *(char**) mem_impl = mem;
 }
 
-void RecordValue::refArg(void* mem_impl) {
+void RecordValue::refArg(void* mem_impl) throw (int, InterpEx*) {
     *(char***) mem_impl = &mem;
 }
 

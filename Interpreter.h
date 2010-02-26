@@ -158,6 +158,7 @@ private:
 };
 
 extern "C" {
+    void interp_mem(MALLOC malloc, REALLOC realloc, FREE free) __attribute__((cdecl));
     void* interp_init(PreCompiler_Callback precomp, ErrorHandeler_Callback err) __attribute__((cdecl));
     void interp_meth(void* interp, void* addr, char* def) __attribute__((cdecl));
     void interp_type(void* interp, char* def) __attribute__((cdecl));

@@ -123,6 +123,8 @@ const char* InterpEx::what() const throw() {
             return "Unknown precompiler directive";
         case E_EXPECTED:
             return "Something was expected and not found";
+        case E_NO_EQUIV_VAL:
+            return "Conversion to/from native not defined";
         default:
             return "Unknown error!";
     }

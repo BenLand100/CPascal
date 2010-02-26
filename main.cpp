@@ -28,6 +28,8 @@
 #include <map>
 #include <list>
 #include <sstream>
+#include <stdio.h>
+#include <stdlib.h>
 
 /**
  * This file need not be linked with the interpreter, only for testing
@@ -59,6 +61,7 @@ int main(int argc, char** argv) {
     in.close();
     ppg[size] = '\0';
 
+    interp_mem((MALLOC)&malloc,(REALLOC)&realloc,(FREE)&free);
     void* interp = interp_init(&precomp,0);
     interp_set(interp,ppg);
     interp_comp(interp);
