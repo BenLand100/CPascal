@@ -149,6 +149,7 @@ char* lex(char* ppg, std::map<std::string,int> &names, PreCompiler_Callback prec
             case 'j':
             case 'k':
             case 'l':
+            	goto name;
             case 'm':
                 if (ppg[1] == 'o' && ppg[2] == 'd' && !namechar(ppg[3])) {
                     *(toks++) = POPERATOR;
